@@ -43,7 +43,7 @@ class MentorCard extends StatelessWidget {
                 child: Image.asset(
                   assetImage,
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => Image.network(
+                  errorBuilder: (_, _, _) => Image.network(
                     mentor.avatarUrl,
                     fit: BoxFit.cover,
                   ),
@@ -138,7 +138,7 @@ class MentorCardWithButton extends StatelessWidget {
               child: Image.asset(
                 assetImage,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Image.network(
+                errorBuilder: (_, _, _) => Image.network(
                   mentor.avatarUrl,
                   fit: BoxFit.cover,
                 ),

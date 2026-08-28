@@ -69,7 +69,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       child: Image.asset(
                         'assets/images/jessica_large.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset('assets/images/jessica_avatar.png'),
+                        errorBuilder: (_, _, _) => Image.asset('assets/images/jessica_avatar.png'),
                       ),
                     ),
                   ),

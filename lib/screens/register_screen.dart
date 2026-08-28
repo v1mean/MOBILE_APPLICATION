@@ -106,7 +106,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             child: Image.network(
                               'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
                               width: 24, height: 24,
-                              errorBuilder: (_, __, ___) =>
+                              errorBuilder: (_, _, _) =>
                                   const Text('G', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.white)),
                             ),
                           ),

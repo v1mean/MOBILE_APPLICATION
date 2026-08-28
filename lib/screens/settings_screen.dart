@@ -52,7 +52,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Image.network(
                         'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
+                        errorBuilder: (_, _, _) => const ColoredBox(
                           color: AppColors.tagPurple,
                           child: Center(child: Text('J', style: TextStyle(fontWeight: FontWeight.w700))),
                         ),
@@ -292,7 +292,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 child: Image.network(
                   'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const Center(
+                  errorBuilder: (_, _, _) => const Center(
                     child: Text('J', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
                   ),
                 ),

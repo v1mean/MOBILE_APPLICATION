@@ -36,10 +36,10 @@ class StarFieldPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final rng = math.Random(42);
     final smallStar = Paint()
-      ..color = Colors.white.withOpacity(0.7)
+      ..color = Colors.white.withValues(alpha: 0.7)
       ..style = PaintingStyle.fill;
     final glowStar = Paint()
-      ..color = Colors.white.withOpacity(0.4)
+      ..color = Colors.white.withValues(alpha: 0.4)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.5);
 
     for (int i = 0; i < 70; i++) {

@@ -51,7 +51,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: Image.asset(
                         'assets/images/jessica_avatar.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const CircleAvatar(
+                        errorBuilder: (_, _, _) => const CircleAvatar(
                           backgroundColor: Color(0xFFFFD5DC),
                           child: Text('J', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
                         ),

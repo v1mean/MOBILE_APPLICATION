@@ -43,14 +43,17 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
       body: SafeArea(
         child: Column(
           children: [
-            // Top Bar with Close
+            // Top Bar with Close Icon
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => context.pop(),
-                  child: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF111827)),
+                  child: const Padding(
+                    padding: EdgeInsets.all(4),
+                    child: Icon(Icons.close_rounded, size: 24, color: Color(0xFF111827)),
+                  ),
                 ),
               ),
             ),
@@ -63,10 +66,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                     const SizedBox(height: 10),
                     // 3D Avatar
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       child: SizedBox(
-                        width: 96,
-                        height: 96,
+                        width: 98,
+                        height: 98,
                         child: Image.asset(
                           'assets/images/mentor_thavy.png',
                           fit: BoxFit.cover,
@@ -74,27 +77,29 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         ),
                       ),
                     ),
-                    const SizedBox(height: 14),
+                    const SizedBox(height: 16),
+                    // Name
                     Text(
                       m.name,
                       style: GoogleFonts.inter(
-                        fontSize: 26,
+                        fontSize: 27,
                         fontWeight: FontWeight.w900,
                         color: const Color(0xFF111827),
                       ),
                     ),
                     const SizedBox(height: 6),
+                    // Bio
                     Text(
                       m.bio,
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
                         color: const Color(0xFF4B5563),
-                        height: 1.4,
+                        height: 1.45,
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    // Action Buttons
+                    const SizedBox(height: 20),
+                    // Action Buttons: Book Class vs Follow
                     Row(
                       children: [
                         Expanded(
@@ -104,7 +109,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 0,
                             ),
@@ -122,7 +127,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE5E7EB),
                               foregroundColor: const Color(0xFF111827),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 0,
                             ),
@@ -134,8 +139,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         ),
                       ],
                     ),
-                    const SizedBox(height: 22),
-                    // Stats
+                    const SizedBox(height: 24),
+                    // Stats Row
                     Row(
                       children: [
                         _StatItem(label: 'Students', value: _formatCount(m.students)),
@@ -145,27 +150,30 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         _StatItem(label: 'Followers', value: _formatCount(m.followers)),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    // Tab Bar
+                    const SizedBox(height: 22),
+                    // Tab Bar Container
                     Container(
+                      height: 48,
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFE5E7EB),
-                        borderRadius: BorderRadius.circular(10),
+                        color: const Color(0xFFDFE2E6),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: TabBar(
                         controller: _tabController,
-                        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
+                        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13),
                         unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
                         labelColor: const Color(0xFF111827),
                         unselectedLabelColor: const Color(0xFF6B7280),
+                        indicatorSize: TabBarIndicatorSize.tab,
                         indicator: BoxDecoration(
                           color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withAlpha(10),
+                              color: Colors.black.withAlpha(12),
                               blurRadius: 4,
+                              offset: const Offset(0, 1),
                             ),
                           ],
                         ),
@@ -176,9 +184,12 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         ],
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    // Courses
-                    ...m.courses.map((c) => CourseCard(course: c)),
+                    const SizedBox(height: 20),
+                    // Courses List
+                    ...m.courses.map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: CourseCard(course: c),
+                    )),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -190,7 +201,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
     );
   }
 
-  Widget _divider() => Container(width: 1, height: 36, color: const Color(0xFFD1D5DB));
+  Widget _divider() => Container(width: 1, height: 38, color: const Color(0xFFD1D5DB));
 }
 
 class _StatItem extends StatelessWidget {
@@ -203,9 +214,9 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
-          const SizedBox(height: 4),
-          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
+          Text(label, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
+          const SizedBox(height: 5),
+          Text(value, style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w800, color: const Color(0xFF111827))),
         ],
       ),
     );
