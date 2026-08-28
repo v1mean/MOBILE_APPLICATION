@@ -40,24 +40,22 @@ class _LoginScreenState extends State<LoginScreen> {
           SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: h * 0.36),
+                SizedBox(height: h * 0.38),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
                     children: [
-                      const SparkleIcon().animate(delay: 100.ms).fadeIn(),
-                      const SizedBox(height: 14),
                       Text('Welcome Back',
                           style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
-                          .animate(delay: 150.ms).fadeIn().slideY(begin: 0.2),
+                          .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 8),
                       Text('Enter your detail below to log into\nyour account.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
-                          .animate(delay: 200.ms).fadeIn(),
+                          .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
                       DarkTextField(hint: 'Email', icon: Icons.mail_outline_rounded, keyboardType: TextInputType.emailAddress)
-                          .animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
+                          .animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
                       DarkTextField(
                         hint: 'Password',
@@ -68,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               color: AppColors.textSecondary, size: 20),
                           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
-                      ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
+                      ).animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
                       Row(
                         children: [
@@ -91,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: GoogleFonts.inter(color: AppColors.accentBlue, fontSize: 13, fontWeight: FontWeight.w600)),
                           ),
                         ],
-                      ).animate(delay: 350.ms).fadeIn(),
+                      ).animate(delay: 300.ms).fadeIn(),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,
@@ -105,12 +103,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                           child: Text('Log In', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                         ),
-                      ).animate(delay: 400.ms).fadeIn().slideY(begin: 0.2),
+                      ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),
                       GestureDetector(
                         onTap: () => context.push('/register'),
                         child: Text('Register Account', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13)),
-                      ).animate(delay: 450.ms).fadeIn(),
+                      ).animate(delay: 400.ms).fadeIn(),
                       const SizedBox(height: 28),
                       Text('or Log In With', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 12)),
                       const SizedBox(height: 14),
@@ -129,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           const SizedBox(width: 16),
                           SocialBtn(onTap: () {}, child: const Icon(Icons.apple_rounded, color: AppColors.white, size: 26)),
                         ],
-                      ).animate(delay: 500.ms).fadeIn(),
+                      ).animate(delay: 450.ms).fadeIn(),
                       const SizedBox(height: 40),
                     ],
                   ),
