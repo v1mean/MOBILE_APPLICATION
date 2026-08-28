@@ -14,38 +14,39 @@ class CourseCard extends StatefulWidget {
 
 class _CourseCardState extends State<CourseCard> {
   Color get _cardColor =>
-      widget.course.cardColor == 'pink' ? const Color(0xFFF0B6FF) : const Color(0xFFBCEBFF);
+      widget.course.cardColor == 'pink' ? const Color(0xFFF1B5FF) : const Color(0xFFBCEBFF);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           // Black Shadow/Offset Layer on right edge matching Figma
           Positioned(
             right: 0,
-            top: 10,
+            top: 8,
             bottom: 0,
-            width: 14,
+            width: 20,
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(26),
               ),
             ),
           ),
           // Main Colored Card
           Container(
-            margin: const EdgeInsets.only(right: 6),
-            padding: const EdgeInsets.all(20),
+            margin: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.fromLTRB(20, 20, 18, 20),
             decoration: BoxDecoration(
               color: _cardColor,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(26),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 // Title and Action Icon / Badge
                 Row(
@@ -55,26 +56,26 @@ class _CourseCardState extends State<CourseCard> {
                       child: Text(
                         widget.course.title,
                         style: GoogleFonts.inter(
-                          fontSize: 16,
+                          fontSize: 16.5,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF111827),
                           height: 1.25,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
+                    const SizedBox(width: 8),
                     if (widget.course.isLive)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF991B1B),
-                          borderRadius: BorderRadius.circular(4),
+                          color: const Color(0xFF8B1D1D),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           'Live',
                           style: GoogleFonts.inter(
                             color: Colors.white,
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -82,10 +83,13 @@ class _CourseCardState extends State<CourseCard> {
                     else
                       GestureDetector(
                         onTap: widget.onFavorite,
-                        child: Icon(
-                          widget.course.isFavorited ? Icons.favorite : Icons.favorite_border_rounded,
-                          size: 20,
-                          color: const Color(0xFF111827),
+                        child: Padding(
+                          padding: const EdgeInsets.all(2.0),
+                          child: Icon(
+                            widget.course.isFavorited ? Icons.favorite : Icons.favorite_border_rounded,
+                            size: 22,
+                            color: const Color(0xFF111827),
+                          ),
                         ),
                       ),
                   ],
@@ -98,6 +102,7 @@ class _CourseCardState extends State<CourseCard> {
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
                     color: const Color(0xFF374151),
+                    height: 1.35,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -106,34 +111,33 @@ class _CourseCardState extends State<CourseCard> {
                   Text(
                     'Class End in ${widget.course.minutesRemaining} mns',
                     style: GoogleFonts.inter(
-                      fontSize: 22,
+                      fontSize: 24,
                       fontWeight: FontWeight.w900,
                       color: const Color(0xFF111827),
+                      letterSpacing: -0.5,
                     ),
                   )
                 else if (widget.course.progress != null)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        height: 6,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(180),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: widget.course.progress ?? 0.35,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 4),
+                    child: Container(
+                      height: 7,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withAlpha(200),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: widget.course.progress ?? 0.35,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(50),
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   )
                 else
                   Row(
@@ -147,6 +151,7 @@ class _CourseCardState extends State<CourseCard> {
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
                           color: const Color(0xFF111827),
+                          letterSpacing: -0.5,
                         ),
                       ),
                       Text(

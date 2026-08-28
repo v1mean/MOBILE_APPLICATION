@@ -34,7 +34,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
       backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
-          // Dark Header
+          // Dark Top Header
           SafeArea(
             bottom: false,
             child: Padding(
@@ -75,7 +75,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
               ),
             ),
           ),
-          // White Content Body
+          // White Rounded Content Body
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
@@ -91,23 +91,24 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                   topRight: Radius.circular(32),
                 ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.only(bottom: 24),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 22),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
                           'My Courses',
                           style: GoogleFonts.inter(
-                            fontSize: 22,
+                            fontSize: 24,
                             fontWeight: FontWeight.w900,
                             color: const Color(0xFF111827),
+                            letterSpacing: -0.5,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 14),
                       ...sampleCourses.map((c) => CourseCard(course: c)),
                     ],
                   ),
