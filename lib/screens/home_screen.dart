@@ -6,7 +6,6 @@ import '../data/mock_data.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/featured_course_card.dart';
-import '../widgets/tag_chip.dart';
 import '../theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -37,136 +36,189 @@ class _HomeScreenState extends State<HomeScreen> {
       backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
+          // Dark Header
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.accentBlue, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: Image.network(
-                        'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
+                  // Jessica Avatar
+                  ClipOval(
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Image.asset(
+                        'assets/images/jessica_avatar.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
-                          color: AppColors.tagPurple,
-                          child: Center(child: Text('J', style: TextStyle(fontWeight: FontWeight.w700))),
+                        errorBuilder: (_, __, ___) => const CircleAvatar(
+                          backgroundColor: Color(0xFFFFD5DC),
+                          child: Text('J', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Jessica Carl',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.white)),
-                      Text('Student',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textWhite70)),
+                      Text(
+                        'Jessica Carl',
+                        style: GoogleFonts.inter(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Student',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: Colors.white70,
+                        ),
+                      ),
                     ],
                   ),
                   const Spacer(),
-                  Container(
-                    width: 40, height: 40,
-                    decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(12)),
-                    child: Stack(
-                      children: [
-                        const Center(child: Icon(Icons.notifications_outlined, color: AppColors.white, size: 22)),
-                        Positioned(
-                          top: 8, right: 9,
-                          child: Container(
-                            width: 7, height: 7,
-                            decoration: const BoxDecoration(color: AppColors.liveRed, shape: BoxShape.circle),
-                          ),
-                        ),
-                      ],
+                  // Clean outline bell icon matching Figma
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 26,
                     ),
                   ),
                 ],
               ),
             ),
           ),
+          // White Content Body
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
-                color: AppColors.lightBg,
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+                color: Color(0xFFF6F7F9),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
               ),
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 18),
+                      // Combined Search & Recent Card
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Container(
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                           decoration: BoxDecoration(
-                            color: AppColors.white,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 3))],
-                          ),
-                          child: Row(
-                            children: [
-                              const SizedBox(width: 14),
-                              const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: TextField(
-                                  onTap: () => context.go('/search'),
-                                  readOnly: true,
-                                  decoration: InputDecoration(
-                                    hintText: 'Search Mentors',
-                                    hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
-                                    border: InputBorder.none, enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none, filled: false,
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 16),
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                margin: const EdgeInsets.all(8),
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(color: AppColors.lightBg, borderRadius: BorderRadius.circular(10)),
-                                child: const Icon(Icons.tune_rounded, size: 18, color: AppColors.textSecondary),
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(6),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('Recent', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
-                              const SizedBox(width: 12),
-                              const TagChip(label: 'Chey Thavy', color: AppColors.tagYellow),
-                              const SizedBox(width: 8),
-                              const TagChip(label: 'Math', color: AppColors.tagGreen),
-                              const SizedBox(width: 8),
-                              const TagChip(label: 'Chemistry', color: AppColors.tagPurple),
+                              // Search Input Row
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.search_rounded,
+                                    color: Color(0xFF6B7280),
+                                    size: 22,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: () => context.go('/search'),
+                                      behavior: HitTestBehavior.opaque,
+                                      child: Text(
+                                        'Search Mentors',
+                                        style: GoogleFonts.inter(
+                                          color: const Color(0xFF374151),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.tune_rounded,
+                                    color: Color(0xFF111827),
+                                    size: 20,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 14),
+                              // Recent Tags Row
+                              Row(
+                                children: [
+                                  Text(
+                                    'Recent',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: const Color(0xFF111827),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  _RecentChip(
+                                    label: 'Chey Thavy',
+                                    bg: const Color(0xFFF3E8FF),
+                                    textColor: const Color(0xFF7E22CE),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  _RecentChip(
+                                    label: 'Math',
+                                    bg: const Color(0xFFDBEAFE),
+                                    textColor: const Color(0xFF1D4ED8),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  _RecentChip(
+                                    label: 'Chemistry',
+                                    bg: const Color(0xFFDCFCE7),
+                                    textColor: const Color(0xFF15803D),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
+                      // Featured Courses Header
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Featured Courses', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Text(
+                          'Featured Courses',
+                          style: GoogleFonts.inter(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 14),
+                      // Featured Courses Horizontal List
                       SizedBox(
-                        height: 145,
+                        height: 135,
                         child: ListView.builder(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -174,19 +226,28 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemBuilder: (context, i) => FeaturedCourseCard(
                             course: featuredCourses[i],
                             onTap: () => context.push('/mentor/${mentors[i % mentors.length].id}'),
-                          ).animate(delay: (i * 100).ms).fadeIn().slideX(begin: 0.2),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 24),
+                      // Popular Mentors Header
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Popular Mentors', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800)),
+                        padding: const EdgeInsets.symmetric(horizontal: 18),
+                        child: Text(
+                          'Popular Mentors',
+                          style: GoogleFonts.inter(
+                            fontSize: 19,
+                            fontWeight: FontWeight.w800,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
+                      // Popular Mentors List
                       ...mentors.map((m) => MentorCardWithButton(
                         mentor: m,
                         onCheckOut: () => context.push('/mentor/${m.id}'),
-                      ).animate().fadeIn().slideY(begin: 0.15)),
+                      )),
                     ],
                   ),
                 ),
@@ -196,6 +257,37 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
       bottomNavigationBar: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
+    );
+  }
+}
+
+class _RecentChip extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color textColor;
+
+  const _RecentChip({
+    required this.label,
+    required this.bg,
+    required this.textColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(50),
+      ),
+      child: Text(
+        label,
+        style: GoogleFonts.inter(
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+      ),
     );
   }
 }

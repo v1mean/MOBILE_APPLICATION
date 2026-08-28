@@ -11,49 +11,46 @@ class MentorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String assetImage = 'assets/images/mentor_channara.png';
+    if (mentor.id == 2) {
+      assetImage = 'assets/images/mentor_thavy.png';
+    }
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
+              color: Colors.black.withAlpha(8),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Row(
           children: [
-            // Avatar
             ClipRRect(
-              borderRadius: BorderRadius.circular(50),
-              child: Container(
-                width: 76,
-                height: 76,
-                color: AppColors.tagBlue,
-                child: Image.network(
-                  mentor.avatarUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Center(
-                    child: Text(
-                      mentor.name[0],
-                      style: GoogleFonts.inter(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.accentBlue,
-                      ),
-                    ),
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                width: 110,
+                height: 110,
+                child: Image.asset(
+                  assetImage,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => Image.network(
+                    mentor.avatarUrl,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
             const SizedBox(width: 14),
-            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,28 +72,22 @@ class MentorCard extends StatelessWidget {
                       color: AppColors.textSecondary,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
                   Text(
                     mentor.experience,
                     style: GoogleFonts.inter(
-                      fontSize: 12,
+                      fontSize: 11,
                       color: AppColors.textMuted,
                     ),
                   ),
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.access_time_rounded, size: 13, color: AppColors.textMuted),
-                      const SizedBox(width: 4),
-                      Text(
-                        mentor.timeSlot,
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    mentor.timeSlot,
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ],
               ),
@@ -116,67 +107,83 @@ class MentorCardWithButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    String assetImage = 'assets/images/mentor_channara.png';
+    if (mentor.id == 2) {
+      assetImage = 'assets/images/mentor_thavy.png';
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(8, 8, 16, 12),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withAlpha(8),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(50),
-            child: Container(
-              width: 80,
-              height: 90,
-              color: AppColors.tagBlue,
-              child: Image.network(
-                mentor.avatarUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Center(
-                  child: Text(
-                    mentor.name[0],
-                    style: GoogleFonts.inter(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.accentBlue,
-                    ),
-                  ),
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+              width: 125,
+              height: 125,
+              child: Image.asset(
+                assetImage,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Image.network(
+                  mentor.avatarUrl,
+                  fit: BoxFit.cover,
                 ),
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   mentor.name,
                   style: GoogleFonts.inter(
                     fontSize: 16,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
+                    color: const Color(0xFF111827),
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   mentor.subject,
-                  style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary),
+                  style: GoogleFonts.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: const Color(0xFF4B5563),
+                  ),
                 ),
                 const SizedBox(height: 4),
-                Text(mentor.experience,
-                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                const SizedBox(height: 4),
+                Text(
+                  mentor.experience,
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+                const SizedBox(height: 6),
                 Text(
                   mentor.timeSlot,
-                  style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF111827),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 Align(
@@ -184,17 +191,17 @@ class MentorCardWithButton extends StatelessWidget {
                   child: GestureDetector(
                     onTap: onCheckOut,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 9),
+                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.darkBg,
+                        color: Colors.black,
                         borderRadius: BorderRadius.circular(50),
                       ),
                       child: Text(
                         'Check out',
                         style: GoogleFonts.inter(
-                          color: AppColors.white,
+                          color: Colors.white,
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ),

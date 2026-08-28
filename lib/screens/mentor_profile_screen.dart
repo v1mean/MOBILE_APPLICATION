@@ -1,11 +1,9 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
 import '../models/mentor.dart';
 import '../widgets/course_card.dart';
-import '../theme/app_colors.dart';
 
 class MentorProfileScreen extends StatefulWidget {
   final int mentorId;
@@ -34,31 +32,25 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
   }
 
   String _formatCount(int n) {
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-    if (n >= 1000) return '${(n / 1000).toStringAsFixed(0)}K';
-    return n.toString();
+    return n.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
   }
 
   @override
   Widget build(BuildContext context) {
     final m = _mentor;
     return Scaffold(
-      backgroundColor: AppColors.lightBg,
+      backgroundColor: const Color(0xFFF6F7F9),
       body: SafeArea(
         child: Column(
           children: [
-            // Top bar with close
+            // Top Bar with Close
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => context.pop(),
-                  child: Container(
-                    width: 34, height: 34,
-                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
-                  ),
+                  child: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF111827)),
                 ),
               ),
             ),
@@ -68,101 +60,114 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 12),
-                    // Avatar
+                    const SizedBox(height: 10),
+                    // 3D Avatar
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 90, height: 90,
-                        color: AppColors.tagBlue,
-                        child: Image.network(
-                          m.avatarUrl,
+                      borderRadius: BorderRadius.circular(20),
+                      child: SizedBox(
+                        width: 96,
+                        height: 96,
+                        child: Image.asset(
+                          'assets/images/mentor_thavy.png',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Center(
-                            child: Text(m.name[0],
-                                style: GoogleFonts.inter(fontSize: 36, fontWeight: FontWeight.w700, color: AppColors.accentBlue)),
-                          ),
+                          errorBuilder: (_, __, ___) => Image.asset('assets/images/mentor_channara.png'),
                         ),
                       ),
-                    ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
+                    ),
                     const SizedBox(height: 14),
-                    Text(m.name,
-                        style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800))
-                        .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
+                    Text(
+                      m.name,
+                      style: GoogleFonts.inter(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF111827),
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    Text(m.bio,
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary, height: 1.5))
-                        .animate(delay: 150.ms).fadeIn(),
-                    const SizedBox(height: 20),
-                    // Buttons row
+                    Text(
+                      m.bio,
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w400,
+                        color: const Color(0xFF4B5563),
+                        height: 1.4,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    // Action Buttons
                     Row(
                       children: [
                         Expanded(
-                          flex: 2,
+                          flex: 3,
                           child: ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.accentBlue,
-                              foregroundColor: AppColors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              backgroundColor: const Color(0xFF2563EB),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               padding: const EdgeInsets.symmetric(vertical: 14),
+                              elevation: 0,
                             ),
-                            child: Text('Book Class | \$${m.bookingPrice.toInt()}',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14)),
+                            child: Text(
+                              'Book Class | \$${m.bookingPrice.toInt()}',
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: OutlinedButton(
+                          flex: 2,
+                          child: ElevatedButton(
                             onPressed: () => setState(() => _following = !_following),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textPrimary,
-                              side: const BorderSide(color: AppColors.border, width: 1.5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFE5E7EB),
+                              foregroundColor: const Color(0xFF111827),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                               padding: const EdgeInsets.symmetric(vertical: 14),
+                              elevation: 0,
                             ),
-                            child: Text(_following ? 'Following' : 'Follow',
-                                style: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 14)),
+                            child: Text(
+                              _following ? 'Following' : 'Follow',
+                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                            ),
                           ),
                         ),
                       ],
-                    ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
-                    const SizedBox(height: 24),
+                    ),
+                    const SizedBox(height: 22),
                     // Stats
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
-                      ),
-                      child: Row(
-                        children: [
-                          _StatItem(label: 'Students', value: _formatCount(m.students)),
-                          _divider(),
-                          _StatItem(label: 'Classes', value: _formatCount(m.classes)),
-                          _divider(),
-                          _StatItem(label: 'Followers', value: _formatCount(m.followers)),
-                        ],
-                      ),
-                    ).animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
+                    Row(
+                      children: [
+                        _StatItem(label: 'Students', value: _formatCount(m.students)),
+                        _divider(),
+                        _StatItem(label: 'Classes', value: _formatCount(m.classes)),
+                        _divider(),
+                        _StatItem(label: 'Followers', value: _formatCount(m.followers)),
+                      ],
+                    ),
                     const SizedBox(height: 20),
-                    // Tab bar
+                    // Tab Bar
                     Container(
+                      padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: AppColors.white,
-                        borderRadius: BorderRadius.circular(14),
+                        color: const Color(0xFFE5E7EB),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: TabBar(
                         controller: _tabController,
                         labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
-                        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w400, fontSize: 13),
-                        labelColor: AppColors.textPrimary,
-                        unselectedLabelColor: AppColors.textSecondary,
+                        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+                        labelColor: const Color(0xFF111827),
+                        unselectedLabelColor: const Color(0xFF6B7280),
                         indicator: BoxDecoration(
-                          color: AppColors.white,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)],
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(10),
+                              blurRadius: 4,
+                            ),
+                          ],
                         ),
                         tabs: const [
                           Tab(text: 'Courses'),
@@ -170,10 +175,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                           Tab(text: 'Discussion'),
                         ],
                       ),
-                    ).animate(delay: 300.ms).fadeIn(),
+                    ),
                     const SizedBox(height: 16),
-                    // Course cards
-                    ...m.courses.map((c) => CourseCard(course: c).animate().fadeIn().slideY(begin: 0.1)),
+                    // Courses
+                    ...m.courses.map((c) => CourseCard(course: c)),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -185,7 +190,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
     );
   }
 
-  Widget _divider() => Container(width: 1, height: 36, color: AppColors.border);
+  Widget _divider() => Container(width: 1, height: 36, color: const Color(0xFFD1D5DB));
 }
 
 class _StatItem extends StatelessWidget {
@@ -198,11 +203,9 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(label,
-              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+          Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
           const SizedBox(height: 4),
-          Text(value,
-              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+          Text(value, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF111827))),
         ],
       ),
     );

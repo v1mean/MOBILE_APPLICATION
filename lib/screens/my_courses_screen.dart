@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
@@ -35,55 +34,62 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
       backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
-          // Dark header
+          // Dark Header
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.accentBlue, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: Image.network(
-                        'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
+                  ClipOval(
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Image.asset(
+                        'assets/images/jessica_avatar.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
-                          color: AppColors.tagPurple,
-                          child: Center(child: Text('J', style: TextStyle(fontWeight: FontWeight.w700))),
-                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Jessica Carl',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.white)),
-                      Text('Student',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textWhite70)),
+                      Text(
+                        'Jessica Carl',
+                        style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Student',
+                        style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                      ),
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.notifications_outlined, color: AppColors.white, size: 26),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
+                  ),
                 ],
               ),
             ),
           ),
-          // White rounded body
+          // White Content Body
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
-                color: AppColors.lightBg,
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+                color: Color(0xFFF6F7F9),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
               ),
               child: ClipRRect(
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
                 child: SingleChildScrollView(
                   padding: const EdgeInsets.only(bottom: 20),
                   child: Column(
@@ -92,16 +98,17 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                       const SizedBox(height: 24),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text('My Courses',
-                            style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800))
-                            .animate().fadeIn().slideY(begin: 0.2),
+                        child: Text(
+                          'My Courses',
+                          style: GoogleFonts.inter(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      ...sampleCourses.asMap().entries.map((e) =>
-                          CourseCard(course: e.value)
-                              .animate(delay: (e.key * 100).ms)
-                              .fadeIn()
-                              .slideY(begin: 0.15)),
+                      ...sampleCourses.map((c) => CourseCard(course: c)),
                     ],
                   ),
                 ),

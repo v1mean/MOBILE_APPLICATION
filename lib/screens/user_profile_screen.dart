@@ -1,11 +1,9 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
-import '../theme/app_colors.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({super.key});
@@ -32,22 +30,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBg,
+      backgroundColor: const Color(0xFFF6F7F9),
       body: Column(
         children: [
-          // Top close/back button (like Figma)
+          // Top Close Button
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
                   onTap: () => context.go('/home'),
                   child: Container(
-                    width: 34, height: 34,
-                    decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(10)),
-                    child: const Icon(Icons.close_rounded, size: 18, color: AppColors.textSecondary),
+                    width: 32,
+                    height: 32,
+                    decoration: const BoxDecoration(
+                      color: Colors.transparent,
+                    ),
+                    child: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF111827)),
                   ),
                 ),
               ),
@@ -59,50 +60,60 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 10),
                   // Avatar
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(50),
-                    child: Container(
-                      width: 80, height: 80,
-                      color: AppColors.tagPurple,
-                      child: Image.network(
-                        'https://api.dicebear.com/9.x/avataaars/png?seed=JessicaCarl&backgroundColor=ffd5dc',
+                  ClipOval(
+                    child: SizedBox(
+                      width: 90,
+                      height: 90,
+                      child: Image.asset(
+                        'assets/images/jessica_large.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Center(
-                          child: Text('J',
-                              style: GoogleFonts.inter(fontSize: 30, fontWeight: FontWeight.w700, color: AppColors.accentBlue)),
+                        errorBuilder: (_, __, ___) => Image.asset('assets/images/jessica_avatar.png'),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Jessica Carl',
+                    style: GoogleFonts.inter(
+                      fontSize: 26,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Join Jomnes 2 years ago.',
+                    style: GoogleFonts.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // My Courses Button Container
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE5E7EB),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'My Courses',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF111827),
                         ),
                       ),
                     ),
-                  ).animate().fadeIn().scale(begin: const Offset(0.8, 0.8)),
-                  const SizedBox(height: 16),
-                  Text('Jessica Carl',
-                      style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800))
-                      .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
-                  const SizedBox(height: 4),
-                  Text('Join Jomnes 2 years ago.',
-                      style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary))
-                      .animate(delay: 150.ms).fadeIn(),
+                  ),
                   const SizedBox(height: 20),
-                  // My Courses button
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: () => context.go('/courses'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.textPrimary,
-                        side: const BorderSide(color: AppColors.border, width: 1.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                      ),
-                      child: Text('My Courses',
-                          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600)),
-                    ),
-                  ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
-                  const SizedBox(height: 20),
-                  // Course cards
-                  ...sampleCourses.map((c) => CourseCard(course: c).animate().fadeIn().slideY(begin: 0.1)),
+                  // Course Cards
+                  ...sampleCourses.map((c) => CourseCard(course: c)),
                   const SizedBox(height: 20),
                 ],
               ),

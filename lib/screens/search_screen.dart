@@ -1,5 +1,4 @@
 ﻿import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
@@ -33,6 +32,7 @@ class _SearchScreenState extends State<SearchScreen> {
         case 0: context.go('/home'); break;
         case 2: context.go('/courses'); break;
         case 3: context.go('/profile'); break;
+        case 4: context.go('/settings'); break;
         default: break;
       }
     }
@@ -44,38 +44,39 @@ class _SearchScreenState extends State<SearchScreen> {
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.accentBlue, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: Image.network(
-                        'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
+                  ClipOval(
+                    child: SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Image.asset(
+                        'assets/images/jessica_avatar.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const ColoredBox(
-                          color: AppColors.tagPurple,
-                          child: Center(child: Text('J', style: TextStyle(fontWeight: FontWeight.w700))),
-                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Jessica Carl',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.white)),
-                      Text('Student',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textWhite70)),
+                      Text(
+                        'Jessica Carl',
+                        style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Student',
+                        style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                      ),
                     ],
                   ),
                   const Spacer(),
-                  const Icon(Icons.notifications_outlined, color: AppColors.white, size: 26),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
+                  ),
                 ],
               ),
             ),
@@ -83,58 +84,65 @@ class _SearchScreenState extends State<SearchScreen> {
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
-                color: AppColors.lightBg,
-                borderRadius: BorderRadius.only(topLeft: Radius.circular(32), topRight: Radius.circular(32)),
+                color: Color(0xFFF6F7F9),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20),
-                  // Search bar row
+                  const SizedBox(height: 18),
+                  // Search Row with Filter Dropdown
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        // Filter dropdown
+                        // Filter Dropdown
                         GestureDetector(
                           onTap: () {
                             setState(() => _filter = _filter == 'Mentors' ? 'Courses' : 'Mentors');
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                             decoration: BoxDecoration(
-                              color: AppColors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
                             ),
                             child: Row(
                               children: [
-                                Text(_filter,
-                                    style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600)),
+                                Text(
+                                  _filter,
+                                  style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF111827)),
+                                ),
                                 const SizedBox(width: 4),
-                                const Icon(Icons.keyboard_arrow_down_rounded, size: 18),
+                                const Icon(Icons.keyboard_arrow_down_rounded, size: 18, color: Color(0xFF111827)),
                               ],
                             ),
                           ),
                         ),
                         const SizedBox(width: 10),
-                        // Search input
+                        // Search Bar
                         Expanded(
                           child: Container(
                             decoration: BoxDecoration(
-                              color: AppColors.white,
-                              borderRadius: BorderRadius.circular(14),
-                              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 8)],
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
                             ),
                             child: TextField(
                               controller: _controller,
                               onChanged: (v) => setState(() => _query = v),
                               decoration: InputDecoration(
                                 hintText: 'Search Mentors',
-                                hintStyle: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 14),
-                                prefixIcon: const Icon(Icons.search_rounded, color: AppColors.textMuted, size: 20),
-                                border: InputBorder.none, enabledBorder: InputBorder.none,
-                                focusedBorder: InputBorder.none, filled: false,
+                                hintStyle: GoogleFonts.inter(color: const Color(0xFF6B7280), fontSize: 14),
+                                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF6B7280), size: 20),
+                                border: InputBorder.none,
+                                enabledBorder: InputBorder.none,
+                                focusedBorder: InputBorder.none,
+                                filled: false,
                                 contentPadding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                             ),
@@ -145,19 +153,21 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(height: 16),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: Text('Search history',
-                        style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Text(
+                      'Search history',
+                      style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500, color: const Color(0xFF6B7280)),
+                    ),
                   ),
-                  const SizedBox(height: 10),
+                  const SizedBox(height: 8),
                   Expanded(
                     child: ListView.builder(
-                      padding: EdgeInsets.zero,
+                      padding: const EdgeInsets.only(bottom: 16),
                       itemCount: filtered.length,
                       itemBuilder: (context, i) => MentorCard(
                         mentor: filtered[i],
                         onTap: () => context.push('/mentor/${filtered[i].id}'),
-                      ).animate(delay: (i * 80).ms).fadeIn().slideY(begin: 0.1),
+                      ),
                     ),
                   ),
                 ],
