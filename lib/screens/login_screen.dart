@@ -23,20 +23,16 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.darkBg,
       body: Stack(
         children: [
+          // Galaxy Hero Image with Dome Clip
           ClipPath(
             clipper: const DomeClipper(curveHeight: 50),
             child: SizedBox(
-              height: h * 0.42,
-              child: GalaxyBackground(
-                child: Stack(
-                  children: [
-                    Positioned(top: 50, left: 30, child: Text('📜', style: TextStyle(fontSize: 44))),
-                    Positioned(top: 36, right: 30, child: Text('🔔', style: TextStyle(fontSize: 50))),
-                    Positioned(bottom: 90, left: 20, child: Text('📅', style: TextStyle(fontSize: 44))),
-                    Positioned(bottom: 80, right: 24, child: Text('🎬', style: TextStyle(fontSize: 44))),
-                    const Center(child: Text('🦉', style: TextStyle(fontSize: 90))),
-                  ],
-                ),
+              height: h * 0.44,
+              width: double.infinity,
+              child: Image.asset(
+                'assets/images/hero_bg.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
               ),
             ),
           ),
@@ -44,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
           SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: h * 0.35),
+                SizedBox(height: h * 0.36),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
@@ -59,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
                           .animate(delay: 200.ms).fadeIn(),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 28),
                       DarkTextField(hint: 'Email', icon: Icons.mail_outline_rounded, keyboardType: TextInputType.emailAddress)
                           .animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
@@ -147,11 +143,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   List<Widget> _asterisks(double h) => [
-    Positioned(left: 20, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
-    Positioned(left: 310, top: h * 0.44, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
-    Positioned(left: 50, top: h * 0.58, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
-    Positioned(left: 280, top: h * 0.62, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
-    Positioned(left: 140, top: h * 0.50, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 12))),
-    Positioned(left: 220, top: h * 0.76, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 16))),
+    Positioned(left: 20, top: h * 0.46, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
+    Positioned(left: 310, top: h * 0.48, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
+    Positioned(left: 50, top: h * 0.60, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
+    Positioned(left: 280, top: h * 0.65, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
+    Positioned(left: 220, top: h * 0.88, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 16))),
   ];
 }

@@ -23,30 +23,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: AppColors.darkBg,
       body: Stack(
         children: [
+          // Galaxy Hero Image with Dome Clip
           ClipPath(
             clipper: const DomeClipper(curveHeight: 50),
             child: SizedBox(
-              height: h * 0.40,
-              child: GalaxyBackground(
-                child: Stack(
-                  children: [
-                    Positioned(top: 50, left: 30, child: Text('📜', style: TextStyle(fontSize: 44))),
-                    Positioned(top: 36, right: 30, child: Text('🔔', style: TextStyle(fontSize: 50))),
-                    Positioned(bottom: 90, left: 20, child: Text('📅', style: TextStyle(fontSize: 44))),
-                    Positioned(bottom: 80, right: 24, child: Text('🎬', style: TextStyle(fontSize: 44))),
-                    const Center(child: Text('🦉', style: TextStyle(fontSize: 90))),
-                  ],
-                ),
+              height: h * 0.42,
+              width: double.infinity,
+              child: Image.asset(
+                'assets/images/hero_bg.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
               ),
             ),
           ),
-          Positioned(left: 20, top: h * 0.40, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
-          Positioned(left: 310, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
-          Positioned(left: 140, top: h * 0.57, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
+          Positioned(left: 20, top: h * 0.44, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
+          Positioned(left: 310, top: h * 0.46, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
+          Positioned(left: 140, top: h * 0.60, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
           SingleChildScrollView(
             child: Column(
               children: [
-                SizedBox(height: h * 0.32),
+                SizedBox(height: h * 0.34),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(

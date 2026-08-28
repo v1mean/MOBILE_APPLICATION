@@ -26,6 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
       case 1: context.go('/search'); break;
       case 2: context.go('/courses'); break;
       case 3: context.go('/profile'); break;
+      case 4: context.go('/settings'); break;
       default: break;
     }
   }

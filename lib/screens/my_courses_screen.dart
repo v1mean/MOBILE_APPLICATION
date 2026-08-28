@@ -24,6 +24,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
       case 0: context.go('/home'); break;
       case 1: context.go('/search'); break;
       case 3: context.go('/profile'); break;
+      case 4: context.go('/settings'); break;
       default: break;
     }
   }

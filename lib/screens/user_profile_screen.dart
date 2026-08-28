@@ -24,6 +24,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       case 0: context.go('/home'); break;
       case 1: context.go('/search'); break;
       case 2: context.go('/courses'); break;
+      case 4: context.go('/settings'); break;
       default: break;
     }
   }
