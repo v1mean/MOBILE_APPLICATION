@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:developer';
 import 'package:http/http.dart' as http;
-
 class ApiService {
   static final String baseUrl = Platform.isAndroid ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
 
@@ -68,7 +68,7 @@ class ApiService {
       );
     } catch (e) {
       // Ignore sync errors or handle them appropriately
-      print('Google sync error: $e');
+      log('Google sync error: $e');
     }
   }
 }

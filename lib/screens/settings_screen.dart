@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -155,7 +155,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: Switch.adaptive(
                               value: _notificationsEnabled,
                               onChanged: (v) => setState(() => _notificationsEnabled = v),
-                              activeColor: AppColors.accentBlue,
+                              activeTrackColor: AppColors.accentBlue,
                             ),
                           ),
                           _SettingsTile(
@@ -165,7 +165,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: Switch.adaptive(
                               value: _emailUpdates,
                               onChanged: (v) => setState(() => _emailUpdates = v),
-                              activeColor: AppColors.accentBlue,
+                              activeTrackColor: AppColors.accentBlue,
                             ),
                           ),
                           _SettingsTile(
@@ -175,7 +175,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             trailing: Switch.adaptive(
                               value: _darkMode,
                               onChanged: (v) => setState(() => _darkMode = v),
-                              activeColor: AppColors.accentBlue,
+                              activeTrackColor: AppColors.accentBlue,
                             ),
                           ),
                           _SettingsTile(
