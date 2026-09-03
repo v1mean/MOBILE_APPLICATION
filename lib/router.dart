@@ -1,4 +1,4 @@
-﻿import 'package:go_router/go_router.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -9,13 +9,55 @@ import 'screens/mentor_profile_screen.dart';
 import 'screens/user_profile_screen.dart';
 import 'screens/my_courses_screen.dart';
 import 'screens/settings_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/forgot_password_screen.dart';
+import 'screens/reset_password_screen.dart';
+import 'services/api_service.dart';
+
+void setupDeepLinkListener() {
+  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+    final AuthChangeEvent event = data.event;
+    final Session? session = data.session;
+    
+    if (event == AuthChangeEvent.passwordRecovery && session != null) {
+      router.go('/reset-password?access_token=${session.accessToken}');
+    } else if (event == AuthChangeEvent.signedIn && session != null) {
+      // Ensure backend profile is created/synced
+      ApiService.syncGoogleUser(session.accessToken);
+      
+      // Navigate to home screen after sign in.
+      router.go('/home');
+    }
+  });
+}
 
 final GoRouter router = GoRouter(
   initialLocation: '/',
   routes: [
     GoRoute(path: '/', pageBuilder: (c, s) => _slide(s, const SplashScreen())),
-    GoRoute(path: '/login', pageBuilder: (c, s) => _slide(s, const LoginScreen())),
+    GoRoute(
+      path: '/login',
+      pageBuilder: (c, s) {
+        final resetSuccess = s.uri.queryParameters['reset'] == 'success';
+        return _slide(s, LoginScreen(passwordResetSuccess: resetSuccess));
+      },
+    ),
     GoRoute(path: '/register', pageBuilder: (c, s) => _slide(s, const RegisterScreen())),
+    GoRoute(path: '/forgot-password', pageBuilder: (c, s) => _slide(s, const ForgotPasswordScreen())),
+    GoRoute(
+      path: '/reset-password',
+      pageBuilder: (c, s) {
+        String token = s.uri.queryParameters['access_token'] ?? '';
+        
+        // Supabase often puts tokens in the URI fragment (e.g. #access_token=...)
+        if (token.isEmpty && s.uri.fragment.isNotEmpty) {
+          final uri = Uri.parse('http://dummy?${s.uri.fragment}');
+          token = uri.queryParameters['access_token'] ?? '';
+        }
+        
+        return _slide(s, ResetPasswordScreen(accessToken: token));
+      },
+    ),
     GoRoute(path: '/home', pageBuilder: (c, s) => _slide(s, const HomeScreen())),
     GoRoute(path: '/search', pageBuilder: (c, s) => _slide(s, const SearchScreen())),
     GoRoute(path: '/courses', pageBuilder: (c, s) => _slide(s, const MyCoursesScreen())),

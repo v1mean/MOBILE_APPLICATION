@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
@@ -73,7 +73,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         child: Image.asset(
                           'assets/images/mentor_thavy.png',
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Image.asset('assets/images/mentor_channara.png'),
+                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/mentor_channara.png'),
                         ),
                       ),
                     ),
