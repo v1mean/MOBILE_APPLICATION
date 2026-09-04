@@ -20,7 +20,7 @@ export async function register(req, res) {
     }
 
     const userExists = await checkUserExists(email);
-    if (userExists) {
+    if (userExists === true) {
       return res.status(409).json({
         success: false,
         message: "An account with this email already exists. Please log in.",
@@ -72,7 +72,7 @@ export async function login(req, res) {
     }
 
     const userExists = await checkUserExists(email);
-    if (!userExists) {
+    if (userExists === false) {
       return res.status(404).json({
         success: false,
         message: "No account found with this email. Please register first.",

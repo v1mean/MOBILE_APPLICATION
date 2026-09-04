@@ -12,6 +12,7 @@ export async function registerUser({
     options: {
       data: {
         full_name: fullName,
+        role,
       },
     },
   });
@@ -24,18 +25,22 @@ export async function registerUser({
     throw new Error("User registration failed");
   }
 
-  const { error: roleError } =
-    await supabaseAdmin.auth.admin.updateUserById(
-      data.user.id,
-      {
-        app_metadata: {
-          role,
-        },
-      }
-    );
+  try {
+    const { error: roleError } =
+      await supabaseAdmin.auth.admin.updateUserById(
+        data.user.id,
+        {
+          app_metadata: {
+            role,
+          },
+        }
+      );
 
-  if (roleError) {
-    throw new Error(roleError.message);
+    if (roleError) {
+      console.warn("Could not set app_metadata role with admin client:", roleError.message);
+    }
+  } catch (err) {
+    console.warn("Could not set app_metadata role:", err.message);
   }
 
   return {
@@ -76,13 +81,20 @@ export async function forgotPassword(email) {
 }
 
 export async function checkUserExists(email) {
-  const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-  if (error) {
-    console.error("Error listing users:", error);
-    return false;
+  try {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
+    if (error) {
+      console.warn("Could not list users with admin client:", error.message);
+      return null;
+    }
+    const userExists = data?.users?.some(
+      (u) => u.email?.toLowerCase() === email.toLowerCase()
+    );
+    return userExists ?? false;
+  } catch (err) {
+    console.warn("checkUserExists exception:", err.message);
+    return null;
   }
-  const userExists = data.users.some((u) => u.email === email);
-  return userExists;
 }
 
 export async function resetPassword(newPassword, accessToken) {
