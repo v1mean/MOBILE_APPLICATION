@@ -55,7 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchUserProfile() async {
     final session = JomnesDB.auth.currentSession;
-    if (session == null) return;
+    if (session == null) {
+      if (mounted) setState(() => _isLoadingProfile = false);
+      return;
+    }
 
     try {
       final data = await JomnesDB.from('Users')
