@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
 import '../models/mentor.dart';
 import '../widgets/course_card.dart';
+import '../main.dart';
 
 class MentorProfileScreen extends StatefulWidget {
-  final int mentorId;
+  final String mentorId;
   const MentorProfileScreen({super.key, required this.mentorId});
 
   @override
@@ -16,13 +17,32 @@ class MentorProfileScreen extends StatefulWidget {
 class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _following = false;
-
-  Mentor get _mentor => mentors.firstWhere((m) => m.id == widget.mentorId, orElse: () => mentors.first);
+  
+  Mentor? _mentor;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _fetchMentor();
+  }
+
+  Future<void> _fetchMentor() async {
+    try {
+      final data = await JomnesDB.from('tutor_profiles')
+          .select('*, Users(name, profile_image)')
+          .eq('tutor_id', widget.mentorId)
+          .single();
+      if (mounted) {
+        setState(() {
+          _mentor = Mentor.fromJson(data);
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -37,7 +57,19 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF6F7F9),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final m = _mentor;
+    if (m == null) {
+      return const Scaffold(
+        backgroundColor: Color(0xFFF6F7F9),
+        body: Center(child: Text('Mentor not found.')),
+      );
+    }
     return Scaffold(
       backgroundColor: const Color(0xFFF6F7F9),
       body: SafeArea(
@@ -70,10 +102,13 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                       child: SizedBox(
                         width: 98,
                         height: 98,
-                        child: Image.asset(
-                          'assets/images/mentor_thavy.png',
+                        child: Image.network(
+                          m.avatarUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Image.asset('assets/images/mentor_channara.png'),
+                          errorBuilder: (_, __, ___) => Container(
+                            color: const Color(0xFFDFE2E6),
+                            child: const Icon(Icons.person, size: 50, color: Colors.grey),
+                          ),
                         ),
                       ),
                     ),

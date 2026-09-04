@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../data/mock_data.dart';
+import '../models/mentor.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
 import '../theme/app_colors.dart';
+import '../main.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -18,10 +20,34 @@ class _SearchScreenState extends State<SearchScreen> {
   String _filter = 'Mentors';
   final _controller = TextEditingController();
   String _query = '';
+  
+  List<Mentor> _allMentors = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchMentors();
+  }
+
+  Future<void> _fetchMentors() async {
+    try {
+      final data = await JomnesDB.from('tutor_profiles')
+          .select('*, Users(name, profile_image)');
+      if (mounted) {
+        setState(() {
+          _allMentors = (data as List).map((e) => Mentor.fromJson(e)).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = mentors.where((m) =>
+    final filtered = _allMentors.where((m) =>
         m.name.toLowerCase().contains(_query.toLowerCase()) ||
         m.subject.toLowerCase().contains(_query.toLowerCase())).toList();
 
@@ -161,14 +187,18 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(height: 8),
                   Expanded(
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, i) => MentorCard(
-                        mentor: filtered[i],
-                        onTap: () => context.push('/mentor/${filtered[i].id}'),
-                      ),
-                    ),
+                    child: _isLoading 
+                      ? const Center(child: CircularProgressIndicator(color: AppColors.accentBlue))
+                      : filtered.isEmpty 
+                        ? Center(child: Text('No mentors found.', style: GoogleFonts.inter(color: Colors.grey)))
+                        : ListView.builder(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, i) => MentorCard(
+                              mentor: filtered[i],
+                              onTap: () => context.push('/mentor/${filtered[i].id}'),
+                            ),
+                          ),
                   ),
                 ],
               ),
