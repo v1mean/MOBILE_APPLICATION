@@ -61,6 +61,17 @@ class _LoginScreenState extends State<LoginScreen> {
       final response = await ApiService.loginUser(email, password);
       
       if (response['success'] == true) {
+        try {
+          final session = response['session'];
+          if (session != null && session['access_token'] != null) {
+            await JomnesDB.auth.setSession(session['access_token'], refreshToken: session['refresh_token']);
+          } else if (response['token'] != null) {
+            await JomnesDB.auth.setSession(response['token']);
+          }
+        } catch (e) {
+          // Ignore session sync errors if the backend doesn't provide valid tokens
+        }
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'] ?? 'Login Successful')),
