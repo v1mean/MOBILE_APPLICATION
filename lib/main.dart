@@ -19,7 +19,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://lfmllyuecleqnympfnqm.supabase.co',
-    anonKey: 'sb_publishable_90gMuHhur1aCcOiYH0Qr_g_B6d_tqrz',
+    publishableKey: 'sb_publishable_90gMuHhur1aCcOiYH0Qr_g_B6d_tqrz',
   );
 
   setupDeepLinkListener();
