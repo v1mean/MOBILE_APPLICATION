@@ -10,10 +10,7 @@ final JomnesDB = Supabase.instance.client;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: 'https://lfmllyuecleqnympfnqm.supabase.co',
-    anonKey: 'sb_publishable_90gMuHhur1aCcOiYH0Qr_g_B6d_tqrz',
-  );
+
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
