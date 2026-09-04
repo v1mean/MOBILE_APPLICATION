@@ -7,6 +7,7 @@ import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
+import '../main.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool passwordResetSuccess;
