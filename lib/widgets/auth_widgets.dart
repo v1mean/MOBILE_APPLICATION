@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../theme/app_colors.dart';
 
@@ -27,6 +27,7 @@ class DarkTextField extends StatelessWidget {
   final bool obscureText;
   final TextInputType? keyboardType;
   final Widget? suffix;
+  final TextEditingController? controller;
 
   const DarkTextField({
     super.key,
@@ -35,11 +36,13 @@ class DarkTextField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType,
     this.suffix,
+    this.controller,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
       style: GoogleFonts.inter(color: AppColors.white, fontSize: 15),

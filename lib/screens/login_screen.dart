@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../main.dart';
 import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
@@ -15,6 +17,40 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _rememberMe = false;
   bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+    try {
+      await JomnesDB.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      // Let the router handle navigation
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message), backgroundColor: Colors.redAccent),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.redAccent),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,10 +90,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
                           .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
-                      DarkTextField(hint: 'Email', icon: Icons.mail_outline_rounded, keyboardType: TextInputType.emailAddress)
-                          .animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
+                      DarkTextField(
+                        controller: _emailController,
+                        hint: 'Email', 
+                        icon: Icons.mail_outline_rounded, 
+                        keyboardType: TextInputType.emailAddress
+                      ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
                       DarkTextField(
+                        controller: _passwordController,
                         hint: 'Password',
                         icon: Icons.lock_outline_rounded,
                         obscureText: _obscurePassword,
@@ -94,14 +135,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => context.go('/home'),
+                          onPressed: _isLoading ? null : _login,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.white, foregroundColor: AppColors.darkBg,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             elevation: 0,
                           ),
-                          child: Text('Log In', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                          child: _isLoading
+                              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.darkBg))
+                              : Text('Log In', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                         ),
                       ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
 import '../theme/app_colors.dart';
@@ -12,7 +12,7 @@ class MentorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String assetImage = 'assets/images/mentor_channara.png';
-    if (mentor.id == 2) {
+    if (mentor.id == '2') {
       assetImage = 'assets/images/mentor_thavy.png';
     }
 
@@ -108,7 +108,7 @@ class MentorCardWithButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String assetImage = 'assets/images/mentor_channara.png';
-    if (mentor.id == 2) {
+    if (mentor.id == '2') {
       assetImage = 'assets/images/mentor_thavy.png';
     }
 

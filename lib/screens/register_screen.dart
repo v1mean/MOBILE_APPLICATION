@@ -1,7 +1,9 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../main.dart';
 import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
@@ -15,6 +17,67 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
+
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _register() async {
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.redAccent),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final res = await JomnesDB.auth.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      
+      final user = res.user;
+      if (user != null) {
+        await JomnesDB.from('Users').insert({
+          'user_id': user.id,
+          'name': 'New User',
+          'email': user.email ?? '',
+          'phone': 'Unknown',
+          'role': 'Student',
+          'profile_image': 'https://api.dicebear.com/9.x/avataaars/png?seed=${user.id}&backgroundColor=ffdfbf',
+          'location': 'Unknown',
+        });
+      }
+
+      // Let the router handle navigation, or show a verification message if email confirmation is enabled
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Registration successful!'), backgroundColor: Colors.green),
+      );
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.message), backgroundColor: Colors.redAccent),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unexpected error occurred'), backgroundColor: Colors.redAccent),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,10 +119,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
                           .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
-                      DarkTextField(hint: 'Email', icon: Icons.mail_outline_rounded, keyboardType: TextInputType.emailAddress)
-                          .animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
+                      DarkTextField(
+                        controller: _emailController,
+                        hint: 'Email', 
+                        icon: Icons.mail_outline_rounded, 
+                        keyboardType: TextInputType.emailAddress
+                      ).animate(delay: 200.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
                       DarkTextField(
+                        controller: _passwordController,
                         hint: 'Password', icon: Icons.lock_outline_rounded, obscureText: _obscurePassword,
                         suffix: IconButton(
                           icon: Icon(_obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -69,6 +137,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ).animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
                       DarkTextField(
+                        controller: _confirmPasswordController,
                         hint: 'Confirm Password', icon: Icons.lock_outline_rounded, obscureText: _obscureConfirm,
                         suffix: IconButton(
                           icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
@@ -80,14 +149,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () => context.go('/home'),
+                          onPressed: _isLoading ? null : _register,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.white, foregroundColor: AppColors.darkBg,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             elevation: 0,
                           ),
-                          child: Text('Register Account', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                          child: _isLoading
+                              ? const SizedBox(height: 24, width: 24, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.darkBg))
+                              : Text('Register Account', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                         ),
                       ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),

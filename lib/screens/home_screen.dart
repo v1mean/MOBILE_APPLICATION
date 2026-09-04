@@ -1,7 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import '../main.dart';
+import '../models/user_profile.dart';
+import '../models/mentor.dart';
 import '../data/mock_data.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
@@ -17,16 +21,79 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
+  UserProfile? _userProfile;
+  bool _isLoadingProfile = true;
+  
+  List<Mentor> _popularMentors = [];
+  bool _isLoadingMentors = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+    _fetchPopularMentors();
+  }
+
+  Future<void> _fetchPopularMentors() async {
+    try {
+      final data = await JomnesDB.from('tutor_profiles')
+          .select('*, Users(name, profile_image)')
+          .limit(5);
+          
+      if (mounted) {
+        setState(() {
+          _popularMentors = (data as List).map((e) => Mentor.fromJson(e)).toList();
+          _isLoadingMentors = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingMentors = false);
+      }
+    }
+  }
+
+  Future<void> _fetchUserProfile() async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) return;
+
+    try {
+      final data = await JomnesDB.from('Users')
+          .select()
+          .eq('user_id', session.user.id)
+          .single();
+      
+      if (mounted) {
+        setState(() {
+          _userProfile = UserProfile.fromJson(data);
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingProfile = false);
+      }
+    }
+  }
 
   void _onNavTap(int i) {
     if (i == _navIndex) return;
     setState(() => _navIndex = i);
     switch (i) {
-      case 1: context.go('/search'); break;
-      case 2: context.go('/courses'); break;
-      case 3: context.go('/profile'); break;
-      case 4: context.go('/settings'); break;
-      default: break;
+      case 1:
+        context.go('/search');
+        break;
+      case 2:
+        context.go('/courses');
+        break;
+      case 3:
+        context.go('/profile');
+        break;
+      case 4:
+        context.go('/settings');
+        break;
+      default:
+        break;
     }
   }
 
@@ -43,19 +110,25 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  // Jessica Avatar
+                  // Current User Avatar
                   ClipOval(
                     child: SizedBox(
                       width: 48,
                       height: 48,
-                      child: Image.asset(
-                        'assets/images/jessica_avatar.png',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const CircleAvatar(
-                          backgroundColor: Color(0xFFFFD5DC),
-                          child: Text('J', style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                        ),
-                      ),
+                      child: _isLoadingProfile 
+                        ? const CircularProgressIndicator(color: AppColors.accentBlue)
+                        : Image.network(
+                            _userProfile?.profileImage ?? currentUserMock.avatarUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) {
+                              final fallbackName = _userProfile?.name ?? currentUserMock.name;
+                              final initial = fallbackName.isNotEmpty ? fallbackName[0].toUpperCase() : 'U';
+                              return CircleAvatar(
+                                backgroundColor: const Color(0xFFFFD5DC),
+                                child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                              );
+                            },
+                          ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -63,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Jessica Carl',
+                        _userProfile?.name ?? 'Loading...',
                         style: GoogleFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -72,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Student',
+                        _userProfile?.role ?? '...',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
@@ -124,7 +197,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+                            border: Border.all(
+                              color: const Color(0xFFE5E7EB),
+                              width: 1,
+                            ),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.black.withAlpha(6),
@@ -225,7 +301,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           itemCount: featuredCourses.length,
                           itemBuilder: (context, i) => FeaturedCourseCard(
                             course: featuredCourses[i],
-                            onTap: () => context.push('/mentor/${mentors[i % mentors.length].id}'),
+                            onTap: () {},
                           ),
                         ),
                       ),
@@ -244,10 +320,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 10),
                       // Popular Mentors List
-                      ...mentors.map((m) => MentorCardWithButton(
-                        mentor: m,
-                        onCheckOut: () => context.push('/mentor/${m.id}'),
-                      )),
+                      if (_isLoadingMentors) 
+                        const Center(child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: CircularProgressIndicator(color: AppColors.accentBlue),
+                        ))
+                      else if (_popularMentors.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: Text('No mentors available yet.', style: GoogleFonts.inter(color: Colors.grey)),
+                        )
+                      else
+                        ..._popularMentors.map((m) => MentorCardWithButton(
+                          mentor: m,
+                          onCheckOut: () => context.push('/mentor/${m.id}'),
+                        )),
                     ],
                   ),
                 ),
@@ -256,7 +343,10 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _navIndex,
+        onTap: _onNavTap,
+      ),
     );
   }
 }

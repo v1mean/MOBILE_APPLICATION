@@ -1,4 +1,4 @@
-﻿import '../models/mentor.dart';
+import '../models/mentor.dart';
 
 final List<Course> sampleCourses = [
   Course(
@@ -31,89 +31,50 @@ final List<Course> sampleCourses = [
   ),
 ];
 
-final List<Mentor> mentors = [
-  Mentor(
-    id: 1,
-    name: 'Ms. Sok ChanNara',
-    subject: 'Geography',
-    experience: 'Experience in teaching for 10years',
-    timeSlot: '10:00 AM - 11:00 AM',
-    avatarUrl: 'https://api.dicebear.com/9.x/avataaars/png?seed=ChanNara&backgroundColor=b6e3f4',
-    rating: 4.8,
-    students: 120128,
-    classes: 2330128,
-    followers: 5350738,
-    bookingPrice: 300,
-    bio: "I've been teaching Geography for about 10 years now. Experiencing in helping a lot of student got A on their tasks.",
-    courses: sampleCourses,
-  ),
-  Mentor(
-    id: 2,
-    name: 'Pro. Sok Thavy',
-    subject: 'Chemistry',
-    experience: 'Experience in teaching for 10years',
-    timeSlot: '2:00 PM - 3:00 PM',
-    avatarUrl: 'https://api.dicebear.com/9.x/avataaars/png?seed=Thavy&backgroundColor=ffd5dc',
-    rating: 4.9,
-    students: 95420,
-    classes: 1820000,
-    followers: 4200000,
-    bookingPrice: 300,
-    bio: "I've been teaching chemistry for about 10 years now. Experiencing in helping a lot of student got A on their tasks.",
-    courses: sampleCourses,
-  ),
-  Mentor(
-    id: 3,
-    name: 'Pro. Sopheap',
-    subject: 'Math',
-    experience: 'Experience in teaching for 8years',
-    timeSlot: '9:00 AM - 10:00 AM',
-    avatarUrl: 'https://api.dicebear.com/9.x/avataaars/png?seed=Sopheap&backgroundColor=c0aede',
-    rating: 4.7,
-    students: 80000,
-    classes: 1200000,
-    followers: 3800000,
-    bookingPrice: 250,
-    bio: "Passionate math educator with 8 years of experience helping students excel in their studies.",
-    courses: sampleCourses,
-  ),
-  Mentor(
-    id: 4,
-    name: 'Pro. Dara',
-    subject: 'Geography',
-    experience: 'Experience in teaching for 6years',
-    timeSlot: '11:00 AM - 12:00 PM',
-    avatarUrl: 'https://api.dicebear.com/9.x/avataaars/png?seed=Dara&backgroundColor=d1f4e0',
-    rating: 4.6,
-    students: 65000,
-    classes: 900000,
-    followers: 2500000,
-    bookingPrice: 200,
-    bio: "Geography expert with 6 years of teaching experience at various academic institutions.",
-    courses: sampleCourses,
-  ),
-];
-
 final List<FeaturedCourse> featuredCourses = [
   FeaturedCourse(
     id: 1,
     mentorName: 'Pro. Sopheap',
     subject: 'Math',
     cardColor: 'orange',
-    imageUrl: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=200&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=200&q=80',
   ),
   FeaturedCourse(
     id: 2,
     mentorName: 'Pro. Dara',
     subject: 'Geography',
     cardColor: 'teal',
-    imageUrl: 'https://images.unsplash.com/photo-1529539795054-3c162aab037a?w=200&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1529539795054-3c162aab037a?w=200&q=80',
   ),
   FeaturedCourse(
     id: 3,
     mentorName: 'Pro. Thavy',
     subject: 'Chemistry',
     cardColor: 'teal2',
-    imageUrl: 'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=200&q=80',
+    imageUrl:
+        'https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?w=200&q=80',
   ),
 ];
+
+class MockUserProfile {
+  final String name;
+  final String role;
+  final String location;
+  final String avatarUrl;
+
+  MockUserProfile({
+    required this.name,
+    required this.role,
+    required this.location,
+    required this.avatarUrl,
+  });
+}
+
+final MockUserProfile currentUserMock = MockUserProfile(
+  name: 'Jessica Carl',
+  role: 'Student',
+  location: 'Phnom Penh, Cambodia',
+  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffdfbf',
+);
