@@ -43,6 +43,24 @@ export async function registerUser({
     console.warn("Could not set app_metadata role:", err.message);
   }
 
+  try {
+    const { error: insertError } = await supabaseAdmin.from('Users').insert({
+      user_id: data.user.id,
+      email: email,
+      name: fullName,
+      role: role,
+      phone: '',
+      profile_image: '',
+      location: ''
+    });
+
+    if (insertError) {
+      console.warn("Could not insert user profile:", insertError.message);
+    }
+  } catch (err) {
+    console.warn("Could not insert user profile:", err.message);
+  }
+
   return {
     user: data.user,
     session: data.session,
