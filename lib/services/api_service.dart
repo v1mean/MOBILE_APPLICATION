@@ -1,12 +1,16 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static final String baseUrl = Platform.isAndroid
-      ? 'http://10.0.2.2:5000/api'
-      : 'http://localhost:5000/api';
+  static String get baseUrl {
+    if (kIsWeb) return 'http://localhost:5005/api';
+
+    return defaultTargetPlatform == TargetPlatform.android
+        ? 'http://10.0.2.2:5005/api'
+        : 'http://localhost:5005/api';
+  }
 
   static Future<Map<String, dynamic>> loginUser(
     String email,
