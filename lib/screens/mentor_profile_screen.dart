@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../data/mock_data.dart';
 import '../models/mentor.dart';
 import '../widgets/course_card.dart';
 import '../main.dart';
@@ -105,7 +104,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         child: Image.network(
                           m.avatarUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (context, error, stackTrace) => Container(
                             color: const Color(0xFFDFE2E6),
                             child: const Icon(Icons.person, size: 50, color: Colors.grey),
                           ),

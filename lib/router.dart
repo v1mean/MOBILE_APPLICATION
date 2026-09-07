@@ -12,7 +12,6 @@ import 'screens/mentor_profile_screen.dart';
 import 'screens/user_profile_screen.dart';
 import 'screens/my_courses_screen.dart';
 import 'screens/settings_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/forgot_password_screen.dart';
 import 'screens/reset_password_screen.dart';
 import 'services/api_service.dart';
@@ -25,8 +24,8 @@ void setupDeepLinkListener() {
     if (event == AuthChangeEvent.passwordRecovery && session != null) {
       router.go('/reset-password?access_token=${session.accessToken}');
     } else if (event == AuthChangeEvent.signedIn && session != null) {
-      // Ensure backend profile is created/synced
-      ApiService.syncGoogleUser(session.accessToken);
+      // Ensure backend profile is created/synced for social logins
+      ApiService.syncSocialUser(session.accessToken);
       
       // Navigate to home screen after sign in.
       router.go('/home');

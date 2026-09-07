@@ -68,12 +68,22 @@
 	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
+		<!-- Jomnes deep linking scheme (password reset, login callback) -->
 		<dict>
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>io.jomnes.app</string>
+			</array>
+		</dict>
+		<!-- Google Sign-In callback scheme (REVERSED iOS Client ID) -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.421524422569-0e5cmrce442ln2j29s5apga9vin6ht9b</string>
 			</array>
 		</dict>
 	</array>

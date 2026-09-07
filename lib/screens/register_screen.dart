@@ -6,6 +6,7 @@ import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -84,6 +86,41 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleGoogleLogin() async {
+    try {
+      await _authService.signInWithGoogle();
+      // Navigation handled by onAuthStateChange listener in router.dart
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In failed: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _handleAppleLogin() async {
+    try {
+      await _authService.signInWithApple();
+      // Navigation handled by onAuthStateChange listener in router.dart
+    } on AppleSignInNotConfiguredException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Apple Sign-In failed: $e')),
+        );
+      }
     }
   }
 
@@ -180,16 +217,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SocialBtn(
-                              onTap: () {},
+                              onTap: _handleGoogleLogin,
                               child: Image.network(
                                 'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
                                 width: 24, height: 24,
-                                errorBuilder: (_, _, _) =>
+                                errorBuilder: (context, error, stackTrace) =>
                                     const Text('G', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.white)),
                               ),
                             ),
                             const SizedBox(width: 16),
-                            SocialBtn(onTap: () {}, child: const Icon(Icons.apple_rounded, color: AppColors.white, size: 26)),
+                            SocialBtn(onTap: _handleAppleLogin, child: const Icon(Icons.apple_rounded, color: AppColors.white, size: 26)),
                           ],
                         ).animate(delay: 450.ms).fadeIn(),
                         const SizedBox(height: 40),
