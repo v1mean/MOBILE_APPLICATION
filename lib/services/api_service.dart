@@ -1,9 +1,10 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:io' show Platform;
 import 'dart:developer';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 class ApiService {
-  static final String baseUrl = Platform.isAndroid ? 'http://10.0.2.2:5005/api' : 'http://localhost:5005/api';
+  static final String baseUrl = (!kIsWeb && Platform.isAndroid) ? 'http://10.0.2.2:5005/api' : 'http://localhost:5005/api';
 
   static Future<Map<String, dynamic>> loginUser(String email, String password) async {
     final response = await http.post(

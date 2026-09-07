@@ -12,12 +12,12 @@ dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 dotenv.config();
 
 const supabaseUrl =
-  process.env.SUPABASE_URL || "https://lfmllyuecleqnympfnqm.supabase.co";
+  process.env.SUPABASE_URL || "https://wlyknabitdvynmfeqcuy.supabase.co";
 
 const supabaseAnonKey =
   process.env.SUPABASE_ANON_KEY ||
   process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_90gMuHhur1aCcOiYH0Qr_g_B6d_tqrz";
+  "sb_publishable_Caawyy6UyVUEGKAsCZKdaQ_TZSZjYtt";
 
 const supabaseServiceRoleKey =
   process.env.SUPABASE_SERVICE_ROLE_KEY ||
