@@ -6,6 +6,7 @@ import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -19,6 +20,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
@@ -87,6 +89,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signInWithGoogle();
+      if (mounted) context.go('/home');
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Google Sign-In failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _handleAppleLogin() async {
+    setState(() => _isLoading = true);
+    try {
+      await _authService.signInWithApple();
+      if (mounted) context.go('/home');
+    } on AppleSignInNotConfiguredException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.message),
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Apple Sign-In failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final h = MediaQuery.of(context).size.height;
@@ -98,7 +141,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ClipPath(
             clipper: const DomeClipper(curveHeight: 50),
             child: SizedBox(
-              height: h * 0.42,
+              height: h * 0.44,
               width: double.infinity,
               child: Image.asset(
                 'assets/images/hero_bg.png',
@@ -107,9 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
             ),
           ),
-          Positioned(left: 20, top: h * 0.44, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
-          Positioned(left: 310, top: h * 0.46, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
-          Positioned(left: 140, top: h * 0.60, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
+          ..._asterisks(h),
           SingleChildScrollView(
             child: Column(
               children: [
@@ -182,16 +223,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             SocialBtn(
-                              onTap: () {},
+                              onTap: _handleGoogleLogin,
                               child: Image.network(
                                 'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
                                 width: 24, height: 24,
-                                errorBuilder: (_, _, _) =>
+                                errorBuilder: (context, error, stackTrace) =>
                                     const Text('G', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.white)),
                               ),
                             ),
                             const SizedBox(width: 16),
-                            SocialBtn(onTap: () {}, child: const Icon(Icons.apple_rounded, color: AppColors.white, size: 26)),
+                            SocialBtn(onTap: _handleAppleLogin, child: const Icon(Icons.apple_rounded, color: AppColors.white, size: 26)),
                           ],
                         ).animate(delay: 450.ms).fadeIn(),
                         const SizedBox(height: 40),
@@ -206,4 +247,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
       ),
     );
   }
+
+  List<Widget> _asterisks(double h) => [
+    Positioned(left: 30, top: h * 0.45, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
+    Positioned(left: 320, top: h * 0.47, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 18))),
+    Positioned(left: 40, top: h * 0.62, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
+    Positioned(left: 290, top: h * 0.63, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 14))),
+    Positioned(left: 200, top: h * 0.85, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 16))),
+  ];
 }

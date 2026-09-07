@@ -20,7 +20,7 @@ export async function register(req, res) {
     }
 
     const userExists = await checkUserExists(email);
-    if (userExists) {
+    if (userExists === true) {
       return res.status(409).json({
         success: false,
         message: "An account with this email already exists. Please log in.",
@@ -72,7 +72,7 @@ export async function login(req, res) {
     }
 
     const userExists = await checkUserExists(email);
-    if (!userExists) {
+    if (userExists === false) {
       return res.status(404).json({
         success: false,
         message: "No account found with this email. Please register first.",
@@ -197,16 +197,63 @@ export async function updatePasswordController(req, res) {
 export async function googleSyncController(req, res) {
   try {
     const user = req.user;
-    // Set default role for new Google users if they don't have one
-    if (!user.app_metadata || !user.app_metadata.role) {
-      await supabaseAdmin.auth.admin.updateUserById(user.id, {
-        app_metadata: { role: "student" },
-      });
+    const isNewUser = !user.app_metadata?.role;
+
+    // ── Step 1: Set the role in Supabase Auth app_metadata ──────────────────
+    // This is checked by requireRole() middleware and is the source of truth
+    // for access control across the entire backend.
+    if (isNewUser) {
+      const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
+        user.id,
+        { app_metadata: { role: "student" } }
+      );
+      if (metaError) {
+        console.warn("Could not set app_metadata role:", metaError.message);
+      }
     }
 
-    return res.status(200).json({ success: true, message: "User synced" });
+    // ── Step 2: Upsert a row in the public.profiles table ───────────────────
+    // Uses ignoreDuplicates:true so existing profiles are never overwritten.
+    // All fields are null-coalesced to handle Google privacy settings where
+    // the user may have hidden their name or email from the app.
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .upsert(
+        {
+          id: user.id,
+          // Some Google accounts hide their email — fall back to empty string
+          email: user.email ?? user.user_metadata?.email ?? "",
+          // Name can come from different metadata keys depending on the provider
+          full_name:
+            user.user_metadata?.full_name ||
+            user.user_metadata?.name ||
+            user.user_metadata?.given_name ||
+            null,
+          avatar_url:
+            user.user_metadata?.avatar_url ||
+            user.user_metadata?.picture ||
+            null,
+          role: "student",
+          created_at: new Date().toISOString(),
+        },
+        {
+          onConflict: "id",       // id is the primary key
+          ignoreDuplicates: true, // Do NOT overwrite fields on returning users
+        }
+      );
+
+    if (profileError) {
+      // Log but don't fail the request — the user is already authenticated
+      console.warn("Profile upsert warning:", profileError.message);
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: isNewUser ? "New user synced with student role." : "Existing user verified.",
+      isNewUser,
+    });
   } catch (error) {
-    console.error("GOOGLE SYNC ERROR:", error);
-    return res.status(500).json({ success: false, message: "Sync failed" });
+    console.error("SOCIAL SYNC ERROR:", error);
+    return res.status(500).json({ success: false, message: "Sync failed." });
   }
 }

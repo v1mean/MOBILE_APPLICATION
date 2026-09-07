@@ -69,20 +69,19 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  static Future<void> syncGoogleUser(String accessToken) async {
-    // This hits a backend endpoint to ensure the user profile is created
-    // if they logged in via Google for the first time.
+  static Future<void> syncSocialUser(String accessToken) async {
+    // Ensures the backend creates/updates a profile with the 'student' role
+    // for any social sign-in (Google, Apple). Fire-and-forget.
     try {
       await http.post(
-        Uri.parse('$baseUrl/auth/google-sync'),
+        Uri.parse('$baseUrl/auth/social-sync'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
       );
     } catch (e) {
-      // Ignore sync errors or handle them appropriately
-      log('Google sync error: $e');
+      log('Social sync error: $e');
     }
   }
 }

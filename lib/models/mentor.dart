@@ -1,5 +1,5 @@
-﻿class Mentor {
-  final int id;
+class Mentor {
+  final String id;
   final String name;
   final String subject;
   final String experience;
@@ -28,6 +28,26 @@
     required this.bio,
     required this.courses,
   });
+
+  factory Mentor.fromJson(Map<String, dynamic> json) {
+    final users = json['Users'] as Map<String, dynamic>? ?? {};
+    
+    return Mentor(
+      id: json['tutor_id'] as String? ?? '',
+      name: users['name'] as String? ?? 'Unknown Mentor',
+      subject: 'General', 
+      experience: '${json['experience_years'] ?? 0} years experience',
+      timeSlot: 'Flexible',
+      avatarUrl: users['profile_image'] as String? ?? 'https://api.dicebear.com/9.x/avataaars/png?seed=fallback',
+      rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
+      students: 120, // UI fallback since not in schema yet
+      classes: 50,
+      followers: 300,
+      bookingPrice: (json['hourly_rate'] as num?)?.toDouble() ?? 0.0,
+      bio: json['bio'] as String? ?? 'No bio provided.',
+      courses: [], // Mock courses handled separately
+    );
+  }
 }
 
 class Course {
