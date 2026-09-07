@@ -140,24 +140,16 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  Future<void> _handleAppleLogin() async {
+  Future<void> _handleFacebookLogin() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithApple();
-      if (mounted) context.go('/home');
-    } on AppleSignInNotConfiguredException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      await _authService.signInWithFacebook();
+      // For web, signInWithOAuth navigates immediately. For mobile, deep link listener in router.dart
+      // handles session and routes to /home when callback returns.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Apple Login failed: $e')),
+          SnackBar(content: Text('Facebook Login failed: $e')),
         );
       }
     } finally {
@@ -350,11 +342,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             const SizedBox(width: 16),
                             SocialBtn(
-                              onTap: _handleAppleLogin,
+                              onTap: _handleFacebookLogin,
                               child: const Icon(
-                                Icons.apple_rounded,
-                                color: AppColors.white,
-                                size: 26,
+                                Icons.facebook,
+                                color: Color(0xFF1877F2),
+                                size: 28,
                               ),
                             ),
                           ],

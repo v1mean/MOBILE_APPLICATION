@@ -1,18 +1,56 @@
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
+import 'dart:io' show Platform;
 import 'dart:developer';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:http/http.dart' as http;
 class ApiService {
   static String get baseUrl {
-    if (kIsWeb) return 'http://localhost:5005/api';
-    return defaultTargetPlatform == TargetPlatform.android ? 'http://10.0.2.2:5005/api' : 'http://localhost:5005/api';
+    const envUrl = String.fromEnvironment('API_BASE_URL');
+    if (envUrl.isNotEmpty) return envUrl;
+
+    if (kIsWeb) {
+      return 'http://localhost:5050/api';
+    }
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:5050/api';
+    }
+    if (Platform.isIOS) {
+      return 'http://localhost:5050/api';
+    }
+    return 'http://localhost:5050/api';
+  }
+
+  static Future<http.Response> _postWithFallback(
+    String endpoint, {
+    Map<String, String>? headers,
+    Object? body,
+    Duration timeout = const Duration(seconds: 5),
+  }) async {
+    final defaultHeaders = {'Content-Type': 'application/json', ...?headers};
+
+    try {
+      return await http
+          .post(Uri.parse('$baseUrl$endpoint'), headers: defaultHeaders, body: body)
+          .timeout(timeout);
+    } catch (e) {
+      // On Android, seamlessly retry between 10.0.2.2 (emulator) and localhost (physical device via adb reverse)
+      if (!kIsWeb && Platform.isAndroid) {
+        final fallbackBase = baseUrl.contains('10.0.2.2')
+            ? 'http://localhost:5050/api'
+            : 'http://10.0.2.2:5050/api';
+        try {
+          return await http
+              .post(Uri.parse('$fallbackBase$endpoint'), headers: defaultHeaders, body: body)
+              .timeout(timeout);
+        } catch (_) {}
+      }
+      rethrow;
+    }
   }
 
   static Future<Map<String, dynamic>> loginUser(String email, String password) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/login'),
-      headers: {'Content-Type': 'application/json'},
+    final response = await _postWithFallback(
+      '/auth/login',
       body: jsonEncode({
         'email': email,
         'password': password,
@@ -23,9 +61,8 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> registerUser(String email, String password, String fullName) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/register'),
-      headers: {'Content-Type': 'application/json'},
+    final response = await _postWithFallback(
+      '/auth/register',
       body: jsonEncode({
         'email': email,
         'password': password,
@@ -37,9 +74,8 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> requestPasswordReset(String email) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/forgot-password'),
-      headers: {'Content-Type': 'application/json'},
+    final response = await _postWithFallback(
+      '/auth/forgot-password',
       body: jsonEncode({'email': email}),
     );
 
@@ -47,10 +83,9 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> updatePassword(String newPassword, String accessToken) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/update-password'),
+    final response = await _postWithFallback(
+      '/auth/update-password',
       headers: {
-        'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({'newPassword': newPassword}),
@@ -60,16 +95,14 @@ class ApiService {
   }
 
   static Future<void> syncSocialUser(String accessToken) async {
-    // Ensures the backend creates/updates a profile with the 'student' role
-    // for any social sign-in (Google, Apple). Fire-and-forget.
     try {
-      await http.post(
-        Uri.parse('$baseUrl/auth/social-sync'),
+      final response = await _postWithFallback(
+        '/auth/social-sync',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': 'Bearer $accessToken',
         },
       );
+      log('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
       log('Social sync error: $e');
     }

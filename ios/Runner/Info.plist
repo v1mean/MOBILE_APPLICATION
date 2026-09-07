@@ -86,6 +86,28 @@
 				<string>com.googleusercontent.apps.421524422569-0e5cmrce442ln2j29s5apga9vin6ht9b</string>
 			</array>
 		</dict>
+		<!-- Facebook Sign-In callback scheme -->
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fbYOUR_FACEBOOK_APP_ID</string>
+			</array>
+		</dict>
+	</array>
+	<key>FacebookAppID</key>
+	<string>YOUR_FACEBOOK_APP_ID</string>
+	<key>FacebookClientToken</key>
+	<string>YOUR_FACEBOOK_CLIENT_TOKEN</string>
+	<key>FacebookDisplayName</key>
+	<string>Jomnes</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+		<string>fbauth2</string>
+		<string>fbshareextension</string>
 	</array>
 </dict>
 </plist>

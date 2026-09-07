@@ -105,24 +105,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Future<void> _handleAppleLogin() async {
+  Future<void> _handleFacebookLogin() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithApple();
-      if (mounted) context.go('/home');
-    } on AppleSignInNotConfiguredException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.message),
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      await _authService.signInWithFacebook();
+      // On mobile, deep link listener in router.dart handles session and routes to /home when callback returns.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Apple Sign-In failed: $e')),
+          SnackBar(content: Text('Facebook Sign-In failed: $e')),
         );
       }
     } finally {
@@ -232,7 +223,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             const SizedBox(width: 16),
-                            SocialBtn(onTap: _handleAppleLogin, child: const Icon(Icons.apple_rounded, color: AppColors.white, size: 26)),
+                            SocialBtn(
+                              onTap: _handleFacebookLogin,
+                              child: const Icon(
+                                Icons.facebook,
+                                color: Color(0xFF1877F2),
+                                size: 28,
+                              ),
+                            ),
                           ],
                         ).animate(delay: 450.ms).fadeIn(),
                         const SizedBox(height: 40),
