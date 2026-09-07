@@ -62,11 +62,13 @@ class _HomeScreenState extends State<HomeScreen> {
       final data = await JomnesDB.from('Users')
           .select()
           .eq('user_id', session.user.id)
-          .single();
+          .maybeSingle();
       
       if (mounted) {
         setState(() {
-          _userProfile = UserProfile.fromJson(data);
+          if (data != null) {
+            _userProfile = UserProfile.fromJson(data);
+          }
           _isLoadingProfile = false;
         });
       }
@@ -75,6 +77,33 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() => _isLoadingProfile = false);
       }
     }
+  }
+
+  String get _displayName {
+    if (_userProfile?.name != null && _userProfile!.name.isNotEmpty) {
+      return _userProfile!.name;
+    }
+    final user = JomnesDB.auth.currentUser;
+    final metaName = user?.userMetadata?['full_name'] ??
+        user?.userMetadata?['name'] ??
+        user?.email?.split('@').first;
+    if (metaName != null && metaName.toString().isNotEmpty) {
+      return metaName.toString();
+    }
+    return _isLoadingProfile ? 'Loading...' : 'Student';
+  }
+
+  String get _displayAvatar {
+    if (_userProfile?.profileImage != null && _userProfile!.profileImage.isNotEmpty) {
+      return _userProfile!.profileImage;
+    }
+    final user = JomnesDB.auth.currentUser;
+    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+    final String? metaAvatar = pic is String ? pic : null;
+    if (metaAvatar != null && metaAvatar.isNotEmpty) {
+      return metaAvatar;
+    }
+    return currentUserMock.avatarUrl;
   }
 
   void _onNavTap(int i) {
@@ -119,10 +148,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: _isLoadingProfile 
                         ? const CircularProgressIndicator(color: AppColors.accentBlue)
                         : Image.network(
-                            _userProfile?.profileImage ?? currentUserMock.avatarUrl,
+                            _displayAvatar,
                             fit: BoxFit.cover,
                             errorBuilder: (_, _, _) {
-                              final fallbackName = _userProfile?.name ?? currentUserMock.name;
+                              final fallbackName = _displayName;
                               final initial = fallbackName.isNotEmpty ? fallbackName[0].toUpperCase() : 'U';
                               return CircleAvatar(
                                 backgroundColor: const Color(0xFFFFD5DC),
@@ -137,7 +166,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _userProfile?.name ?? 'Loading...',
+                        _displayName,
                         style: GoogleFonts.inter(
                           fontSize: 17,
                           fontWeight: FontWeight.w700,
@@ -146,7 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _userProfile?.role ?? '...',
+                        _userProfile?.role ?? 'Student',
                         style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.w400,
