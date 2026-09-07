@@ -1,5 +1,13 @@
 # 🔌 Jomnes — Supabase Backend & Database Integration Plan
 
+## 🚨 Recent Updates (September 2026)
+- **Database Synchronization:** Switched both the Flutter App (`lib/main.dart`) and custom Node.js backend (`backend/src/config/supabase.js`) to use the live database `lfmllyuecleqnympfnqm.supabase.co` containing the `Users` and `tutor_profiles` tables.
+- **Session Syncing:** Updated `login_screen.dart` to extract the login token provided by the Node.js API and synchronize it directly with the local Flutter Supabase client via `JomnesDB.auth.setSession()`.
+- **Automated Profile Creation:** Modified `backend/src/services/auth.service.js` to automatically bypass Row Level Security using the `supabaseAdmin` service role key, inserting a new row into the public `Users` table immediately upon account registration.
+- **Web Compatibility:** Fixed a crash on Flutter Web by swapping `dart:io` Platform checks for `kIsWeb` and `defaultTargetPlatform` in `api_service.dart`.
+
+---
+
 ## 1. Overview & Architecture
 
 This document provides a comprehensive blueprint for integrating **Supabase** (PostgreSQL, Auth, Storage, and Realtime) into the **Jomnes** Flutter application.
