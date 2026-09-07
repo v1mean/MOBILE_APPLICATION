@@ -9,8 +9,8 @@ import 'api_service.dart';
 const String _googleWebClientId =
     '421524422569-umor5co1gdlr529vbpuntsqa77ghnbs3.apps.googleusercontent.com';
 
-const String _googleIosClientId =
-    '421524422569-0e5cmrce442ln2j29s5apga9vin6ht9b.apps.googleusercontent.com';
+// const String _googleIosClientId =
+//     '421524422569-0e5cmrce442ln2j29s5apga9vin6ht9b.apps.googleusercontent.com';
 
 class AuthService {
   final SupabaseClient supabase = Supabase.instance.client;
@@ -19,7 +19,7 @@ class AuthService {
   Future<void> signInWithGoogle() async {
 
     final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: _googleIosClientId,       
+      // clientId: _googleIosClientId,       
       serverClientId: _googleWebClientId, 
     );
 
