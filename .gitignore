@@ -48,3 +48,4 @@ app.*.map.json
 
 /config/
 !backend/src/config/
+devtools_options.yaml

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -15,12 +16,12 @@ const String _googleIosClientId =
 class AuthService {
   final SupabaseClient supabase = Supabase.instance.client;
 
-  
+  // ── Google Sign-In (Native / Web) ──────────────────────────────────────────
   Future<void> signInWithGoogle() async {
 
     final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: _googleIosClientId,       
-      serverClientId: _googleWebClientId, 
+      clientId: kIsWeb ? _googleWebClientId : _googleIosClientId,       // Used on iOS and Web
+      serverClientId: kIsWeb ? null : _googleWebClientId, // Used on Android + backend validation
     );
 
     try {
