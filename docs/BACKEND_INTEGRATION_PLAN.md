@@ -4,7 +4,8 @@
 - **Database Synchronization:** Switched both the Flutter App (`lib/main.dart`) and custom Node.js backend (`backend/src/config/supabase.js`) to use the live database `lfmllyuecleqnympfnqm.supabase.co` containing the `Users` and `tutor_profiles` tables.
 - **Session Syncing:** Updated `login_screen.dart` to extract the login token provided by the Node.js API and synchronize it directly with the local Flutter Supabase client via `JomnesDB.auth.setSession()`.
 - **Automated Profile Creation:** Modified `backend/src/services/auth.service.js` to automatically bypass Row Level Security using the `supabaseAdmin` service role key, inserting a new row into the public `Users` table immediately upon account registration.
-- **Web Compatibility:** Fixed a crash on Flutter Web by swapping `dart:io` Platform checks for `kIsWeb` and `defaultTargetPlatform` in `api_service.dart`.
+- **Security Vulnerability Fixed:** Removed the `.env` file from Git tracking and added it to `.gitignore` to prevent the leakage of the Supabase Admin Service Role Key.
+- **Version Control:** Successfully pulled and resolved merge conflicts from the `develop` branch, safely integrating changes without losing local config fixes.
 
 ---
 
