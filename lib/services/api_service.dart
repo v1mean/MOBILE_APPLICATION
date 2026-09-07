@@ -2,23 +2,30 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:developer';
 import 'package:http/http.dart' as http;
-class ApiService {
-  static final String baseUrl = Platform.isAndroid ? 'http://10.0.2.2:5000/api' : 'http://localhost:5000/api';
 
-  static Future<Map<String, dynamic>> loginUser(String email, String password) async {
+class ApiService {
+  static final String baseUrl = Platform.isAndroid
+      ? 'http://10.0.2.2:5000/api'
+      : 'http://localhost:5000/api';
+
+  static Future<Map<String, dynamic>> loginUser(
+    String email,
+    String password,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/login'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-      }),
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> registerUser(String email, String password, String fullName) async {
+  static Future<Map<String, dynamic>> registerUser(
+    String email,
+    String password,
+    String fullName,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/auth/register'),
       headers: {'Content-Type': 'application/json'},
@@ -42,8 +49,11 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  static Future<Map<String, dynamic>> updatePassword(String newPassword, String accessToken) async {
-    final response = await http.post(
+  static Future<Map<String, dynamic>> updatePassword(
+    String newPassword,
+    String accessToken,
+  ) async {
+    final response = await http.patch(
       Uri.parse('$baseUrl/auth/update-password'),
       headers: {
         'Content-Type': 'application/json',
