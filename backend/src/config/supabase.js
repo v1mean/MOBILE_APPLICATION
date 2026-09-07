@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import ws from "ws";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -29,9 +30,17 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Node.js 20 does not have native WebSocket support.
+// Pass the 'ws' package as the transport so Supabase Realtime can connect.
+const clientOptions = {
+  global: { fetch },
+  realtime: { transport: ws },
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, clientOptions);
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
+  ...clientOptions,
   auth: {
     autoRefreshToken: false,
     persistSession: false,
