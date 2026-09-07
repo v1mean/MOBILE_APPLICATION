@@ -90,22 +90,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
     try {
       await _authService.signInWithGoogle();
-      // Navigation handled by onAuthStateChange listener in router.dart
+      if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Google Sign-In failed: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleAppleLogin() async {
+    setState(() => _isLoading = true);
     try {
       await _authService.signInWithApple();
-      // Navigation handled by onAuthStateChange listener in router.dart
+      if (mounted) context.go('/home');
     } on AppleSignInNotConfiguredException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -121,6 +125,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           SnackBar(content: Text('Apple Sign-In failed: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

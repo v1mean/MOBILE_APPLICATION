@@ -1,7 +1,9 @@
+import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
@@ -112,22 +114,37 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleGoogleLogin() async {
+    setState(() => _isLoading = true);
     try {
       await _authService.signInWithGoogle();
-      // Navigation handled by onAuthStateChange listener in router.dart
+     
+      if (mounted) context.go('/home');
     } catch (e) {
+    
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session != null && mounted) {
+        log('DEBUG: Exception thrown but session exists — navigating to /home. Error was: $e');
+        context.go('/home');
+        return;
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Login failed: $e')),
+          SnackBar(
+            content: Text('Google Login failed: $e'),
+            duration: const Duration(seconds: 6),
+          ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleAppleLogin() async {
+    setState(() => _isLoading = true);
     try {
       await _authService.signInWithApple();
-      // Navigation handled by onAuthStateChange listener in router.dart
+      if (mounted) context.go('/home');
     } on AppleSignInNotConfiguredException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -143,6 +160,8 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(content: Text('Apple Login failed: $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -153,7 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: AppColors.darkBg,
       body: Stack(
         children: [
-          // Galaxy Hero Image with Dome Clip
           ClipPath(
             clipper: const DomeClipper(curveHeight: 50),
             child: SizedBox(
