@@ -26,7 +26,7 @@
 | Screen | Route | Key Features & Implementation |
 | :--- | :--- | :--- |
 | **Splash / Onboarding** | `/` | Immersive hero illustration background, branded typography, animated entrance, and seamless onboarding flow. |
-| **Authentication** | `/login`<br>`/register` | Dark aesthetic cards with animated tab switching, input validation, password toggle, social login buttons (Google, Apple, Facebook). |
+| **Authentication** | `/login`<br>`/register` | Dark aesthetic cards with animated tab switching, input validation, password toggle, social login buttons (Google, Facebook). |
 | **Home Screen** | `/home` | Student profile banner with notification indicator, interactive search trigger, horizontal **Featured Courses** carousel (Math, Geography, Chemistry), and **Top Mentors** list with live availability badges. |
 | **Search & Discovery** | `/search` | Dynamic category filter chips (All, Math, Science, Language, etc.), search bar with real-time mentor filtering, rating/experience highlights. |
 | **Mentor Profile** | `/mentor/:id` | Detailed mentor header, rating/student/follower counters, subject badges, tabbed switcher (**About** vs. **Reviews**), and sticky **Book Session** CTA. |
