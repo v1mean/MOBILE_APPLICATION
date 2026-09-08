@@ -88,7 +88,7 @@ class AuthService {
       log('DEBUG: Initiating Facebook OAuth sign-in');
       await supabase.auth.signInWithOAuth(
         OAuthProvider.facebook,
-        redirectTo: kIsWeb ? null : 'io.jomnes.app://login-callback',
+        redirectTo: kIsWeb ? 'http://localhost:8080' : 'io.jomnes.app://login-callback',
       );
       // On mobile, this launches the system browser/custom tab for Facebook.
       // Once authenticated, Supabase redirects to io.jomnes.app://login-callback,
