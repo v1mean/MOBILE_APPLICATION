@@ -29,6 +29,8 @@ void setupDeepLinkListener() {
       
       // Navigate to home screen after sign in.
       router.go('/home');
+    } else if (event == AuthChangeEvent.signedOut) {
+      router.go('/login');
     }
   });
 }

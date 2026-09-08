@@ -20,6 +20,7 @@ class AuthService {
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'http://localhost:8080',
+        queryParams: {'prompt': 'select_account'},
       );
       return;
     }
@@ -31,6 +32,11 @@ class AuthService {
     );
 
     try {
+      // Force account chooser prompt so it never silently auto-selects cached account
+      try {
+        await googleSignIn.signOut();
+      } catch (_) {}
+
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
         log('DEBUG: Google Sign-In cancelled by user.');
@@ -96,8 +102,10 @@ class AuthService {
 
   Future<void> signOut() async {
     try {
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      await googleSignIn.signOut();
+      if (!kIsWeb) {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        await googleSignIn.signOut();
+      }
     } catch (_) {
     }
     await supabase.auth.signOut();

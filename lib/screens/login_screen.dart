@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
@@ -120,13 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
      
       if (mounted) context.go('/home');
     } catch (e) {
-    
-      final session = Supabase.instance.client.auth.currentSession;
-      if (session != null && mounted) {
-        log('DEBUG: Exception thrown but session exists — navigating to /home. Error was: $e');
-        context.go('/home');
-        return;
-      }
+      log('Google Login error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
