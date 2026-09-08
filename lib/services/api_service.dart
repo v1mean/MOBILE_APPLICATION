@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:io' show Platform;
 import 'dart:developer';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 class ApiService {
   static String get baseUrl {
@@ -11,10 +10,10 @@ class ApiService {
     if (kIsWeb) {
       return 'http://localhost:5050/api';
     }
-    if (Platform.isAndroid) {
+    if (defaultTargetPlatform == TargetPlatform.android) {
       return 'http://10.0.2.2:5050/api';
     }
-    if (Platform.isIOS) {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
       return 'http://localhost:5050/api';
     }
     return 'http://localhost:5050/api';
@@ -34,7 +33,7 @@ class ApiService {
           .timeout(timeout);
     } catch (e) {
       // On Android, seamlessly retry between 10.0.2.2 (emulator) and localhost (physical device via adb reverse)
-      if (!kIsWeb && Platform.isAndroid) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         final fallbackBase = baseUrl.contains('10.0.2.2')
             ? 'http://localhost:5050/api'
             : 'http://10.0.2.2:5050/api';
