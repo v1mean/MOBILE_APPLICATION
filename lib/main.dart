@@ -1,3 +1,4 @@
+import 'package:mobile_application/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'router.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
 
   setupDeepLinkListener();
 
+  AuthService().printDeployKeyHash();
   runApp(const JomnesApp());
 }
 

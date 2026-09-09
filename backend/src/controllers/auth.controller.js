@@ -245,25 +245,37 @@ export async function socialSyncController(req, res) {
       );
     } catch (_) {}
 
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .upsert(
-        {
-          id: user.id,
-          email: user.email ?? user.user_metadata?.email ?? "",
-          full_name: fullName,
-          avatar_url: avatarUrl,
-          role: "student",
-          created_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "id",       // id is the primary key
-          ignoreDuplicates: true, // Do NOT overwrite fields on returning users
-        }
-      );
+    try {
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .upsert(
+          {
+            id: user.id,
+            email: user.email ?? user.user_metadata?.email ?? "",
+            full_name: fullName,
+            avatar_url: avatarUrl,
+            role: "student",
+            created_at: new Date().toISOString(),
+          },
+          {
+            onConflict: "id",
+            ignoreDuplicates: true,
+          }
+        );
 
-    if (profileError && !profileError.message.includes("does not exist")) {
-      console.warn(`[${provider}] Profile upsert warning:`, profileError.message);
+      if (profileError) {
+        if (profileError.message.includes("does not exist") || profileError.message.includes("Could not find the table")) {
+          console.error("ERROR: Profiles table missing in Supabase. Please run the SQL initialization script.");
+        } else {
+          console.warn(`[${provider}] Profile upsert warning:`, profileError.message);
+        }
+      }
+    } catch (profileCatchError) {
+      if (profileCatchError.message && (profileCatchError.message.includes("does not exist") || profileCatchError.message.includes("Could not find the table"))) {
+        console.error("ERROR: Profiles table missing in Supabase. Please run the SQL initialization script.");
+      } else {
+        console.error(`[${provider}] Profile upsert catch error:`, profileCatchError.message);
+      }
     }
 
     return res.status(200).json({

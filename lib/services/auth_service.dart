@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter/services.dart';
 import 'api_service.dart';
 
 const String _googleWebClientId =
@@ -13,6 +14,20 @@ const String _googleIosClientId =
 
 class AuthService {
   final SupabaseClient supabase = Supabase.instance.client;
+  static const platform = MethodChannel('io.jomnes.app/hash');
+
+  Future<void> printDeployKeyHash() async {
+    if (!kIsWeb) {
+      try {
+        final String? hash = await platform.invokeMethod('getKeyHash');
+        log('====================================');
+        log('FACEBOOK ANDROID KEY HASH: $hash');
+        log('====================================');
+      } catch (e) {
+        log('Failed to get key hash: $e');
+      }
+    }
+  }
 
   // ── Google Sign-In (Native / Web) ──────────────────────────────────────────
   Future<void> signInWithGoogle() async {
