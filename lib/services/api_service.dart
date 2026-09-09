@@ -8,15 +8,15 @@ class ApiService {
     if (envUrl.isNotEmpty) return envUrl;
 
     if (kIsWeb) {
-      return 'http://localhost:5050/api';
+      return 'http://localhost:5005/api';
     }
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5050/api';
+      return 'http://10.0.2.2:5005/api';
     }
     if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'http://localhost:5050/api';
+      return 'http://localhost:5005/api';
     }
-    return 'http://localhost:5050/api';
+    return 'http://localhost:5005/api';
   }
 
   static Future<http.Response> _postWithFallback(
@@ -35,8 +35,8 @@ class ApiService {
       // On Android, seamlessly retry between 10.0.2.2 (emulator) and localhost (physical device via adb reverse)
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         final fallbackBase = baseUrl.contains('10.0.2.2')
-            ? 'http://localhost:5050/api'
-            : 'http://10.0.2.2:5050/api';
+            ? 'http://localhost:5005/api'
+            : 'http://10.0.2.2:5005/api';
         try {
           return await http
               .post(Uri.parse('$fallbackBase$endpoint'), headers: defaultHeaders, body: body)

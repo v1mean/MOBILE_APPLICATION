@@ -83,7 +83,7 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>com.googleusercontent.apps.421524422569-0e5cmrce442ln2j29s5apga9vin6ht9b</string>
+				<string>com.googleusercontent.apps.914787896690-qsd2iabddl5j7rd502s6p3tppv8scsvb</string>
 			</array>
 		</dict>
 		<!-- Facebook Sign-In callback scheme -->
@@ -92,14 +92,14 @@
 			<string>Editor</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>fbYOUR_FACEBOOK_APP_ID</string>
+				<string>fb2172302643350758</string>
 			</array>
 		</dict>
 	</array>
 	<key>FacebookAppID</key>
-	<string>YOUR_FACEBOOK_APP_ID</string>
+	<string>2172302643350758</string>
 	<key>FacebookClientToken</key>
-	<string>YOUR_FACEBOOK_CLIENT_TOKEN</string>
+	<string>c2d86faa242f92e98f87aae8094de1ba</string>
 	<key>FacebookDisplayName</key>
 	<string>Jomnes</string>
 	<key>LSApplicationQueriesSchemes</key>

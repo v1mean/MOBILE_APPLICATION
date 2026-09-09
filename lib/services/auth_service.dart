@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'api_service.dart';
 
@@ -82,18 +83,36 @@ class AuthService {
     }
   }
 
-  // ── Facebook Sign-In (Supabase OAuth) ──────────────────────────────────────
+  // ── Facebook Sign-In (Native SDK) ──────────────────────────────────────────
   Future<void> signInWithFacebook() async {
     try {
-      log('DEBUG: Initiating Facebook OAuth sign-in');
-      await supabase.auth.signInWithOAuth(
-        OAuthProvider.facebook,
-        redirectTo: kIsWeb ? 'http://localhost:8080' : 'io.jomnes.app://login-callback',
+      log('DEBUG: Initiating Facebook native sign-in');
+      
+      // Request Facebook login
+      final LoginResult result = await FacebookAuth.instance.login(
+        permissions: ['public_profile', 'email'],
+        loginBehavior: LoginBehavior.nativeWithFallback,
       );
-      // On mobile, this launches the system browser/custom tab for Facebook.
-      // Once authenticated, Supabase redirects to io.jomnes.app://login-callback,
-      // where onAuthStateChange in router.dart detects the session and triggers
-      // ApiService.syncSocialUser.
+
+      if (result.status == LoginStatus.success && result.accessToken != null) {
+        // Exchange Facebook access token with Supabase
+        final AuthResponse response = await supabase.auth.signInWithIdToken(
+          provider: OAuthProvider.facebook,
+          idToken: result.accessToken!.tokenString,
+        );
+        
+        log('DEBUG: Supabase Facebook login succeeded. UID: ${response.user?.id}');
+
+        // Fire-and-forget backend sync
+        final session = supabase.auth.currentSession;
+        if (session != null) {
+          ApiService.syncSocialUser(session.accessToken);
+        }
+      } else if (result.status == LoginStatus.cancelled) {
+        log('DEBUG: Facebook Login cancelled by user.');
+      } else {
+        throw Exception('Facebook Login failed: ${result.message}');
+      }
     } catch (e) {
       log('Facebook Sign-In error: $e');
       rethrow;
@@ -105,6 +124,7 @@ class AuthService {
       if (!kIsWeb) {
         final GoogleSignIn googleSignIn = GoogleSignIn();
         await googleSignIn.signOut();
+        await FacebookAuth.instance.logOut();
       }
     } catch (_) {
     }

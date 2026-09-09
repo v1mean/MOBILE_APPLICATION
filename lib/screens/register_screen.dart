@@ -109,11 +109,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
     try {
       await _authService.signInWithFacebook();
-      // On mobile, deep link listener in router.dart handles session and routes to /home when callback returns.
+      if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Facebook Sign-In failed: $e')),
+          SnackBar(content: Text('Facebook configuration error. Please check Bundle ID. ($e)')),
         );
       }
     } finally {

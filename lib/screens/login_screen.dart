@@ -137,12 +137,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await _authService.signInWithFacebook();
-      // For web, signInWithOAuth navigates immediately. For mobile, deep link listener in router.dart
-      // handles session and routes to /home when callback returns.
+      // Native login completes inline
+      if (mounted) context.go('/home');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Facebook Login failed: $e')),
+          SnackBar(content: Text('Facebook configuration error. Please check Bundle ID. ($e)')),
         );
       }
     } finally {
