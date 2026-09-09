@@ -1,12 +1,12 @@
 # 📊 Jomnes — Current Project State & Screen Audit
 
 *Last Updated: September 2026*  
-*Repository Status: Clean working tree on `main` branch*
+*Repository Status: Clean working tree on `develop` branch (synced with `origin/develop`)*
 
 ---
 
 ## 1. Executive Summary
-The **Jomnes** Flutter codebase represents a fully realized, pixel-perfect frontend implementation based on the Figma UI/UX design specifications. All 9 core application screens, custom navigation, animations, and reusable widget components are functional with structured mock data.
+The **Jomnes** Flutter codebase represents a fully realized, pixel-perfect implementation based on the Figma UI/UX design specifications. All 9 core application screens, custom navigation, micro-animations, and reusable widget components are functional, fully integrated with a Node.js/Express backend (port 5050) and live Supabase authentication & database services (`lfmllyuecleqnympfnqm.supabase.co`).
 
 ---
 
@@ -24,22 +24,26 @@ The **Jomnes** Flutter codebase represents a fully realized, pixel-perfect front
 ---
 
 ### 🔐 2. Authentication Screens (`lib/screens/login_screen.dart` & `register_screen.dart`)
-- **Status**: ✅ 100% Complete
+- **Status**: ✅ 100% Complete (Live Auth & Social Sync)
 - **Components**:
   - Hero background illustration header.
   - Tab Switcher (`Sign In` vs `Sign Up`) with animated underline/pill indicator.
   - Form Fields: Email, Password (with toggleable visibility icon), Name & Confirm Password for registration.
-  - *"Forgot Password?"* interactive text.
-  - Primary Submit Button with press state and validation handling.
-  - Social Login Section: Google, Apple, and Facebook branded buttons.
-  - Route navigation directly to `/home` upon submission.
+  - *"Forgot Password?"* interactive text with Supabase password reset flow.
+  - Primary Submit Button with validation, loading indicator, and JWT session synchronization.
+  - **Google Sign-In**:
+    - Web: OAuth redirect with `prompt: select_account` ensuring the account chooser modal is always presented.
+    - Android/iOS: Native `GoogleSignIn` with Web Client ID as `serverClientId`, automatic cache sign-out, and credential exchange.
+  - **Facebook Sign-In**: Supabase OAuth integration configured for Web and Mobile deep linking (`io.jomnes.app://login-callback`).
+  - **Backend Social Sync**: Automatically calls `POST /api/auth/social-sync` on port 5050 to synchronize user profiles in the database.
+  - Navigation Guard: `GoRouter` authentication redirect with deep link and sign-out event listeners.
 
 ---
 
 ### 🏠 3. Home Screen (`lib/screens/home_screen.dart`)
-- **Status**: ✅ 100% Complete
+- **Status**: ✅ 100% Complete (Dynamic User Profile)
 - **Components**:
-  - **Dark Header**: Student avatar (`jessica_avatar.png`), name (*"Jessica Carl"*), status (*"Student"*), and notification bell icon.
+  - **Dark Header**: Dynamic user greeting and avatar powered by the active Supabase session (extracts `full_name` and `avatar_url`), gracefully falling back to student avatar (`jessica_avatar.png`) and default profile.
   - **Search Trigger**: Interactive search field that routes directly to `/search`.
   - **Featured Courses Section**:
     - Horizontal scrollable card carousel.
@@ -101,14 +105,17 @@ The **Jomnes** Flutter codebase represents a fully realized, pixel-perfect front
 ---
 
 ### ⚙️ 8. Settings Screen (`lib/screens/settings_screen.dart`)
-- **Status**: ✅ 100% Complete
+- **Status**: ✅ 100% Complete (Clean Session Destruction)
 - **Components**:
   - Account Settings section (Profile, Security, Email preferences).
   - Notifications toggle (Push notifications, Email alerts, SMS reminders).
   - Appearance section (Theme mode selector: System, Dark, Light).
   - Language selector (English, Khmer, etc.).
   - Privacy policy and Terms of service links.
-  - **Log Out** button triggering confirmation dialog.
+  - **Log Out**:
+    - Triggers confirmation modal.
+    - Fully destroys Supabase active session and clears Google cache (`AuthService().signOut()`).
+    - Redirects to `/login` with router guard preventing bounce back to `/home`.
 
 ---
 
@@ -128,6 +135,6 @@ The **Jomnes** Flutter codebase represents a fully realized, pixel-perfect front
 ---
 
 ## 4. Current Limitations & Next Development Phase
-1. **Mock Data**: Data is currently served in-memory from [`lib/data/mock_data.dart`](file:///c:/Users/Thyrex%202.0/Desktop/MOBILE%20APPLICATION/MOBILE_APPLICATION/lib/data/mock_data.dart).
-2. **Backend Services**: Ready to be connected to Supabase for PostgreSQL persistence, JWT auth, and live updates.
-3. **Interactive Booking**: Time-slot picker modal to be connected to backend booking API.
+1. **Facebook Provider Activation**: Client-side OAuth implementation is complete in Flutter (`lib/services/auth_service.dart`). Requires teammate to enable the Facebook provider in Supabase Dashboard (`lfmllyuecleqnympfnqm`) using credentials from Meta Developers Console.
+2. **PostgreSQL Mock Data Transition**: Course catalog and mentor directories currently serve static mock models while auth and user profiles are fully synchronized with PostgreSQL via Supabase and Node.js.
+3. **Interactive Booking**: Connect mentor time-slot booking UI with backend booking API endpoints.

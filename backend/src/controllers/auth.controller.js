@@ -194,9 +194,10 @@ export async function updatePasswordController(req, res) {
   }
 }
 
-export async function googleSyncController(req, res) {
+export async function socialSyncController(req, res) {
   try {
     const user = req.user;
+    const provider = user.app_metadata?.provider || "social";
     const isNewUser = !user.app_metadata?.role;
 
     // ── Step 1: Set the role in Supabase Auth app_metadata ──────────────────
@@ -208,31 +209,50 @@ export async function googleSyncController(req, res) {
         { app_metadata: { role: "student" } }
       );
       if (metaError) {
-        console.warn("Could not set app_metadata role:", metaError.message);
+        console.warn(`[${provider}] Could not set app_metadata role:`, metaError.message);
       }
     }
 
     // ── Step 2: Upsert a row in the public.profiles table ───────────────────
-    // Uses ignoreDuplicates:true so existing profiles are never overwritten.
-    // All fields are null-coalesced to handle Google privacy settings where
-    // the user may have hidden their name or email from the app.
+    // Handle provider-specific metadata schemas (Google vs Facebook)
+    const fullName =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      (user.user_metadata?.first_name
+        ? `${user.user_metadata.first_name} ${user.user_metadata.last_name || ""}`.trim()
+        : user.user_metadata?.given_name) ||
+      null;
+
+    const avatarUrl =
+      user.user_metadata?.avatar_url ||
+      (typeof user.user_metadata?.picture === "string"
+        ? user.user_metadata.picture
+        : user.user_metadata?.picture?.data?.url) ||
+      null;
+
+    try {
+      await supabaseAdmin.from("Users").upsert(
+        {
+          user_id: user.id,
+          email: user.email ?? user.user_metadata?.email ?? "",
+          name: fullName || "Student",
+          role: "student",
+          phone: "",
+          profile_image: avatarUrl || "",
+          location: "",
+        },
+        { onConflict: "user_id", ignoreDuplicates: true }
+      );
+    } catch (_) {}
+
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert(
         {
           id: user.id,
-          // Some Google accounts hide their email — fall back to empty string
           email: user.email ?? user.user_metadata?.email ?? "",
-          // Name can come from different metadata keys depending on the provider
-          full_name:
-            user.user_metadata?.full_name ||
-            user.user_metadata?.name ||
-            user.user_metadata?.given_name ||
-            null,
-          avatar_url:
-            user.user_metadata?.avatar_url ||
-            user.user_metadata?.picture ||
-            null,
+          full_name: fullName,
+          avatar_url: avatarUrl,
           role: "student",
           created_at: new Date().toISOString(),
         },
@@ -242,18 +262,23 @@ export async function googleSyncController(req, res) {
         }
       );
 
-    if (profileError) {
-      // Log but don't fail the request — the user is already authenticated
-      console.warn("Profile upsert warning:", profileError.message);
+    if (profileError && !profileError.message.includes("does not exist")) {
+      console.warn(`[${provider}] Profile upsert warning:`, profileError.message);
     }
 
     return res.status(200).json({
       success: true,
-      message: isNewUser ? "New user synced with student role." : "Existing user verified.",
+      message: isNewUser
+        ? `New ${provider} user synced with student role.`
+        : `Existing ${provider} user verified.`,
       isNewUser,
+      provider,
     });
   } catch (error) {
     console.error("SOCIAL SYNC ERROR:", error);
     return res.status(500).json({ success: false, message: "Sync failed." });
   }
 }
+
+// Backward compatibility alias for legacy route
+export const googleSyncController = socialSyncController;

@@ -3,9 +3,12 @@
 ## 🚨 Recent Updates (September 2026)
 - **Database Synchronization:** Switched both the Flutter App (`lib/main.dart`) and custom Node.js backend (`backend/src/config/supabase.js`) to use the live database `lfmllyuecleqnympfnqm.supabase.co` containing the `Users` and `tutor_profiles` tables.
 - **Session Syncing:** Updated `login_screen.dart` to extract the login token provided by the Node.js API and synchronize it directly with the local Flutter Supabase client via `JomnesDB.auth.setSession()`.
-- **Automated Profile Creation:** Modified `backend/src/services/auth.service.js` to automatically bypass Row Level Security using the `supabaseAdmin` service role key, inserting a new row into the public `Users` table immediately upon account registration.
-- **Security Vulnerability Fixed:** Removed the `.env` file from Git tracking and added it to `.gitignore` to prevent the leakage of the Supabase Admin Service Role Key.
-- **Version Control:** Successfully pulled and resolved merge conflicts from the `develop` branch, safely integrating changes without losing local config fixes.
+- **Automated Profile Creation & Social Sync:** Implemented `POST /api/auth/social-sync` in the Express backend, automatically upserting user profiles into PostgreSQL upon Google or Facebook OAuth sign-in.
+- **Log Out Session Destruction:** Fixed `settings_screen.dart` and `router.dart` so confirming logout actively awaits `AuthService().signOut()`, purging active tokens from memory/storage and stopping GoRouter from bouncing back to `/home`.
+- **Account Chooser Prompt:** In `auth_service.dart`, added `prompt: select_account` for Web and cleared native Google account cache on Mobile to force account chooser dialogs.
+- **Web Safety:** Replaced `dart:io` platform detection with Flutter foundation web-safe targets in `api_service.dart`, allowing flawless compilation on Web Server.
+- **Security Vulnerability Fixed:** Removed `.env` file from Git tracking and added it to `.gitignore` to prevent secret leakage.
+- **Version Control:** All integration changes cleanly merged and pushed to `origin/develop`.
 
 ---
 
@@ -16,25 +19,29 @@ This document provides a comprehensive blueprint for integrating **Supabase** (P
 ```mermaid
 graph TD
     App[Flutter Mobile & Web App] -->|OAuth / Email| SupaAuth[Supabase Auth]
-    App -->|PostgREST / Realtime| SupaDB[(PostgreSQL DB)]
+    App -->|API Requests / Sync| NodeAPI[Express Backend :5050]
+    NodeAPI -->|Service Role / Admin| SupaDB[(PostgreSQL DB)]
+    App -->|PostgREST / Realtime| SupaDB
     App -->|Avatars & Media| SupaStorage[Supabase Storage]
     
     subgraph Auth Providers
         Google[Google OAuth] --> SupaAuth
-        Apple[Apple Sign-In] --> SupaAuth
+        Facebook[Facebook OAuth] --> SupaAuth
         Email[Email & Password] --> SupaAuth
     end
     
     subgraph PostgreSQL Tables
+        Users[Users]
+        TutorProfiles[tutor_profiles]
         Profiles[profiles]
-        Mentors[mentors]
         Courses[courses]
         Bookings[bookings]
         Reviews[reviews]
     end
     
+    SupaDB --> Users
+    SupaDB --> TutorProfiles
     SupaDB --> Profiles
-    SupaDB --> Mentors
     SupaDB --> Courses
     SupaDB --> Bookings
     SupaDB --> Reviews
