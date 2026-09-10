@@ -98,43 +98,56 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  ClipOval(
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: _isLoadingProfile
-                          ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
-                          : avatar != null
-                              ? Image.network(
-                                  avatar,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => CircleAvatar(
-                                    backgroundColor: const Color(0xFFFFD5DC),
-                                    child: Text(initial,
-                                        style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  backgroundColor: const Color(0xFFFFD5DC),
-                                  child: Text(initial,
-                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                ),
+                  // Current User Avatar & Info (clickable to Settings)
+                  GestureDetector(
+                    onTap: () => context.go('/settings'),
+                    behavior: HitTestBehavior.opaque,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipOval(
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: _isLoadingProfile
+                                  ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
+                                  : avatar != null
+                                      ? Image.network(
+                                          avatar,
+                                          fit: BoxFit.cover,
+                                          errorBuilder: (_, _, _) => CircleAvatar(
+                                            backgroundColor: const Color(0xFFFFD5DC),
+                                            child: Text(initial,
+                                                style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                          ),
+                                        )
+                                      : CircleAvatar(
+                                          backgroundColor: const Color(0xFFFFD5DC),
+                                          child: Text(initial,
+                                              style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                        ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                name,
+                                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _displayRole,
+                                style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        name,
-                        style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _displayRole,
-                        style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
-                      ),
-                    ],
                   ),
                   const Spacer(),
                   IconButton(

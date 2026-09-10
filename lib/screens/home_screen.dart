@@ -154,56 +154,68 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  // Current User Avatar
-                  ClipOval(
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: _isLoadingProfile
-                        ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
-                        : _displayAvatar != null
-                            ? Image.network(
-                                _displayAvatar!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) {
-                                  final initial = _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U';
-                                  return CircleAvatar(
-                                    backgroundColor: const Color(0xFFFFD5DC),
-                                    child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                  );
-                                },
-                              )
-                            : CircleAvatar(
-                                backgroundColor: const Color(0xFFFFD5DC),
-                                child: Text(
-                                  _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U',
-                                  style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+                  // Current User Avatar & Info (clickable to Settings)
+                  GestureDetector(
+                    onTap: () => context.go('/settings'),
+                    behavior: HitTestBehavior.opaque,
+                    child: MouseRegion(
+                      cursor: SystemMouseCursors.click,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ClipOval(
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: _isLoadingProfile
+                                ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
+                                : _displayAvatar != null
+                                    ? Image.network(
+                                        _displayAvatar!,
+                                        fit: BoxFit.cover,
+                                        errorBuilder: (_, _, _) {
+                                          final initial = _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U';
+                                          return CircleAvatar(
+                                            backgroundColor: const Color(0xFFFFD5DC),
+                                            child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                          );
+                                        },
+                                      )
+                                    : CircleAvatar(
+                                        backgroundColor: const Color(0xFFFFD5DC),
+                                        child: Text(
+                                          _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U',
+                                          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+                                        ),
+                                      ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _displayName,
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
                                 ),
                               ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _userProfile?.role ?? 'Student',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w400,
+                                  color: Colors.white70,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _displayName,
-                        style: GoogleFonts.inter(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _userProfile?.role ?? 'Student',
-                        style: GoogleFonts.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w400,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
                   ),
                   const Spacer(),
                   // Clean outline bell icon matching Figma
@@ -346,13 +358,20 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Featured Courses Horizontal List
                       SizedBox(
                         height: 135,
-                        child: ListView.builder(
+                        child: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: featuredCourses.length,
-                          itemBuilder: (context, i) => FeaturedCourseCard(
-                            course: featuredCourses[i],
-                            onTap: () {},
+                          child: Row(
+                            children: featuredCourses.map((course) {
+                              return FeaturedCourseCard(
+                                course: course,
+                                onTap: () {
+                                  context.go(
+                                    '/course-listing/${Uri.encodeComponent(course.subject)}',
+                                  );
+                                },
+                              );
+                            }).toList(),
                           ),
                         ),
                       ),

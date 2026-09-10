@@ -18,6 +18,7 @@ import 'screens/edit_profile_screen.dart';
 import 'screens/change_password_screen.dart';
 import 'screens/privacy_security_screen.dart';
 import 'screens/payment_methods_screen.dart';
+import 'screens/course_listing_screen.dart';
 import 'services/api_service.dart';
 
 void setupDeepLinkListener() {
@@ -145,6 +146,22 @@ final GoRouter router = GoRouter(
       pageBuilder: (c, s) {
         final id = s.pathParameters['id']!;
         return _instant(s, MentorProfileScreen(mentorId: id));
+      },
+    ),
+    GoRoute(
+      path: '/course-listing',
+      pageBuilder: (c, s) {
+        final rawSubject = s.uri.queryParameters['subject'] ?? 'Courses';
+        final subject = Uri.decodeComponent(rawSubject);
+        return _instant(s, CourseListingScreen(subject: subject));
+      },
+    ),
+    GoRoute(
+      path: '/course-listing/:subject',
+      pageBuilder: (c, s) {
+        final rawSubject = s.pathParameters['subject'] ?? 'Courses';
+        final subject = Uri.decodeComponent(rawSubject);
+        return _instant(s, CourseListingScreen(subject: subject));
       },
     ),
   ],
