@@ -110,8 +110,9 @@ class _CourseListingScreenState extends State<CourseListingScreen> {
   @override
   Widget build(BuildContext context) {
     final mentors = _filteredMentors;
-    final isRecommended = !mentors.any((m) =>
-        m.subject.toLowerCase().contains(widget.subject.toLowerCase()));
+    final isRecommended = !mentors.any(
+      (m) => m.subject.toLowerCase().contains(widget.subject.toLowerCase()),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -176,7 +177,9 @@ class _CourseListingScreenState extends State<CourseListingScreen> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 6),
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.accentBlue.withAlpha(50),
                       borderRadius: BorderRadius.circular(12),
@@ -187,8 +190,11 @@ class _CourseListingScreenState extends State<CourseListingScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.school_rounded,
-                            color: Colors.white, size: 14),
+                        const Icon(
+                          Icons.school_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
                         const SizedBox(width: 5),
                         Text(
                           '${mentors.length} listings',
@@ -247,8 +253,11 @@ class _CourseListingScreenState extends State<CourseListingScreen> {
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.info_outline_rounded,
-                                  color: Color(0xFF2563EB), size: 20),
+                              const Icon(
+                                Icons.info_outline_rounded,
+                                color: Color(0xFF2563EB),
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
