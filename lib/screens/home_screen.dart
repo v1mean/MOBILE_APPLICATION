@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import '../router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../models/mentor.dart';
@@ -38,21 +39,31 @@ class _HomeScreenState extends State<HomeScreen> {
           .select('*, Users(name, profile_image)')
           .limit(5);
           
-      if (mounted) {
+      if (mounted && data.isNotEmpty) {
         setState(() {
           _popularMentors = (data as List).map((e) => Mentor.fromJson(e)).toList();
           _isLoadingMentors = false;
         });
+        return;
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingMentors = false);
-      }
+      // Fall through to fallback
+    }
+
+    if (mounted) {
+      setState(() {
+        _popularMentors = defaultMentors;
+        _isLoadingMentors = false;
+      });
     }
   }
 
   Future<void> _fetchUserProfile() async {
     final session = JomnesDB.auth.currentSession;
+    // ignore: avoid_print
+    print('DEBUG session: ${session?.user.id} | email: ${session?.user.email}');
+    // ignore: avoid_print
+    print('DEBUG userMeta: ${JomnesDB.auth.currentUser?.userMetadata}');
     if (session == null) {
       if (mounted) setState(() => _isLoadingProfile = false);
       return;
@@ -63,7 +74,8 @@ class _HomeScreenState extends State<HomeScreen> {
           .select()
           .eq('user_id', session.user.id)
           .maybeSingle();
-      
+      // ignore: avoid_print
+      print('DEBUG Users row: $data');
       if (mounted) {
         setState(() {
           if (data != null) {
@@ -73,6 +85,8 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
+      // ignore: avoid_print
+      print('DEBUG Users fetch error: $e');
       if (mounted) {
         setState(() => _isLoadingProfile = false);
       }
@@ -90,10 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (metaName != null && metaName.toString().isNotEmpty) {
       return metaName.toString();
     }
-    return _isLoadingProfile ? 'Loading...' : 'Student';
+    return isGuestMode ? 'Guest' : (_isLoadingProfile ? 'Loading...' : 'Student');
   }
 
-  String get _displayAvatar {
+  String? get _displayAvatar {
     if (_userProfile?.profileImage != null && _userProfile!.profileImage.isNotEmpty) {
       return _userProfile!.profileImage;
     }
@@ -103,7 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
     if (metaAvatar != null && metaAvatar.isNotEmpty) {
       return metaAvatar;
     }
-    return currentUserMock.avatarUrl;
+    return null; // No avatar — show initial letter circle
   }
 
   void _onNavTap(int i) {
@@ -145,20 +159,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: SizedBox(
                       width: 48,
                       height: 48,
-                      child: _isLoadingProfile 
-                        ? const CircularProgressIndicator(color: AppColors.accentBlue)
-                        : Image.network(
-                            _displayAvatar,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, _, _) {
-                              final fallbackName = _displayName;
-                              final initial = fallbackName.isNotEmpty ? fallbackName[0].toUpperCase() : 'U';
-                              return CircleAvatar(
+                      child: _isLoadingProfile
+                        ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
+                        : _displayAvatar != null
+                            ? Image.network(
+                                _displayAvatar!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) {
+                                  final initial = _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U';
+                                  return CircleAvatar(
+                                    backgroundColor: const Color(0xFFFFD5DC),
+                                    child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                  );
+                                },
+                              )
+                            : CircleAvatar(
                                 backgroundColor: const Color(0xFFFFD5DC),
-                                child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                              );
-                            },
-                          ),
+                                child: Text(
+                                  _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U',
+                                  style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+                                ),
+                              ),
                     ),
                   ),
                   const SizedBox(width: 14),

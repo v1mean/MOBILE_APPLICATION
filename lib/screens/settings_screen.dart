@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import '../main.dart';
+import '../models/user_profile.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../theme/app_colors.dart';
 import '../services/auth_service.dart';
@@ -19,6 +21,55 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _emailUpdates = false;
   bool _darkMode = false;
   String _selectedLanguage = 'English';
+  UserProfile? _userProfile;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) return;
+    try {
+      final data = await JomnesDB.from('Users')
+          .select()
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+      if (mounted && data != null) {
+        setState(() {
+          _userProfile = UserProfile.fromJson(data);
+        });
+      }
+    } catch (_) {}
+  }
+
+  String get _displayName {
+    if (_userProfile?.name.isNotEmpty == true) return _userProfile!.name;
+    final user = JomnesDB.auth.currentUser;
+    return user?.userMetadata?['full_name'] ??
+        user?.userMetadata?['name'] ??
+        user?.email?.split('@').first ??
+        'Student';
+  }
+
+  String get _displayEmail {
+    if (_userProfile?.email.isNotEmpty == true) return _userProfile!.email;
+    return JomnesDB.auth.currentUser?.email ?? '';
+  }
+
+  String get _displayRole {
+    if (_userProfile?.role.isNotEmpty == true) return _userProfile!.role;
+    return 'Student';
+  }
+
+  String? get _avatarUrl {
+    if (_userProfile?.profileImage.isNotEmpty == true) return _userProfile!.profileImage;
+    final user = JomnesDB.auth.currentUser;
+    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+    return pic is String && pic.isNotEmpty ? pic : null;
+  }
 
   void _onNavTap(int i) {
     if (i == _navIndex) return;
@@ -36,44 +87,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
-          // Dark header
+          // Top bar
           SafeArea(
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 44, height: 44,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.accentBlue, width: 2),
-                    ),
-                    child: ClipOval(
-                      child: Image.network(
-                        'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => const ColoredBox(
-                          color: AppColors.tagPurple,
-                          child: Center(child: Text('J', style: TextStyle(fontWeight: FontWeight.w700))),
-                        ),
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+              child: Builder(builder: (context) {
+                final name = _displayName;
+                final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+                final avatar = _avatarUrl;
+                return Row(
+                  children: [
+                    ClipOval(
+                      child: SizedBox(
+                        width: 48,
+                        height: 48,
+                        child: avatar != null
+                            ? Image.network(
+                                avatar,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => CircleAvatar(
+                                  backgroundColor: const Color(0xFFFFD5DC),
+                                  child: Text(initial,
+                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                ),
+                              )
+                            : CircleAvatar(
+                                backgroundColor: const Color(0xFFFFD5DC),
+                                child: Text(initial,
+                                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                              ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Jessica Carl',
-                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.white)),
-                      Text('Student',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textWhite70)),
-                    ],
-                  ),
-                  const Spacer(),
-                  const Icon(Icons.settings_rounded, color: AppColors.white, size: 26),
-                ],
-              ),
+                    const SizedBox(width: 14),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          name,
+                          style: GoogleFonts.inter(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _displayRole,
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w400,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              }),
             ),
           ),
           // White card body
@@ -119,25 +190,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.person_outline_rounded,
                             iconColor: AppColors.accentBlue,
                             title: 'Edit Profile',
-                            onTap: () {},
+                            onTap: () async {
+                              await context.push('/edit-profile');
+                              _fetchUserProfile();
+                            },
                           ),
                           _SettingsTile(
                             icon: Icons.lock_outline_rounded,
                             iconColor: const Color(0xFF8B5CF6),
                             title: 'Change Password',
-                            onTap: () {},
+                            onTap: () => context.push('/change-password'),
                           ),
                           _SettingsTile(
                             icon: Icons.shield_outlined,
                             iconColor: const Color(0xFF10B981),
                             title: 'Privacy & Security',
-                            onTap: () {},
+                            onTap: () => context.push('/privacy-security'),
                           ),
                           _SettingsTile(
                             icon: Icons.payment_rounded,
                             iconColor: const Color(0xFFF59E0B),
                             title: 'Payment Methods',
-                            onTap: () {},
+                            onTap: () => context.push('/payment-methods'),
                             isLast: true,
                           ),
                         ],
@@ -265,10 +339,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileCard(BuildContext context) {
+    final name = _displayName;
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final avatar = _avatarUrl;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
-        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
             colors: [AppColors.accentBlue, Color(0xFF6366F1)],
@@ -284,55 +360,77 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        child: Row(
-          children: [
-            ClipOval(
-              child: Container(
-                width: 60, height: 60,
-                color: Colors.white24,
-                child: Image.network(
-                  'https://api.dicebear.com/9.x/avataaars/png?seed=Jessica&backgroundColor=ffd5dc',
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => const Center(
-                    child: Text('J', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.white)),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () async {
+              await context.push('/edit-profile');
+              _fetchUserProfile();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
                 children: [
-                  Text('Jessica Carl',
-                      style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                  Text('jessica@jomnes.com',
-                      style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
-                  const SizedBox(height: 6),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                    decoration: BoxDecoration(
+                  ClipOval(
+                    child: Container(
+                      width: 60, height: 60,
                       color: Colors.white24,
-                      borderRadius: BorderRadius.circular(20),
+                      child: avatar != null
+                          ? Image.network(
+                              avatar,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, _, _) => CircleAvatar(
+                                backgroundColor: const Color(0xFFFFD5DC),
+                                child: Text(initial,
+                                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
+                              ),
+                            )
+                          : CircleAvatar(
+                              backgroundColor: const Color(0xFFFFD5DC),
+                              child: Text(initial,
+                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
+                            ),
                     ),
-                    child: Text('Student',
-                        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(name,
+                            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                        Text(_displayEmail,
+                            style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: Colors.white24,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(_displayRole,
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  MouseRegion(
+                    cursor: SystemMouseCursors.click,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
+                    ),
                   ),
                 ],
               ),
             ),
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.edit_rounded, color: Colors.white, size: 18),
-              ),
-            ),
-          ],
+          ),
         ),
       ).animate().fadeIn().slideY(begin: 0.2),
     );
@@ -368,7 +466,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ],
         ),
-        child: Column(children: items),
+        clipBehavior: Clip.antiAlias,
+        child: Material(
+          color: Colors.transparent,
+          child: Column(children: items),
+        ),
       ).animate(delay: delay.ms).fadeIn().slideY(begin: 0.1),
     );
   }
@@ -494,17 +596,20 @@ class _SettingsTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(isLast ? 0 : 0).copyWith(
-            bottomLeft: isLast ? const Radius.circular(20) : Radius.zero,
-            bottomRight: isLast ? const Radius.circular(20) : Radius.zero,
-            topLeft: Radius.zero,
-            topRight: Radius.zero,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            mouseCursor: onTap != null ? SystemMouseCursors.click : SystemMouseCursors.basic,
+            borderRadius: BorderRadius.circular(isLast ? 0 : 0).copyWith(
+              bottomLeft: isLast ? const Radius.circular(20) : Radius.zero,
+              bottomRight: isLast ? const Radius.circular(20) : Radius.zero,
+              topLeft: Radius.zero,
+              topRight: Radius.zero,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
               children: [
                 // Icon container
                 Container(
@@ -547,7 +652,8 @@ class _SettingsTile extends StatelessWidget {
             ),
           ),
         ),
-        if (!isLast)
+      ),
+      if (!isLast)
           const Divider(height: 1, indent: 68, endIndent: 16, color: AppColors.border),
       ],
     );

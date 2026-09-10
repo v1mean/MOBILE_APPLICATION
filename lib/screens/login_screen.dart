@@ -9,6 +9,7 @@ import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../main.dart';
+import '../router.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool passwordResetSuccess;
@@ -344,7 +345,45 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ).animate(delay: 450.ms).fadeIn(),
-                        const SizedBox(height: 40),
+                        const SizedBox(height: 24),
+                        GestureDetector(
+                          onTap: () {
+                            isGuestMode = true;
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 10,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.darkCard.withValues(alpha: 0.6),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(
+                                color: AppColors.darkBorder.withValues(alpha: 0.5),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  'Continue as guest',
+                                  style: GoogleFonts.inter(
+                                    color: AppColors.textWhite70,
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                const Icon(
+                                  Icons.arrow_forward_rounded,
+                                  color: AppColors.textWhite70,
+                                  size: 14,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ).animate(delay: 500.ms).fadeIn(),
+                        const SizedBox(height: 32),
                       ],
                     ),
                   ),

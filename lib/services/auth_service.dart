@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
+import '../router.dart';
 import 'api_service.dart';
 
 const String _googleWebClientId =
@@ -135,6 +136,7 @@ class AuthService {
   }
 
   Future<void> signOut() async {
+    isGuestMode = false;
     try {
       if (!kIsWeb) {
         final GoogleSignIn googleSignIn = GoogleSignIn();
@@ -144,5 +146,9 @@ class AuthService {
     } catch (_) {
     }
     await supabase.auth.signOut();
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    await supabase.auth.updateUser(UserAttributes(password: newPassword));
   }
 }

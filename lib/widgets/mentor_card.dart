@@ -46,6 +46,15 @@ class MentorCard extends StatelessWidget {
                   errorBuilder: (_, _, _) => Image.network(
                     mentor.avatarUrl,
                     fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      color: const Color(0xFFFFD5DC),
+                      child: Center(
+                        child: Text(
+                          mentor.name.isNotEmpty ? mentor.name[0] : 'M',
+                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: Colors.black),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -141,6 +150,15 @@ class MentorCardWithButton extends StatelessWidget {
                 errorBuilder: (_, _, _) => Image.network(
                   mentor.avatarUrl,
                   fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    color: const Color(0xFFFFD5DC),
+                    child: Center(
+                      child: Text(
+                        mentor.name.isNotEmpty ? mentor.name[0] : 'M',
+                        style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w700, color: Colors.black),
+                      ),
+                    ),
+                  ),
                 ),
               ),
             ),

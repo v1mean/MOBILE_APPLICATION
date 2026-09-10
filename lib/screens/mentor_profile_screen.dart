@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../models/mentor.dart';
 import '../widgets/course_card.dart';
+import '../data/mock_data.dart';
 import '../main.dart';
 
 class MentorProfileScreen extends StatefulWidget {
@@ -32,15 +33,25 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
       final data = await JomnesDB.from('tutor_profiles')
           .select('*, Users(name, profile_image)')
           .eq('tutor_id', widget.mentorId)
-          .single();
-      if (mounted) {
+          .maybeSingle();
+      if (mounted && data != null) {
         setState(() {
           _mentor = Mentor.fromJson(data);
           _isLoading = false;
         });
+        return;
       }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+    } catch (_) {}
+
+    if (mounted) {
+      final fallback = defaultMentors.firstWhere(
+        (m) => m.id == widget.mentorId,
+        orElse: () => defaultMentors.first,
+      );
+      setState(() {
+        _mentor = fallback;
+        _isLoading = false;
+      });
     }
   }
 

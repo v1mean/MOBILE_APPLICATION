@@ -1,6 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import '../main.dart';
+import '../models/user_profile.dart';
 import '../data/mock_data.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
@@ -15,6 +17,57 @@ class MyCoursesScreen extends StatefulWidget {
 
 class _MyCoursesScreenState extends State<MyCoursesScreen> {
   int _navIndex = 2;
+  UserProfile? _userProfile;
+  bool _isLoadingProfile = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) {
+      if (mounted) setState(() => _isLoadingProfile = false);
+      return;
+    }
+    try {
+      final data = await JomnesDB.from('Users')
+          .select()
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+      if (mounted) {
+        setState(() {
+          if (data != null) _userProfile = UserProfile.fromJson(data);
+          _isLoadingProfile = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingProfile = false);
+    }
+  }
+
+  String get _displayName {
+    if (_userProfile?.name.isNotEmpty == true) return _userProfile!.name;
+    final user = JomnesDB.auth.currentUser;
+    return user?.userMetadata?['full_name'] ??
+        user?.userMetadata?['name'] ??
+        user?.email?.split('@').first ??
+        'Student';
+  }
+
+  String get _displayRole {
+    if (_userProfile?.role.isNotEmpty == true) return _userProfile!.role;
+    return 'Student';
+  }
+
+  String? get _avatarUrl {
+    if (_userProfile?.profileImage.isNotEmpty == true) return _userProfile!.profileImage;
+    final user = JomnesDB.auth.currentUser;
+    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+    return pic is String && pic.isNotEmpty ? pic : null;
+  }
 
   void _onNavTap(int i) {
     if (i == _navIndex) return;
@@ -30,6 +83,10 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final name = _displayName;
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final avatar = _avatarUrl;
+
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: Column(
@@ -45,10 +102,23 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                     child: SizedBox(
                       width: 48,
                       height: 48,
-                      child: Image.asset(
-                        'assets/images/jessica_avatar.png',
-                        fit: BoxFit.cover,
-                      ),
+                      child: _isLoadingProfile
+                          ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
+                          : avatar != null
+                              ? Image.network(
+                                  avatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => CircleAvatar(
+                                    backgroundColor: const Color(0xFFFFD5DC),
+                                    child: Text(initial,
+                                        style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  backgroundColor: const Color(0xFFFFD5DC),
+                                  child: Text(initial,
+                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -56,12 +126,12 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Jessica Carl',
+                        name,
                         style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Student',
+                        _displayRole,
                         style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
                       ),
                     ],

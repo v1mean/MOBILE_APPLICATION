@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="app_name">Jomnes</string>
     <string name="facebook_app_id">2172302643350758</string>
     <string name="facebook_client_token">c2d86faa242f92e98f87aae8094de1ba</string>
     <string name="fb_login_protocol_scheme">fb2172302643350758</string>

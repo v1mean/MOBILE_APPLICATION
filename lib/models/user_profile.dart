@@ -21,14 +21,16 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      userId: json['user_id'] as String,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      role: json['role'] as String,
-      profileImage: json['profile_image'] as String,
-      location: json['location'] as String,
+      userId: (json['user_id'] as String?) ?? '',
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'] as String) ?? DateTime.now()
+          : DateTime.now(),
+      name: (json['name'] as String?) ?? '',
+      email: (json['email'] as String?) ?? '',
+      phone: (json['phone'] as String?) ?? '',
+      role: (json['role'] as String?) ?? 'Student',
+      profileImage: (json['profile_image'] as String?) ?? '',
+      location: (json['location'] as String?) ?? '',
     );
   }
 
@@ -45,3 +47,4 @@ class UserProfile {
     };
   }
 }
+
