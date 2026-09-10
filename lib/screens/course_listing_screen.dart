@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../models/mentor.dart';
 import '../widgets/mentor_card.dart';
-import '../data/mock_data.dart';
 import '../main.dart';
 
 class CourseListingScreen extends StatefulWidget {
@@ -27,24 +26,63 @@ class _CourseListingScreenState extends State<CourseListingScreen> {
     _fetchMentors();
   }
 
+  @override
+  void reassemble() {
+    super.reassemble();
+    _fetchMentors();
+  }
+
   Future<void> _fetchMentors() async {
     try {
-      final data = await JomnesDB.from('tutor_profiles')
-          .select('*, Users(name, profile_image)');
-      if (mounted && data.isNotEmpty) {
+      final usersData = await JomnesDB.from('Users')
+          .select()
+          .eq('role', 'mentor');
+
+      final userList = usersData as List;
+      final tutorIds = userList.map((u) => u['user_id']).toList();
+
+      List<dynamic> profiles = [];
+      if (tutorIds.isNotEmpty) {
+        profiles = await JomnesDB.from('tutor_profiles')
+            .select()
+            .filter('tutor_id', 'in', tutorIds) as List;
+      }
+      final profileMap = {for (var p in profiles) p['tutor_id'].toString(): p};
+
+      final mentors = userList.map((u) {
+        final uid = u['user_id'].toString();
+        final p = profileMap[uid] ?? {};
+        return Mentor(
+          id: uid,
+          name: u['name'] ?? 'Mentor',
+          subject: 'General',
+          experience: '${p['experience_years'] ?? 5} years experience',
+          timeSlot: 'Flexible',
+          avatarUrl: (u['profile_image'] != null && u['profile_image'].toString().isNotEmpty)
+              ? u['profile_image']
+              : 'https://api.dicebear.com/9.x/avataaars/png?seed=$uid',
+          rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
+          students: (p['total_students'] as num?)?.toInt() ?? 120,
+          classes: 50,
+          followers: 300,
+          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 250.0,
+          bio: p['bio'] ?? 'Experienced mentor.',
+          courses: [],
+        );
+      }).toList();
+
+      if (mounted) {
         setState(() {
-          _allMentors = (data as List).map((e) => Mentor.fromJson(e)).toList();
+          _allMentors = mentors;
           _isLoading = false;
         });
-        return;
       }
-    } catch (_) {}
-
-    if (mounted) {
-      setState(() {
-        _allMentors = defaultMentors;
-        _isLoading = false;
-      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
