@@ -45,7 +45,7 @@ class Mentor {
       followers: 300,
       bookingPrice: (json['hourly_rate'] as num?)?.toDouble() ?? 0.0,
       bio: json['bio'] as String? ?? 'No bio provided.',
-      courses: [], // Mock courses handled separately
+      courses: (users['courses'] as List<dynamic>?)?.map((e) => Course.fromJson(e)).toList() ?? [],
     );
   }
 }
@@ -74,6 +74,21 @@ class Course {
     this.progress,
     this.cardColor = 'pink',
   });
+
+  factory Course.fromJson(Map<String, dynamic> json) {
+    return Course(
+      id: json['id'] as int? ?? 0,
+      title: json['title'] as String? ?? 'Untitled Course',
+      description: json['description'] as String? ?? '',
+      rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+      durationHours: json['duration_hours'] as int? ?? 0,
+      isFavorited: json['is_favorited'] as bool? ?? false,
+      isLive: json['is_live'] as bool? ?? false,
+      minutesRemaining: json['minutes_remaining'] as int?,
+      progress: (json['progress'] as num?)?.toDouble(),
+      cardColor: json['card_color'] as String? ?? 'pink',
+    );
+  }
 }
 
 class FeaturedCourse {
@@ -90,4 +105,15 @@ class FeaturedCourse {
     required this.cardColor,
     required this.imageUrl,
   });
+
+  factory FeaturedCourse.fromJson(Map<String, dynamic> json) {
+    final users = json['Users'] as Map<String, dynamic>? ?? {};
+    return FeaturedCourse(
+      id: json['id'] as int? ?? 0,
+      mentorName: users['name'] as String? ?? 'Unknown Mentor',
+      subject: 'General', // Subject would need a different mapping or join if required
+      cardColor: json['card_color'] as String? ?? 'orange',
+      imageUrl: json['image_url'] as String? ?? 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=200&q=80',
+    );
+  }
 }

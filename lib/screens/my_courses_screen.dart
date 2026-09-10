@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
-import '../data/mock_data.dart';
+import '../models/mentor.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
 import '../theme/app_colors.dart';
@@ -19,11 +19,22 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   int _navIndex = 2;
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
+  
+  List<Course> _myCourses = [];
+  bool _isLoadingCourses = true;
 
   @override
   void initState() {
     super.initState();
     _fetchUserProfile();
+    _fetchMyCourses();
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    _fetchUserProfile();
+    _fetchMyCourses();
   }
 
   Future<void> _fetchUserProfile() async {
@@ -45,6 +56,28 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
       }
     } catch (_) {
       if (mounted) setState(() => _isLoadingProfile = false);
+    }
+  }
+
+  Future<void> _fetchMyCourses() async {
+    try {
+      final data = await JomnesDB.from('courses')
+          .select()
+          .eq('is_featured', false)
+          .limit(3);
+          
+      if (mounted) {
+        setState(() {
+          _myCourses = (data as List).map((e) => Course.fromJson(e)).toList();
+          _isLoadingCourses = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCourses = false;
+        });
+      }
     }
   }
 
@@ -173,9 +206,18 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 24),
-                  child: Column(
+                child: RefreshIndicator(
+                  color: AppColors.accentBlue,
+                  onRefresh: () async {
+                    await Future.wait([
+                      _fetchUserProfile(),
+                      _fetchMyCourses(),
+                    ]);
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 22),
@@ -192,15 +234,27 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      ...sampleCourses.map((c) => CourseCard(course: c)),
+                      if (_isLoadingCourses)
+                        const Center(child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: CircularProgressIndicator(color: AppColors.accentBlue),
+                        ))
+                      else if (_myCourses.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text('You have not enrolled in any courses yet.', style: GoogleFonts.inter(color: Colors.grey)),
+                        )
+                      else
+                        ..._myCourses.map((c) => CourseCard(course: c)),
                     ],
                   ),
                 ),
               ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    ),
       bottomNavigationBar: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
     );
   }

@@ -5,7 +5,6 @@ import '../router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../models/mentor.dart';
-import '../data/mock_data.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/featured_course_card.dart';
@@ -25,36 +24,104 @@ class _HomeScreenState extends State<HomeScreen> {
   
   List<Mentor> _popularMentors = [];
   bool _isLoadingMentors = true;
+  
+  List<FeaturedCourse> _featuredCourses = [];
+  bool _isLoadingFeatured = true;
 
   @override
   void initState() {
     super.initState();
     _fetchUserProfile();
     _fetchPopularMentors();
+    _fetchFeaturedCourses();
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    _fetchUserProfile();
+    _fetchPopularMentors();
+    _fetchFeaturedCourses();
   }
 
   Future<void> _fetchPopularMentors() async {
     try {
-      final data = await JomnesDB.from('tutor_profiles')
-          .select('*, Users(name, profile_image)')
+      final usersData = await JomnesDB.from('Users')
+          .select()
+          .eq('role', 'mentor')
           .limit(5);
-          
-      if (mounted && data.isNotEmpty) {
+
+      final userList = usersData as List;
+      final tutorIds = userList.map((u) => u['user_id']).toList();
+
+      List<dynamic> profiles = [];
+      if (tutorIds.isNotEmpty) {
+        profiles = await JomnesDB.from('tutor_profiles')
+            .select()
+            .filter('tutor_id', 'in', tutorIds) as List;
+      }
+      final profileMap = {for (var p in profiles) p['tutor_id'].toString(): p};
+
+      final mentors = userList.map((u) {
+        final uid = u['user_id'].toString();
+        final p = profileMap[uid] ?? {};
+        return Mentor(
+          id: uid,
+          name: u['name'] ?? 'Mentor',
+          subject: 'General',
+          experience: '${p['experience_years'] ?? 5} years experience',
+          timeSlot: 'Flexible',
+          avatarUrl: (u['profile_image'] != null && u['profile_image'].toString().isNotEmpty)
+              ? u['profile_image']
+              : 'https://api.dicebear.com/9.x/avataaars/png?seed=$uid',
+          rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
+          students: (p['total_students'] as num?)?.toInt() ?? 120,
+          classes: 50,
+          followers: 300,
+          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 250.0,
+          bio: p['bio'] ?? 'Experienced mentor.',
+          courses: [],
+        );
+      }).toList();
+
+      if (mounted) {
         setState(() {
-          _popularMentors = (data as List).map((e) => Mentor.fromJson(e)).toList();
+          _popularMentors = mentors;
           _isLoadingMentors = false;
         });
-        return;
       }
-    } catch (e) {
-      // Fall through to fallback
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('ERROR fetching mentors: $e\n$st');
+      if (mounted) {
+        setState(() {
+          _isLoadingMentors = false;
+        });
+      }
     }
+  }
 
-    if (mounted) {
-      setState(() {
-        _popularMentors = defaultMentors;
-        _isLoadingMentors = false;
-      });
+  Future<void> _fetchFeaturedCourses() async {
+    try {
+      final data = await JomnesDB.from('courses')
+          .select('*, Users!inner(name)')
+          .eq('is_featured', true)
+          .limit(5);
+          
+      if (mounted) {
+        setState(() {
+          _featuredCourses = (data as List).map((e) => FeaturedCourse.fromJson(e)).toList();
+          _isLoadingFeatured = false;
+        });
+      }
+    } catch (e, st) {
+      // ignore: avoid_print
+      print('ERROR fetching featured courses: $e\n$st');
+      if (mounted) {
+        setState(() {
+          _isLoadingFeatured = false;
+        });
+      }
     }
   }
 
@@ -246,9 +313,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
                 ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(bottom: 20),
-                  child: Column(
+                child: RefreshIndicator(
+                  color: AppColors.accentBlue,
+                  onRefresh: () async {
+                    await Future.wait([
+                      _fetchUserProfile(),
+                      _fetchPopularMentors(),
+                      _fetchFeaturedCourses(),
+                    ]);
+                  },
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 20),
+                    child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 18),
@@ -356,25 +433,33 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 14),
                       // Featured Courses Horizontal List
-                      SizedBox(
-                        height: 135,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: featuredCourses.map((course) {
-                              return FeaturedCourseCard(
-                                course: course,
-                                onTap: () {
-                                  context.go(
-                                    '/course-listing/${Uri.encodeComponent(course.subject)}',
-                                  );
-                                },
-                              );
-                            }).toList(),
+                      if (_isLoadingFeatured)
+                        const Center(child: Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: CircularProgressIndicator(color: AppColors.accentBlue),
+                        ))
+                      else if (_featuredCourses.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: Text('No featured courses available yet.', style: GoogleFonts.inter(color: Colors.grey)),
+                        )
+                      else
+                        SizedBox(
+                          height: 135,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _featuredCourses.length,
+                            itemBuilder: (context, i) => FeaturedCourseCard(
+                              course: _featuredCourses[i],
+                              onTap: () {
+                                context.go(
+                                  '/course-listing/${Uri.encodeComponent(_featuredCourses[i].subject)}',
+                                );
+                              },
+                            ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: 24),
                       // Popular Mentors Header
                       Padding(
@@ -411,7 +496,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
           ),
-        ],
+        ),
+      ],
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _navIndex,

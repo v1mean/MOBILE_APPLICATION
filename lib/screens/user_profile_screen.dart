@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
-import '../data/mock_data.dart';
+import '../models/mentor.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
 
@@ -19,10 +19,14 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
 
+  List<Course> _myCourses = [];
+  bool _isLoadingCourses = true;
+
   @override
   void initState() {
     super.initState();
     _fetchUserProfile();
+    _fetchMyCourses();
   }
 
   Future<void> _fetchUserProfile() async {
@@ -44,6 +48,28 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       }
     } catch (_) {
       if (mounted) setState(() => _isLoadingProfile = false);
+    }
+  }
+
+  Future<void> _fetchMyCourses() async {
+    try {
+      final data = await JomnesDB.from('courses')
+          .select()
+          .eq('is_featured', false)
+          .limit(3);
+          
+      if (mounted) {
+        setState(() {
+          _myCourses = (data as List).map((e) => Course.fromJson(e)).toList();
+          _isLoadingCourses = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingCourses = false;
+        });
+      }
     }
   }
 
@@ -195,7 +221,18 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   ),
                   const SizedBox(height: 20),
                   // Course Cards
-                  ...sampleCourses.map((c) => CourseCard(course: c)),
+                  if (_isLoadingCourses)
+                    const Center(child: Padding(
+                      padding: EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
+                    ))
+                  else if (_myCourses.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text('No courses enrolled.', style: GoogleFonts.inter(color: Colors.grey)),
+                    )
+                  else
+                    ..._myCourses.map((c) => CourseCard(course: c)),
                   const SizedBox(height: 20),
                 ],
               ),

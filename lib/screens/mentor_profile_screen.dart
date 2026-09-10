@@ -3,7 +3,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../models/mentor.dart';
 import '../widgets/course_card.dart';
-import '../data/mock_data.dart';
 import '../main.dart';
 
 class MentorProfileScreen extends StatefulWidget {
@@ -30,28 +29,51 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
 
   Future<void> _fetchMentor() async {
     try {
-      final data = await JomnesDB.from('tutor_profiles')
-          .select('*, Users(name, profile_image)')
+      final user = await JomnesDB.from('Users')
+          .select()
+          .eq('user_id', widget.mentorId)
+          .maybeSingle();
+
+      final profile = await JomnesDB.from('tutor_profiles')
+          .select()
           .eq('tutor_id', widget.mentorId)
           .maybeSingle();
-      if (mounted && data != null) {
+
+      final coursesData = await JomnesDB.from('courses')
+          .select()
+          .eq('tutor_id', widget.mentorId);
+
+      final coursesList = (coursesData as List).map((c) => Course.fromJson(c)).toList();
+
+      if (mounted && user != null) {
+        final p = profile ?? {};
         setState(() {
-          _mentor = Mentor.fromJson(data);
+          _mentor = Mentor(
+            id: widget.mentorId,
+            name: user['name'] ?? 'Mentor',
+            subject: 'General',
+            experience: '${p['experience_years'] ?? 5} years experience',
+            timeSlot: 'Flexible',
+            avatarUrl: (user['profile_image'] != null && user['profile_image'].toString().isNotEmpty)
+                ? user['profile_image']
+                : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
+            rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
+            students: (p['total_students'] as num?)?.toInt() ?? 120,
+            classes: 50,
+            followers: 300,
+            bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 250.0,
+            bio: p['bio'] ?? 'Experienced mentor.',
+            courses: coursesList,
+          );
           _isLoading = false;
         });
-        return;
+      } else if (mounted) {
+        setState(() => _isLoading = false);
       }
-    } catch (_) {}
-
-    if (mounted) {
-      final fallback = defaultMentors.firstWhere(
-        (m) => m.id == widget.mentorId,
-        orElse: () => defaultMentors.first,
-      );
-      setState(() {
-        _mentor = fallback;
-        _isLoading = false;
-      });
+    } catch (e) {
+      // ignore: avoid_print
+      print('ERROR in _fetchMentor: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
