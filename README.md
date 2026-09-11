@@ -24,6 +24,11 @@
 
 ## ▶️ How to Run the Project
 
+> [!TIP]
+> **✅ Recommended Method: Run on a Physical Android Phone via USB**
+> Plug your Android phone into your PC with a USB cable, enable USB Debugging, and run `flutter run`.
+> This gives the most accurate, native app experience and is the fastest to set up compared to emulators.
+
 > **Prerequisites** — Make sure you have the following installed before running:
 > - [Flutter SDK 3.12+](https://docs.flutter.dev/get-started/install)
 > - [Dart SDK 3.0+](https://dart.dev/get-dart) *(bundled with Flutter)*
