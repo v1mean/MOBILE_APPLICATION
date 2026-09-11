@@ -74,6 +74,37 @@ Leave this terminal running, then open a new terminal for the Flutter commands b
 
 ---
 
+### 📲 Run on a Physical Android Phone (USB)
+
+**Step 1** — Enable Developer Mode on your phone:
+1. Go to **Settings → About Phone**
+2. Tap **Build Number** 7 times until you see *"You are now a developer"*
+3. Go to **Settings → Developer Options** → Enable **USB Debugging**
+
+**Step 2** — Connect your phone via USB cable, then verify Flutter detects it:
+
+```bash
+flutter devices
+```
+
+You should see your phone listed by model name.
+
+**Step 3** — Run the app on your phone:
+
+```bash
+flutter run
+```
+
+If multiple devices are connected, specify the device ID:
+
+```bash
+flutter run -d <your-device-id>
+```
+
+Replace `<your-device-id>` with the ID shown by `flutter devices` (e.g. `R3CN90ABCDE`).
+
+---
+
 ### 🌐 Run on Chrome (Web)
 
 This is the fastest way to preview the app in a browser:
@@ -122,37 +153,6 @@ Or simply run `flutter run` — if only one emulator is running, Flutter picks i
 ```bash
 flutter run
 ```
-
----
-
-### 📲 Run on a Physical Android Phone (USB)
-
-**Step 1** — Enable Developer Mode on your phone:
-1. Go to **Settings → About Phone**
-2. Tap **Build Number** 7 times until you see *"You are now a developer"*
-3. Go to **Settings → Developer Options** → Enable **USB Debugging**
-
-**Step 2** — Connect your phone via USB cable, then verify Flutter detects it:
-
-```bash
-flutter devices
-```
-
-You should see your phone listed by model name.
-
-**Step 3** — Run the app on your phone:
-
-```bash
-flutter run
-```
-
-If multiple devices are connected, specify the device ID:
-
-```bash
-flutter run -d <your-device-id>
-```
-
-Replace `<your-device-id>` with the ID shown by `flutter devices` (e.g. `R3CN90ABCDE`).
 
 ---
 
