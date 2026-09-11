@@ -10,6 +10,7 @@
 ---
 
 ## 📑 Table of Contents
+- [▶️ How to Run the Project](#️-how-to-run-the-project)
 - [✨ Key Features & Implemented Screens](#-key-features--implemented-screens)
 - [🛠️ Tech Stack & Dependencies](#️-tech-stack--dependencies)
 - [📂 Project Directory Structure](#-project-directory-structure)
@@ -18,6 +19,150 @@
 - [🗺️ Routing & Navigation Matrix](#️-routing--navigation-matrix)
 - [🔮 Supabase & Backend Roadmap](#-supabase--backend-roadmap)
 - [📚 Additional Documentation](#-additional-documentation)
+
+---
+
+## ▶️ How to Run the Project
+
+> **Prerequisites** — Make sure you have the following installed before running:
+> - [Flutter SDK 3.12+](https://docs.flutter.dev/get-started/install)
+> - [Dart SDK 3.0+](https://dart.dev/get-dart) *(bundled with Flutter)*
+> - [Android Studio](https://developer.android.com/studio) *(for emulator or USB device)*
+> - [Google Chrome](https://www.google.com/chrome/) *(for web)*
+> - [Node.js 18+](https://nodejs.org/) *(for the backend server)*
+
+### Step 1 — Install Flutter Dependencies
+
+Run this once after cloning the project:
+
+```bash
+cd MOBILE_APPLICATION
+flutter pub get
+```
+
+### Step 2 — Set Up Environment Variables
+
+Copy the example `.env` file and fill in your Supabase credentials:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and set your values:
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
+
+### Step 3 — Start the Backend Server
+
+The app requires the Node.js backend to be running for API calls:
+
+```bash
+cd backend
+npm install       # only needed the first time
+npm start         # starts the server on http://localhost:5005
+```
+
+Leave this terminal running, then open a new terminal for the Flutter commands below.
+
+---
+
+### 🌐 Run on Chrome (Web)
+
+This is the fastest way to preview the app in a browser:
+
+```bash
+flutter run -d chrome
+```
+
+- Chrome will **open automatically** with the app running.
+- The app URL will be a random `localhost` port (e.g. `http://localhost:54667`).
+- Use **`r`** in the terminal for hot reload, **`R`** for hot restart.
+
+To run on a **fixed port** (useful for sharing with teammates):
+
+```bash
+flutter run -d web-server --web-port 8080 --web-hostname localhost
+```
+
+Then open [http://localhost:8080](http://localhost:8080) manually in Chrome.
+
+---
+
+### 📱 Run on Android Studio (Emulator)
+
+**Step 1** — Open Android Studio and create an emulator:
+1. Go to **Device Manager** → **Create Device**
+2. Choose a phone profile (e.g. *Pixel 6*) → Select a system image (API 33+)
+3. Click **Finish**, then **▶ Launch** the emulator
+
+**Step 2** — Verify Flutter can detect the emulator:
+
+```bash
+flutter devices
+```
+
+You should see your emulator listed (e.g. `sdk gphone64 x86 64 • emulator-5554`).
+
+**Step 3** — Run the app on the emulator:
+
+```bash
+flutter run -d emulator-5554
+```
+
+Or simply run `flutter run` — if only one emulator is running, Flutter picks it automatically:
+
+```bash
+flutter run
+```
+
+---
+
+### 📲 Run on a Physical Android Phone (USB)
+
+**Step 1** — Enable Developer Mode on your phone:
+1. Go to **Settings → About Phone**
+2. Tap **Build Number** 7 times until you see *"You are now a developer"*
+3. Go to **Settings → Developer Options** → Enable **USB Debugging**
+
+**Step 2** — Connect your phone via USB cable, then verify Flutter detects it:
+
+```bash
+flutter devices
+```
+
+You should see your phone listed by model name.
+
+**Step 3** — Run the app on your phone:
+
+```bash
+flutter run
+```
+
+If multiple devices are connected, specify the device ID:
+
+```bash
+flutter run -d <your-device-id>
+```
+
+Replace `<your-device-id>` with the ID shown by `flutter devices` (e.g. `R3CN90ABCDE`).
+
+---
+
+### 🛠️ Useful Flutter Commands
+
+| Command | Description |
+| :--- | :--- |
+| `flutter devices` | List all connected devices & emulators |
+| `flutter run` | Run on the default connected device |
+| `flutter run -d chrome` | Run on Chrome browser |
+| `flutter run -d emulator-5554` | Run on a specific emulator |
+| `flutter pub get` | Install/update dependencies |
+| `flutter clean` | Clear build cache (fixes most build errors) |
+| `flutter build apk` | Build release APK for Android |
+| `flutter analyze` | Run static code analysis |
 
 ---
 
@@ -121,38 +266,23 @@ MOBILE_APPLICATION/
 
 ## 🚀 Getting Started & Local Development
 
-### Prerequisites
-* Flutter SDK (3.12+ recommended)
-* Dart SDK (3.0+ recommended)
-* Google Chrome (for web testing) or Android / iOS Emulator / Windows Desktop
+See the [▶️ How to Run the Project](#️-how-to-run-the-project) section at the top for full setup and run instructions for Chrome, Android emulator, and physical devices.
 
-### Running the App
+### Quick Start Summary
 
-1. **Clone the repository & install dependencies**:
-   ```bash
-   flutter pub get
-   ```
+```bash
+# 1. Install dependencies
+flutter pub get
 
-2. **Run on Web Server**:
-   ```bash
-   flutter run -d web-server --web-port 8080 --web-hostname localhost
-   ```
-   Open [http://localhost:8080](http://localhost:8080) in your browser.
+# 2. Start backend (in a separate terminal)
+cd backend && npm start
 
-3. **Run on Chrome (Web)**:
-   ```bash
-   flutter run -d chrome
-   ```
+# 3. Run on Chrome
+flutter run -d chrome
 
-4. **Run on Windows Desktop**:
-   ```bash
-   flutter run -d windows
-   ```
-
-5. **Run on Connected Mobile Device / Emulator**:
-   ```bash
-   flutter run
-   ```
+# 4. Run on Android emulator or phone
+flutter run
+```
 
 ---
 
