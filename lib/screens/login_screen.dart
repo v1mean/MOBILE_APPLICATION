@@ -135,15 +135,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleFacebookLogin() async {
+    // ignore: avoid_print
+    print('>>> FB TAP: _handleFacebookLogin entered');
     setState(() => _isLoading = true);
     try {
       await _authService.signInWithFacebook();
-      // Native login completes inline
-      if (mounted) context.go('/home');
+      // ignore: avoid_print
+      print('>>> FB TAP: signInWithFacebook returned without throwing');
+      // Do NOT navigate here: signInWithOAuth only launches the browser and
+      // returns immediately, long before the user has logged in. Navigating
+      // now would hit the router's auth guard (no session yet) and bounce
+      // straight back to /login. The onAuthStateChange listener in router.dart
+      // handles the redirect to /home once the session actually lands.
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Facebook configuration error. Please check Bundle ID. ($e)')),
+          SnackBar(content: Text('Facebook Login failed: $e')),
         );
       }
     } finally {
