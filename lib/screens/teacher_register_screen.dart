@@ -20,32 +20,32 @@ class _DomeClipper extends CustomClipper<Path> {
   bool shouldReclip(_DomeClipper old) => false;
 }
 
-class TeacherLoginScreen extends StatefulWidget {
-  const TeacherLoginScreen({super.key});
+class TeacherRegisterScreen extends StatefulWidget {
+  const TeacherRegisterScreen({super.key});
   @override
-  State<TeacherLoginScreen> createState() => _TeacherLoginScreenState();
+  State<TeacherRegisterScreen> createState() => _TeacherRegisterScreenState();
 }
 
-class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
+class _TeacherRegisterScreenState extends State<TeacherRegisterScreen> {
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _rememberMe = false;
+  final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
-  bool _isLoading = false;
+  bool _obscureConfirm = true;
 
   @override
   void dispose() {
     _phoneController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     super.dispose();
   }
 
   List<Widget> _asterisks(double h) => [
     Positioned(left: 20, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 18))),
-    Positioned(right: 28, top: h * 0.46, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 16))),
-    Positioned(left: 60, top: h * 0.52, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
+    Positioned(right: 28, top: h * 0.5, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 16))),
     Positioned(left: 18, bottom: 60, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 18))),
-    Positioned(right: 22, bottom: 40, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 16))),
+    Positioned(right: 22, bottom: 40, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
   ];
 
   @override
@@ -74,10 +74,10 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                     children: [
                       const SparkleIcon().animate(delay: 50.ms).fadeIn(),
                       const SizedBox(height: 12),
-                      Text('Welcome Back', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
+                      Text('Welcome to Jomnes', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
                           .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 6),
-                      Text('Enter your detail below to log into\nyour account.',
+                      Text('Enter your detail below to register\nyour account.',
                           textAlign: TextAlign.center,
                           style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
                           .animate(delay: 150.ms).fadeIn(),
@@ -101,32 +101,22 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                         ),
                       ).animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          SizedBox(
-                            width: 20, height: 20,
-                            child: Checkbox(
-                              value: _rememberMe,
-                              onChanged: (v) => setState(() => _rememberMe = v ?? false),
-                              activeColor: AppColors.accentBlue,
-                              side: const BorderSide(color: AppColors.darkBorder),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text('Remember me', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13)),
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () => context.push('/teacher-forgot-password'),
-                            child: Text('Forgot password?', style: GoogleFonts.inter(color: AppColors.accentBlue, fontSize: 13, fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ).animate(delay: 300.ms).fadeIn(),
+                      DarkTextField(
+                        controller: _confirmPasswordController,
+                        hint: 'Confirm Password',
+                        icon: Icons.lock_outline_rounded,
+                        obscureText: _obscureConfirm,
+                        suffix: IconButton(
+                          icon: Icon(_obscureConfirm ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                              color: AppColors.textSecondary, size: 20),
+                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                        ),
+                      ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 28),
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : () => context.go('/teacher-home'),
+                          onPressed: () => context.go('/teacher-home'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.white,
                             foregroundColor: AppColors.darkBg,
@@ -134,18 +124,16 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             elevation: 0,
                           ),
-                          child: _isLoading
-                              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text('Log In', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                          child: Text('Register Account', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
                         ),
                       ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),
                       GestureDetector(
-                        onTap: () => context.push('/teacher-register'),
-                        child: Text('Register Account', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 14)),
+                        onTap: () => context.pop(),
+                        child: Text('Back to Log In', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 14)),
                       ).animate(delay: 380.ms).fadeIn(),
                       const SizedBox(height: 20),
-                      Text('or Log In With', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13))
+                      Text('Registered with', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13))
                           .animate(delay: 400.ms).fadeIn(),
                       const SizedBox(height: 16),
                       Row(
