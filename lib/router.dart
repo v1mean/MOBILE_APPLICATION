@@ -20,6 +20,8 @@ import 'screens/change_password_screen.dart';
 import 'screens/privacy_security_screen.dart';
 import 'screens/payment_methods_screen.dart';
 import 'screens/course_listing_screen.dart';
+import 'screens/role_selection_screen.dart';
+import 'screens/teacher_login_screen.dart';
 import 'services/api_service.dart';
 
 void setupDeepLinkListener() {
@@ -95,25 +97,32 @@ final GoRouter router = GoRouter(
     final isGoingToSplash = state.matchedLocation == '/';
     final isGoingToForgotPassword = state.matchedLocation == '/forgot-password';
     final isGoingToResetPassword = state.matchedLocation == '/reset-password';
+    final isGoingToRoleSelect = state.matchedLocation == '/role-select';
+    final isGoingToTeacherLogin = state.matchedLocation == '/teacher-login';
 
     final isAuthPage = isGoingToLogin ||
         isGoingToRegister ||
         isGoingToSplash ||
         isGoingToForgotPassword ||
-        isGoingToResetPassword;
+        isGoingToResetPassword ||
+        isGoingToRoleSelect ||
+        isGoingToTeacherLogin;
 
     // If unauthenticated (and not guest) and trying to access a protected route
     if (!loggedIn && !isAuthPage) {
       return '/login';
     }
     // If logged in (real session OR guest) and on an auth/splash page → go home
-    if (loggedIn && (isGoingToLogin || isGoingToRegister || isGoingToSplash)) {
+    if (loggedIn && (isGoingToLogin || isGoingToRegister || isGoingToSplash ||
+        isGoingToRoleSelect || isGoingToTeacherLogin)) {
       return '/home';
     }
     return null; // No redirection needed
   },
   routes: [
     GoRoute(path: '/', pageBuilder: (c, s) => _instant(s, const SplashScreen())),
+    GoRoute(path: '/role-select', pageBuilder: (c, s) => _instant(s, const RoleSelectionScreen())),
+    GoRoute(path: '/teacher-login', pageBuilder: (c, s) => _instant(s, const TeacherLoginScreen())),
     GoRoute(
       path: '/login',
       pageBuilder: (c, s) {
