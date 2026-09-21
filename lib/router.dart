@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -25,7 +26,11 @@ void setupDeepLinkListener() {
   Supabase.instance.client.auth.onAuthStateChange.listen((data) {
     final AuthChangeEvent event = data.event;
     final Session? session = data.session;
-    
+
+    log('DEBUG: onAuthStateChange fired — event=$event, hasSession=${session != null}');
+    // ignore: avoid_print
+    print('>>> AUTH EVENT: $event, hasSession=${session != null}');
+
     if (event == AuthChangeEvent.passwordRecovery && session != null) {
       router.go('/reset-password?access_token=${session.accessToken}');
     } else if (event == AuthChangeEvent.signedIn && session != null) {

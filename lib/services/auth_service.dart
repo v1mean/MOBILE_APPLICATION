@@ -99,38 +99,25 @@ class AuthService {
     }
   }
 
-  //Facebook Sign-In (Native SDK)
+  // ── Facebook Sign-In (Native SDK) ──────────────────────────────────────────
   Future<void> signInWithFacebook() async {
     try {
-      log('DEBUG: Initiating Facebook native sign-in');
-      
-      // Request Facebook login
-      final LoginResult result = await FacebookAuth.instance.login(
-        permissions: ['public_profile', 'email'],
-        loginBehavior: LoginBehavior.nativeWithFallback,
+      log('DEBUG: Initiating Facebook OAuth sign-in');
+      // ignore: avoid_print
+      print('>>> FB: calling signInWithOAuth, kIsWeb=$kIsWeb');
+      final bool launched = await supabase.auth.signInWithOAuth(
+        OAuthProvider.facebook,
+        redirectTo: kIsWeb ? Uri.base.origin : 'io.jomnes.app://login-callback',
       );
-
-      if (result.status == LoginStatus.success && result.accessToken != null) {
-        // Exchange Facebook access token with Supabase
-        final AuthResponse response = await supabase.auth.signInWithIdToken(
-          provider: OAuthProvider.facebook,
-          idToken: result.accessToken!.tokenString,
-        );
-        
-        log('DEBUG: Supabase Facebook login succeeded. UID: ${response.user?.id}');
-
-        // Fire-and-forget backend sync
-        final session = supabase.auth.currentSession;
-        if (session != null) {
-          ApiService.syncSocialUser(session.accessToken);
-        }
-      } else if (result.status == LoginStatus.cancelled) {
-        log('DEBUG: Facebook Login cancelled by user.');
-      } else {
-        throw Exception('Facebook Login failed: ${result.message}');
-      }
+      // ignore: avoid_print
+      print('>>> FB: signInWithOAuth launched=$launched');
+      // This leaves the app and redirects back after login; the router's
+      // onAuthStateChange listener (see router.dart) picks up the session
+      // and navigates once it lands — nothing else to do here.
     } catch (e) {
       log('Facebook Sign-In error: $e');
+      // ignore: avoid_print
+      print('>>> FB ERROR: $e');
       rethrow;
     }
   }
