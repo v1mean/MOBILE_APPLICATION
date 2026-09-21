@@ -50,7 +50,7 @@ void setupDeepLinkListener() {
       // Navigate to home screen after sign in.
       router.go('/home');
     } else if (event == AuthChangeEvent.signedOut) {
-      router.go('/login');
+      router.go('/');
     }
   });
 }
@@ -136,9 +136,8 @@ final GoRouter router = GoRouter(
     if (!loggedIn && !isAuthPage) {
       return '/login';
     }
-    // If logged in (real session OR guest) and on an auth/splash page → go home
-    if (loggedIn && (isGoingToLogin || isGoingToRegister || isGoingToSplash ||
-        isGoingToRoleSelect || isGoingToTeacherLogin)) {
+    // If logged in (real session OR guest) and on student login/register -> go home
+    if (loggedIn && (isGoingToLogin || isGoingToRegister)) {
       return '/home';
     }
     return null; // No redirection needed
