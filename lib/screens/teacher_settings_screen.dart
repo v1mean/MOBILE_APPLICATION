@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -73,7 +73,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              context.go('/role-select');
+              context.go('/');
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.liveRed,

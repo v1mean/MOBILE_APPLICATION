@@ -528,7 +528,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 await AuthService().signOut();
               } catch (_) {}
               if (context.mounted) {
-                context.go('/login');
+                context.go('/');
               }
             },
             style: ElevatedButton.styleFrom(
