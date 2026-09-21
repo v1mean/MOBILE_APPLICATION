@@ -116,13 +116,6 @@ export async function checkUserExists(email) {
 }
 
 export async function resetPassword(newPassword, accessToken) {
-  // In Supabase v2, to update a user's password using updateUser on behalf of the user,
-  // we can use the access token. However, updateUser doesn't take an access token directly.
-  // We first retrieve the user with the token to get their ID, then use admin API.
-  // OR we just use admin api directly if we have the token.
-  // The prompt says: "This should use supabase.auth.updateUser({ password: newPassword })."
-  // If the prompt strictly wants this exact call, we'll do it. But we need to ensure the client is authenticated.
-  // Let's pass the token in globalHeaders temporarily or just call it.
   
   if (accessToken) {
     const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);

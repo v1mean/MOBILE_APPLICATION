@@ -30,7 +30,7 @@ class AuthService {
     }
   }
 
-  // ── Google Sign-In (Native / Web) ──────────────────────────────────────────
+  //Google Sign-In (Native / Web)
   Future<void> signInWithGoogle() async {
     if (kIsWeb) {
       log('DEBUG: Initiating Google OAuth sign-in for Web');
@@ -44,12 +44,12 @@ class AuthService {
 
     // Native Mobile (Android & iOS)
     final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: _googleIosClientId,       // Used on iOS
-      serverClientId: _googleWebClientId, // Used on Android + iOS backend validation
+      clientId: _googleIosClientId,       
+      serverClientId: _googleWebClientId,
     );
 
     try {
-      // Force account chooser prompt so it never silently auto-selects cached account
+      
       try {
         await googleSignIn.signOut();
       } catch (_) {}
@@ -99,7 +99,7 @@ class AuthService {
     }
   }
 
-  // ── Facebook Sign-In (Native SDK) ──────────────────────────────────────────
+  //Facebook Sign-In (Native SDK)
   Future<void> signInWithFacebook() async {
     try {
       log('DEBUG: Initiating Facebook native sign-in');

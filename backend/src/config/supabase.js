@@ -6,7 +6,6 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load .env from backend directory, then fallback to MOBILE_APPLICATION directory
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
 dotenv.config();
@@ -30,8 +29,6 @@ if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   );
 }
 
-// Node.js 20 does not have native WebSocket support.
-// Pass the 'ws' package as the transport so Supabase Realtime can connect.
 const clientOptions = {
   global: { fetch },
   realtime: { transport: ws },
