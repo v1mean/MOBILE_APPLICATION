@@ -30,22 +30,46 @@ class Mentor {
   });
 
   factory Mentor.fromJson(Map<String, dynamic> json) {
-    final users = json['Users'] as Map<String, dynamic>? ?? {};
-    
+    final user = json['user'] as Map<String, dynamic>?;
+    // Also support old shape for backwards compat
+    final users = user ?? (json['Users'] as Map<String, dynamic>? ?? {});
+
+    // Extract subjects from tutor_subjects array
+    final tutorSubjects = json['tutor_subjects'] as List<dynamic>? ?? [];
+    final subjectNames = tutorSubjects
+        .map((ts) {
+          final subj = ts['Subjects'] as Map<String, dynamic>?;
+          return subj?['name'] as String? ?? '';
+        })
+        .where((s) => s.isNotEmpty)
+        .toList();
+    final primarySubject = subjectNames.isNotEmpty ? subjectNames.first : 'General';
+
+    // Extract availability days
+    final availList = json['availability'] as List<dynamic>? ?? [];
+    final availDays = availList
+        .where((a) => a['is_available'] == true)
+        .map((a) {
+          final day = a['day_of_week'] as String? ?? '';
+          return day.length >= 3 ? day.substring(0, 3) : day; // 'Monday' -> 'Mon'
+        })
+        .toList();
+    final availText = availDays.isNotEmpty ? availDays.join(', ') : 'Flexible';
+
     return Mentor(
       id: json['tutor_id'] as String? ?? '',
       name: users['name'] as String? ?? 'Unknown Mentor',
-      subject: 'General', 
-      experience: '${json['experience_years'] ?? 0} years experience',
-      timeSlot: 'Flexible',
+      subject: primarySubject,
+      experience: '${json['experience_years'] ?? 0} yrs exp',
+      timeSlot: availText,
       avatarUrl: users['profile_image'] as String? ?? 'https://api.dicebear.com/9.x/avataaars/png?seed=fallback',
       rating: (json['rating'] as num?)?.toDouble() ?? 5.0,
-      students: 120, // UI fallback since not in schema yet
-      classes: 50,
-      followers: 300,
+      students: (json['total_students'] as num?)?.toInt() ?? 0,
+      classes: 0,
+      followers: (json['review_count'] as num?)?.toInt() ?? 0,
       bookingPrice: (json['hourly_rate'] as num?)?.toDouble() ?? 0.0,
       bio: json['bio'] as String? ?? 'No bio provided.',
-      courses: (users['courses'] as List<dynamic>?)?.map((e) => Course.fromJson(e)).toList() ?? [],
+      courses: [],
     );
   }
 }

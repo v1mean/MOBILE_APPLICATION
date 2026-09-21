@@ -6,6 +6,7 @@ import '../main.dart';
 import '../models/user_profile.dart';
 import '../models/mentor.dart';
 import '../services/api_service.dart';
+import '../services/permission_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
 
@@ -32,33 +33,129 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     _fetchMyCourses();
   }
 
+  // ── Avatar tap → action sheet → Gallery or Camera ───────────────────────
   Future<void> _pickAndUploadAvatar() async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) return;
+    if (!mounted) return;
 
+    // Show native-style action sheet to choose source
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36, height: 4,
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Text('Update Profile Photo',
+                  style: GoogleFonts.inter(
+                      fontSize: 16, fontWeight: FontWeight.w700,
+                      color: const Color(0xFF111827))),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF3B82F6).withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.photo_library_rounded,
+                      color: Color(0xFF3B82F6)),
+                ),
+                title: Text('Choose from Gallery',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                subtitle: Text('Select a photo from your library',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: const Color(0xFF6B7280))),
+                onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+              ),
+              ListTile(
+                leading: Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded,
+                      color: Color(0xFF10B981)),
+                ),
+                title: Text('Take a Photo',
+                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+                subtitle: Text('Use your camera to take a new photo',
+                    style: GoogleFonts.inter(
+                        fontSize: 12, color: const Color(0xFF6B7280))),
+                onTap: () => Navigator.pop(ctx, ImageSource.camera),
+              ),
+              const SizedBox(height: 4),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Cancel',
+                    style: GoogleFonts.inter(
+                        color: const Color(0xFF6B7280),
+                        fontWeight: FontWeight.w500)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (source == null || !mounted) return;
+
+    // Request permission based on chosen source
+    final bool granted = source == ImageSource.gallery
+        ? await PermissionService.requestPhotoPermission(context)
+        : await PermissionService.requestCameraPermission(context);
+
+    if (!granted || !mounted) return;
+
+    // Pick image
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       imageQuality: 80,
       maxWidth: 512,
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
 
-    if (!mounted) return;
+    // Upload
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) return;
+
     setState(() => _isUploadingAvatar = true);
-
     try {
       final result = await ApiService.uploadAvatar(
         picked.path,
         session.accessToken,
       );
       if (result['success'] == true && mounted) {
-        // Refresh profile from Supabase to pick up the new URL and bust cache
         _avatarTimestamp = DateTime.now().millisecondsSinceEpoch;
         await _fetchUserProfile();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Profile photo updated!')),
+            SnackBar(
+              content: Row(children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                const Text('Profile photo updated!'),
+              ]),
+              backgroundColor: const Color(0xFF10B981),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
           );
         }
       } else if (mounted) {
@@ -69,9 +166,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload error: $e')),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isUploadingAvatar = false);

@@ -196,3 +196,117 @@ export async function uploadAvatar(req, res) {
     return res.status(500).json({ success: false, message: "Upload failed." });
   }
 }
+
+// ── GET /api/mentors  ────────────────────────────────────────────────────────
+export async function getFilteredMentors(req, res) {
+  try {
+    const { query, subject_id, minPrice, maxPrice, day_of_week, city } = req.query;
+
+    // Step 1: Build tutor_profiles query
+    let dbQuery = supabaseAdmin
+      .from('tutor_profiles')
+      .select(`
+        tutor_id,
+        user_id,
+        bio,
+        hourly_rate,
+        experience_years,
+        rating,
+        location,
+        teaching_mode,
+        is_available,
+        total_students,
+        review_count,
+        availability!inner(day_of_week, start_time, end_time, is_available),
+        tutor_subjects(subject_id, Subjects(id, name))
+      `)
+      .eq('is_available', true);
+
+    // Price filters
+    if (minPrice && minPrice !== '') dbQuery = dbQuery.gte('hourly_rate', parseFloat(minPrice));
+    if (maxPrice && maxPrice !== '') dbQuery = dbQuery.lte('hourly_rate', parseFloat(maxPrice));
+
+    // Location filter
+    if (city && city.trim()) dbQuery = dbQuery.ilike('location', `%${city.trim()}%`);
+
+    // Availability filter
+    if (day_of_week && day_of_week.trim()) {
+      dbQuery = dbQuery
+        .eq('availability.day_of_week', day_of_week.trim())
+        .eq('availability.is_available', true);
+    }
+
+    const { data: tutors, error: tutorError } = await dbQuery
+      .order('rating', { ascending: false })
+      .limit(50);
+
+    if (tutorError) {
+      console.error('[getFilteredMentors] tutor query error:', tutorError.message);
+      return res.status(500).json({ success: false, message: tutorError.message });
+    }
+
+    if (!tutors || tutors.length === 0) {
+      return res.status(200).json({ success: true, mentors: [] });
+    }
+
+    // Step 2: Filter by subject_id if provided
+    let filteredTutors = tutors;
+    if (subject_id && subject_id.trim()) {
+      filteredTutors = tutors.filter(t =>
+        (t.tutor_subjects || []).some(ts => ts.subject_id === subject_id.trim())
+      );
+    }
+
+    // Step 3: Manual join with Users table
+    const userIds = [...new Set(filteredTutors.map(t => t.user_id))];
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from('Users')
+      .select('user_id, name, email, profile_image')
+      .in('user_id', userIds);
+
+    if (usersError) {
+      console.warn('[getFilteredMentors] Users join warning:', usersError.message);
+    }
+
+    const usersMap = {};
+    (users || []).forEach(u => { usersMap[u.user_id] = u; });
+
+    // Step 4: Keyword search after join
+    let result = filteredTutors
+      .map(t => ({
+        ...t,
+        user: usersMap[t.user_id] || null,
+      }))
+      .filter(t => t.user !== null);
+
+    if (query && query.trim()) {
+      const q = query.trim().toLowerCase();
+      result = result.filter(t =>
+        (t.bio || '').toLowerCase().includes(q) ||
+        (t.user?.name || '').toLowerCase().includes(q) ||
+        (t.tutor_subjects || []).some(ts =>
+          (ts.Subjects?.name || '').toLowerCase().includes(q)
+        )
+      );
+    }
+
+    return res.status(200).json({ success: true, mentors: result });
+  } catch (err) {
+    console.error('[getFilteredMentors] Unexpected error:', err);
+    return res.status(500).json({ success: false, message: 'Search failed.' });
+  }
+}
+
+// ── GET /api/mentors/subjects ──────────────────────────────────────────────
+export async function getSubjects(req, res) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('Subjects')
+      .select('id, name')
+      .order('name');
+    if (error) return res.status(500).json({ success: false, message: error.message });
+    return res.status(200).json({ success: true, subjects: data ?? [] });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'Failed to load subjects.' });
+  }
+}

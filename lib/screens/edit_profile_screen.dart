@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../services/api_service.dart';
+import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -179,8 +180,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     final session = JomnesDB.auth.currentSession;
     if (session == null) return;
 
-    // Close the bottom sheet first so the picker can open
+    // Close the bottom sheet first — must happen before the OS dialog
     Navigator.pop(sheetContext);
+
+    // Request photo library permission
+    if (!mounted) return;
+    final granted = await PermissionService.requestPhotoPermission(context);
+    if (!granted || !mounted) return;
 
     final picker = ImagePicker();
     final picked = await picker.pickImage(
@@ -188,8 +194,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       imageQuality: 80,
       maxWidth: 512,
     );
-    if (picked == null) return;
-    if (!mounted) return;
+    if (picked == null || !mounted) return;
 
     setState(() => _isUploadingAvatar = true);
     try {
@@ -198,7 +203,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         final timestamp = DateTime.now().millisecondsSinceEpoch;
         final newUrl = '${result['avatarUrl']}?t=$timestamp';
         setState(() => _avatarUrl = newUrl);
-        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(children: [

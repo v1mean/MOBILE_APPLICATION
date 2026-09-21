@@ -88,6 +88,8 @@ class MentorCard extends StatelessWidget {
                       fontSize: 11,
                       color: AppColors.textMuted,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 6),
                   Text(
@@ -97,6 +99,8 @@ class MentorCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ],
               ),

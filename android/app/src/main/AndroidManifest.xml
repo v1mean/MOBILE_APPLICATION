@@ -67,4 +67,9 @@
         </intent>
         <provider android:authorities="com.facebook.katana.provider.PlatformProvider" />
     </queries>
+
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/> <!-- For Android 13+ -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+
 </manifest>

@@ -23,29 +23,31 @@ class _SearchScreenState extends State<SearchScreen> {
   String _query = '';
 
   // ── Filter State ──────────────────────────────────────────────────────────
-  String? _filterSubject;
+  String? _selectedSubjectId;
+  String? _selectedSubjectName;
+  String? _filterDay;          // full day name e.g. 'Monday'
   String? _filterCity;
-  String? _filterDay;
-  RangeValues _priceRange = const RangeValues(0, 500);
+  RangeValues _priceRange = const RangeValues(0, 200);
 
   // ── Data ──────────────────────────────────────────────────────────────────
   List<Mentor> _mentors = [];
+  List<Map<String, dynamic>> _subjects = [];
   bool _isLoading = false;
+  bool _isLoadingSubjects = true;
+  String? _error;
 
   UserProfile? _userProfile;
-  bool _isLoadingProfile = true;
-
   Timer? _debounce;
 
-  static const _subjects = ['', 'Math', 'Physics', 'Chemistry', 'English', 'Programming', 'Music', 'Art'];
-  static const _cities = ['', 'Phnom Penh', 'Siem Reap', 'Battambang', 'Remote'];
-  static const _days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  static const _days = [
+    'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+  ];
 
   @override
   void initState() {
     super.initState();
     _fetchUserProfile();
-    _search(); // initial load of all mentors
+    _loadSubjects();
   }
 
   @override
@@ -55,7 +57,17 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
-  // ── Debounced search ──────────────────────────────────────────────────────
+  Future<void> _loadSubjects() async {
+    final subjects = await ApiService.fetchSubjects();
+    if (mounted) {
+      setState(() {
+        _subjects = subjects;
+        _isLoadingSubjects = false;
+      });
+      _search(); // initial load after subjects ready
+    }
+  }
+
   void _onQueryChanged(String value) {
     setState(() => _query = value);
     _debounce?.cancel();
@@ -64,19 +76,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Future<void> _search() async {
     if (!mounted) return;
-    setState(() => _isLoading = true);
+    setState(() { _isLoading = true; _error = null; });
     try {
-      final result = await ApiService.searchMentors(
+      final result = await ApiService.fetchMentors(
         query: _query.isEmpty ? null : _query,
-        subject: (_filterSubject?.isEmpty ?? true) ? null : _filterSubject,
+        subjectId: _selectedSubjectId,
         minPrice: _priceRange.start > 0 ? _priceRange.start : null,
-        maxPrice: _priceRange.end < 500 ? _priceRange.end : null,
+        maxPrice: _priceRange.end < 200 ? _priceRange.end : null,
+        dayOfWeek: _filterDay,
         city: (_filterCity?.isEmpty ?? true) ? null : _filterCity,
-        day: _filterDay,
       );
-
       if (!mounted) return;
-
       final raw = result['mentors'] as List? ?? [];
       setState(() {
         _mentors = raw.map((e) => Mentor.fromJson(e as Map<String, dynamic>)).toList();
@@ -84,277 +94,36 @@ class _SearchScreenState extends State<SearchScreen> {
       });
     } catch (e) {
       if (!mounted) return;
-      setState(() => _isLoading = false);
+      setState(() { _isLoading = false; _error = 'Could not connect. Check backend.'; });
     }
   }
 
   Future<void> _fetchUserProfile() async {
     final session = JomnesDB.auth.currentSession;
-    if (session == null) {
-      if (mounted) setState(() => _isLoadingProfile = false);
-      return;
-    }
+    if (session == null) return;
     try {
-      final data = await JomnesDB
-          .from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-      if (mounted) {
-        setState(() {
-          if (data != null) _userProfile = UserProfile.fromJson(data);
-          _isLoadingProfile = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingProfile = false);
-    }
-  }
-
-  // ── Filter Bottom Sheet ───────────────────────────────────────────────────
-  void _showFilterSheet() {
-    String? tempSubject = _filterSubject;
-    String? tempCity = _filterCity;
-    String? tempDay = _filterDay;
-    RangeValues tempPrice = _priceRange;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          maxChildSize: 0.92,
-          minChildSize: 0.5,
-          expand: false,
-          builder: (ctx, scroll) => SingleChildScrollView(
-            controller: scroll,
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: 20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD1D5DB),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-
-                Text('Filter Mentors',
-                    style: GoogleFonts.inter(
-                        fontSize: 18, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 20),
-
-                // Subject
-                Text('Subject',
-                    style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151))),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: tempSubject ?? '',
-                  items: _subjects
-                      .map((s) => DropdownMenuItem(
-                          value: s,
-                          child: Text(s.isEmpty ? 'Any subject' : s,
-                              style: GoogleFonts.inter(fontSize: 14))))
-                      .toList(),
-                  onChanged: (v) => setSheetState(() => tempSubject = v),
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFE5E7EB))),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFE5E7EB))),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // City
-                Text('City',
-                    style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151))),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: tempCity ?? '',
-                  items: _cities
-                      .map((c) => DropdownMenuItem(
-                          value: c,
-                          child: Text(c.isEmpty ? 'Any city' : c,
-                              style: GoogleFonts.inter(fontSize: 14))))
-                      .toList(),
-                  onChanged: (v) => setSheetState(() => tempCity = v),
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFE5E7EB))),
-                    enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(
-                            color: Color(0xFFE5E7EB))),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Price Range
-                Text(
-                    'Price: \$${tempPrice.start.toInt()} – \$${tempPrice.end.toInt() == 500 ? "500+" : tempPrice.end.toInt()}',
-                    style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151))),
-                RangeSlider(
-                  values: tempPrice,
-                  min: 0,
-                  max: 500,
-                  divisions: 50,
-                  activeColor: AppColors.accentBlue,
-                  labels: RangeLabels(
-                    '\$${tempPrice.start.toInt()}',
-                    '\$${tempPrice.end.toInt()}',
-                  ),
-                  onChanged: (v) => setSheetState(() => tempPrice = v),
-                ),
-                const SizedBox(height: 8),
-
-                // Day of week
-                Text('Available Day',
-                    style: GoogleFonts.inter(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF374151))),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  children: _days
-                      .map((d) => ChoiceChip(
-                            label: Text(d,
-                                style: GoogleFonts.inter(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600)),
-                            selected: tempDay == d,
-                            selectedColor: AppColors.accentBlue,
-                            labelStyle: GoogleFonts.inter(
-                                color: tempDay == d
-                                    ? Colors.white
-                                    : const Color(0xFF374151)),
-                            onSelected: (sel) => setSheetState(() =>
-                                tempDay = (sel ? d : null)),
-                          ))
-                      .toList(),
-                ),
-                const SizedBox(height: 28),
-
-                // Buttons
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () {
-                          setSheetState(() {
-                            tempSubject = null;
-                            tempCity = null;
-                            tempDay = null;
-                            tempPrice = const RangeValues(0, 500);
-                          });
-                        },
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: Text('Clear',
-                            style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w600)),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _filterSubject = tempSubject;
-                            _filterCity = tempCity;
-                            _filterDay = tempDay;
-                            _priceRange = tempPrice;
-                          });
-                          Navigator.pop(ctx);
-                          _search();
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.accentBlue,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
-                        ),
-                        child: Text('Apply',
-                            style: GoogleFonts.inter(
-                                fontWeight: FontWeight.w700)),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Derived helpers ───────────────────────────────────────────────────────
-  String get _displayName {
-    if (_userProfile?.name.isNotEmpty == true) return _userProfile!.name;
-    final user = JomnesDB.auth.currentUser;
-    return user?.userMetadata?['full_name'] ??
-        user?.userMetadata?['name'] ??
-        user?.email?.split('@').first ??
-        'Student';
-  }
-
-  String get _displayRole {
-    if (_userProfile?.role.isNotEmpty == true) return _userProfile!.role;
-    return 'Student';
-  }
-
-  String? get _avatarUrl {
-    if (_userProfile?.profileImage.isNotEmpty == true) {
-      return _userProfile!.profileImage;
-    }
-    final user = JomnesDB.auth.currentUser;
-    final dynamic pic =
-        user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
-    return pic is String && pic.isNotEmpty ? pic : null;
+      final data = await JomnesDB.from('Users').select().eq('user_id', session.user.id).maybeSingle();
+      if (mounted && data != null) setState(() => _userProfile = UserProfile.fromJson(data));
+    } catch (_) {}
   }
 
   bool get _hasActiveFilters =>
-      (_filterSubject?.isNotEmpty ?? false) ||
+      (_selectedSubjectId != null) ||
+      (_filterDay != null) ||
       (_filterCity?.isNotEmpty ?? false) ||
-      _filterDay != null ||
       _priceRange.start > 0 ||
-      _priceRange.end < 500;
+      _priceRange.end < 200;
+
+  void _clearAllFilters() {
+    setState(() {
+      _selectedSubjectId = null;
+      _selectedSubjectName = null;
+      _filterDay = null;
+      _filterCity = null;
+      _priceRange = const RangeValues(0, 200);
+    });
+    _search();
+  }
 
   void _onNavTap(int i) {
     if (i == _navIndex) return;
@@ -364,177 +133,234 @@ class _SearchScreenState extends State<SearchScreen> {
       case 2: context.go('/courses'); break;
       case 3: context.go('/profile'); break;
       case 4: context.go('/settings'); break;
-      default: break;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final initial = _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'S';
-    final avatar = _avatarUrl;
+    final name = _userProfile?.name ?? JomnesDB.auth.currentUser?.userMetadata?['full_name'] ?? 'User';
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
+    final avatarUrl = _userProfile?.profileImage.isNotEmpty == true ? _userProfile!.profileImage : null;
 
     return Scaffold(
-      backgroundColor: AppColors.accentBlue,
+      backgroundColor: AppColors.darkBg,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
-            // ── Header ──────────────────────────────────────────────────
+            // ── Header ────────────────────────────────────────────────────
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  ClipOval(
-                    child: SizedBox(
-                      width: 44,
-                      height: 44,
-                      child: () {
-                        if (_isLoadingProfile) {
-                          return const CircleAvatar(
-                            backgroundColor: Color(0xFFFFD5DC),
-                          );
-                        }
-                        if (avatar != null) {
-                          return Image.network(avatar,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, _, _) => CircleAvatar(
-                                    backgroundColor: const Color(0xFFFFD5DC),
-                                    child: Text(initial,
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black)),
-                                  ));
-                        }
-                        return CircleAvatar(
-                          backgroundColor: const Color(0xFFFFD5DC),
-                          child: Text(initial,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black)),
-                        );
-                      }(),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Find Mentors',
+                            style: GoogleFonts.inter(
+                                fontSize: 24,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.white)),
+                        Text('Search by subject, day or price',
+                            style: GoogleFonts.inter(
+                                fontSize: 13,
+                                color: Colors.white60)),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_displayName,
-                          style: GoogleFonts.inter(
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                              color: Colors.white)),
-                      const SizedBox(height: 2),
-                      Text(_displayRole,
-                          style: GoogleFonts.inter(
-                              fontSize: 12, color: Colors.white70)),
-                    ],
-                  ),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.notifications_none_rounded,
-                        color: Colors.white, size: 26),
+                  GestureDetector(
+                    onTap: () => context.go('/profile'),
+                    child: CircleAvatar(
+                      radius: 20,
+                      backgroundColor: const Color(0xFFFFD5DC),
+                      backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                      child: avatarUrl == null
+                          ? Text(initial,
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w700, color: Colors.black))
+                          : null,
+                    ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(height: 16),
 
-            // ── White content area ───────────────────────────────────────
+            // ── Body (white card) ──────────────────────────────────────────
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(
                   color: Color(0xFFF6F7F9),
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(32),
-                    topRight: Radius.circular(32),
+                    topLeft: Radius.circular(28),
+                    topRight: Radius.circular(28),
                   ),
                 ),
                 child: Column(
                   children: [
-                    const SizedBox(height: 18),
-
-                    // ── Search + Filter Row ──────────────────────────────
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Filter button
-                          GestureDetector(
-                            onTap: _showFilterSheet,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: _hasActiveFilters
-                                    ? AppColors.accentBlue
-                                    : Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                    color: _hasActiveFilters
-                                        ? AppColors.accentBlue
-                                        : const Color(0xFFE5E7EB),
-                                    width: 1),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.tune_rounded,
-                                      size: 18,
-                                      color: _hasActiveFilters
-                                          ? Colors.white
-                                          : const Color(0xFF111827)),
-                                  const SizedBox(width: 4),
-                                  Text('Filter',
-                                      style: GoogleFonts.inter(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: _hasActiveFilters
-                                              ? Colors.white
-                                              : const Color(0xFF111827))),
-                                ],
+                          // ── Search bar ──────────────────────────────────
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withAlpha(10),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2))
+                              ],
+                            ),
+                            child: TextField(
+                              controller: _controller,
+                              onChanged: _onQueryChanged,
+                              style: GoogleFonts.inter(
+                                  fontSize: 14, color: const Color(0xFF111827)),
+                              decoration: InputDecoration(
+                                hintText: 'Search mentors, subjects...',
+                                hintStyle: GoogleFonts.inter(
+                                    color: const Color(0xFF9CA3AF), fontSize: 14),
+                                prefixIcon: const Icon(Icons.search_rounded,
+                                    color: Color(0xFF9CA3AF), size: 20),
+                                suffixIcon: _query.isNotEmpty
+                                    ? IconButton(
+                                        icon: const Icon(Icons.close,
+                                            size: 18, color: Color(0xFF9CA3AF)),
+                                        onPressed: () {
+                                          _controller.clear();
+                                          _onQueryChanged('');
+                                        })
+                                    : null,
+                                border: InputBorder.none,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 14),
                               ),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(height: 16),
 
-                          // Search bar
-                          Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                    color: const Color(0xFFE5E7EB), width: 1),
+                          // ── Subject chips ────────────────────────────────
+                          Text('Subject',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF6B7280))),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 34,
+                            child: _isLoadingSubjects
+                                ? const Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.accentBlue),
+                                    ))
+                                : ListView(
+                                    scrollDirection: Axis.horizontal,
+                                    children: [
+                                      _subjectChip('All', null),
+                                      ..._subjects.map((s) =>
+                                          _subjectChip(
+                                              s['name'] as String,
+                                              s['id'] as String)),
+                                    ],
+                                  ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // ── Day chips ────────────────────────────────────
+                          Text('Availability',
+                              style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: const Color(0xFF6B7280))),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            height: 34,
+                            child: ListView.separated(
+                              scrollDirection: Axis.horizontal,
+                              itemCount: _days.length,
+                              separatorBuilder: (_, _) => const SizedBox(width: 6),
+                              itemBuilder: (_, i) {
+                                final day = _days[i];
+                                final label = day.substring(0, 3);
+                                final isSelected = _filterDay == day;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setState(() =>
+                                        _filterDay = isSelected ? null : day);
+                                    _search();
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 14, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: isSelected
+                                          ? AppColors.accentBlue
+                                          : Colors.white,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                          color: isSelected
+                                              ? AppColors.accentBlue
+                                              : const Color(0xFFE5E7EB)),
+                                    ),
+                                    child: Text(
+                                      label,
+                                      style: GoogleFonts.inter(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : const Color(0xFF374151)),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 14),
+
+                          // ── Price range ──────────────────────────────────
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text('Price Range',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF6B7280))),
+                              Text(
+                                '\$${_priceRange.start.toInt()} – \$${_priceRange.end.toInt()}/hr',
+                                style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.accentBlue),
                               ),
-                              child: TextField(
-                                controller: _controller,
-                                onChanged: _onQueryChanged,
-                                decoration: InputDecoration(
-                                  hintText: 'Search Mentors',
-                                  hintStyle: GoogleFonts.inter(
-                                      color: const Color(0xFF6B7280),
-                                      fontSize: 14),
-                                  prefixIcon: const Icon(
-                                      Icons.search_rounded,
-                                      color: Color(0xFF6B7280),
-                                      size: 20),
-                                  suffixIcon: _query.isNotEmpty
-                                      ? IconButton(
-                                          icon: const Icon(Icons.close,
-                                              size: 18,
-                                              color: Color(0xFF6B7280)),
-                                          onPressed: () {
-                                            _controller.clear();
-                                            _onQueryChanged('');
-                                          },
-                                        )
-                                      : null,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 14),
-                                ),
-                              ),
+                            ],
+                          ),
+                          SliderTheme(
+                            data: SliderThemeData(
+                              rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 8),
+                              trackHeight: 3,
+                              activeTrackColor: AppColors.accentBlue,
+                              inactiveTrackColor: const Color(0xFFE5E7EB),
+                              thumbColor: AppColors.accentBlue,
+                              overlayColor: AppColors.accentBlue.withAlpha(30),
+                            ),
+                            child: RangeSlider(
+                              values: _priceRange,
+                              min: 0,
+                              max: 200,
+                              divisions: 40,
+                              onChanged: (v) => setState(() => _priceRange = v),
+                              onChangeEnd: (_) => _search(),
                             ),
                           ),
                         ],
@@ -542,62 +368,71 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
 
                     // ── Active filter chips ──────────────────────────────
-                    if (_hasActiveFilters) ...[
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 32,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                    if (_hasActiveFilters)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                        child: Row(
                           children: [
-                            if (_filterSubject?.isNotEmpty ?? false)
-                              _filterChip(_filterSubject!, () {
-                                setState(() => _filterSubject = null);
-                                _search();
-                              }),
-                            if (_filterCity?.isNotEmpty ?? false)
-                              _filterChip(_filterCity!, () {
-                                setState(() => _filterCity = null);
-                                _search();
-                              }),
-                            if (_filterDay != null)
-                              _filterChip(_filterDay!, () {
-                                setState(() => _filterDay = null);
-                                _search();
-                              }),
-                            if (_priceRange.start > 0 || _priceRange.end < 500)
-                              _filterChip(
-                                  '\$${_priceRange.start.toInt()}–\$${_priceRange.end.toInt()}',
-                                  () {
-                                setState(() =>
-                                    _priceRange = const RangeValues(0, 500));
-                                _search();
-                              }),
+                            Expanded(
+                              child: Wrap(
+                                spacing: 6,
+                                children: [
+                                  if (_selectedSubjectName != null)
+                                    _filterChip('Subject: $_selectedSubjectName', () {
+                                      setState(() {
+                                        _selectedSubjectId = null;
+                                        _selectedSubjectName = null;
+                                      });
+                                      _search();
+                                    }),
+                                  if (_filterDay != null)
+                                    _filterChip('Day: ${_filterDay!.substring(0, 3)}', () {
+                                      setState(() => _filterDay = null);
+                                      _search();
+                                    }),
+                                  if (_priceRange.start > 0 || _priceRange.end < 200)
+                                    _filterChip(
+                                        '\$${_priceRange.start.toInt()}–\$${_priceRange.end.toInt()}/hr',
+                                        () {
+                                      setState(() => _priceRange = const RangeValues(0, 200));
+                                      _search();
+                                    }),
+                                ],
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _clearAllFilters,
+                              child: Text('Clear all',
+                                  style: GoogleFonts.inter(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.accentBlue)),
+                            ),
                           ],
                         ),
                       ),
-                    ],
 
-                    const SizedBox(height: 12),
-
-                    // ── Result count ─────────────────────────────────────
+                    // ── Result count + error ──────────────────────────────
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                       child: Row(
                         children: [
                           Text(
-                            _isLoading
-                                ? 'Searching…'
-                                : '${_mentors.length} mentor${_mentors.length == 1 ? '' : 's'} found',
+                            _error != null
+                                ? _error!
+                                : _isLoading
+                                    ? 'Searching…'
+                                    : '${_mentors.length} mentor${_mentors.length == 1 ? '' : 's'} found',
                             style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w500,
-                                color: const Color(0xFF6B7280)),
+                                color: _error != null
+                                    ? Colors.red
+                                    : const Color(0xFF6B7280)),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 8),
 
                     // ── Results ───────────────────────────────────────────
                     Expanded(
@@ -610,33 +445,44 @@ class _SearchScreenState extends State<SearchScreen> {
                                     color: AppColors.accentBlue))
                             : _mentors.isEmpty
                                 ? ListView(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
+                                    physics: const AlwaysScrollableScrollPhysics(),
                                     children: [
-                                      const SizedBox(height: 80),
+                                      const SizedBox(height: 60),
                                       Center(
-                                          child: Column(
-                                        children: [
-                                          Icon(Icons.search_off_rounded,
-                                              size: 48,
-                                              color: Colors.grey.shade400),
-                                          const SizedBox(height: 12),
-                                          Text('No mentors found.',
+                                        child: Column(
+                                          children: [
+                                            Icon(Icons.people_outline_rounded,
+                                                size: 56,
+                                                color: Colors.grey.shade300),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              'No mentors found\nfor these filters.',
+                                              textAlign: TextAlign.center,
                                               style: GoogleFonts.inter(
-                                                  color: Colors.grey)),
-                                        ],
-                                      )),
+                                                  color: Colors.grey.shade400,
+                                                  fontSize: 15),
+                                            ),
+                                            const SizedBox(height: 16),
+                                            if (_hasActiveFilters)
+                                              TextButton(
+                                                onPressed: _clearAllFilters,
+                                                child: Text('Clear filters',
+                                                    style: GoogleFonts.inter(
+                                                        color: AppColors.accentBlue,
+                                                        fontWeight: FontWeight.w600)),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   )
                                 : ListView.builder(
-                                    physics:
-                                        const AlwaysScrollableScrollPhysics(),
-                                    padding: const EdgeInsets.only(bottom: 16),
+                                    physics: const AlwaysScrollableScrollPhysics(),
+                                    padding: const EdgeInsets.only(bottom: 24),
                                     itemCount: _mentors.length,
                                     itemBuilder: (ctx, i) => MentorCard(
                                       mentor: _mentors[i],
-                                      onTap: () => context
-                                          .push('/mentor/${_mentors[i].id}'),
+                                      onTap: () => context.push('/mentor/${_mentors[i].id}'),
                                     ),
                                   ),
                       ),
@@ -653,9 +499,43 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
+  Widget _subjectChip(String label, String? id) {
+    final isSelected = id == null
+        ? _selectedSubjectId == null
+        : _selectedSubjectId == id;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _selectedSubjectId = id;
+          _selectedSubjectName = id == null ? null : label;
+        });
+        _search();
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.accentBlue : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: isSelected
+                  ? AppColors.accentBlue
+                  : const Color(0xFFE5E7EB)),
+        ),
+        child: Text(
+          label,
+          style: GoogleFonts.inter(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isSelected ? Colors.white : const Color(0xFF374151)),
+        ),
+      ),
+    );
+  }
+
   Widget _filterChip(String label, VoidCallback onRemove) {
     return Container(
-      margin: const EdgeInsets.only(right: 6),
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: AppColors.accentBlue.withAlpha(20),
@@ -667,13 +547,13 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           Text(label,
               style: GoogleFonts.inter(
-                  fontSize: 12,
+                  fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppColors.accentBlue)),
           const SizedBox(width: 4),
           GestureDetector(
             onTap: onRemove,
-            child: Icon(Icons.close, size: 14, color: AppColors.accentBlue),
+            child: Icon(Icons.close, size: 13, color: AppColors.accentBlue),
           ),
         ],
       ),

@@ -173,7 +173,57 @@ class ApiService {
     }
   }
 
-  // ── Update Profile ──────────────────────────────────────────────────────
+  // ── Fetch Subjects ────────────────────────────────────────────────────────
+  static Future<List<Map<String, dynamic>>> fetchSubjects() async {
+    try {
+      final response = await http
+          .get(Uri.parse('$baseUrl/users/mentors/subjects'))
+          .timeout(const Duration(seconds: 10));
+      final body = jsonDecode(response.body);
+      final raw = body['subjects'] as List? ?? [];
+      return raw.cast<Map<String, dynamic>>();
+    } catch (_) {
+      return [];
+    }
+  }
+
+  // ── Fetch Filtered Mentors (production endpoint) ─────────────────────────
+  static Future<Map<String, dynamic>> fetchMentors({
+    String? query,
+    String? subjectId,
+    double? minPrice,
+    double? maxPrice,
+    String? dayOfWeek,
+    String? city,
+  }) async {
+    final params = <String, String>{};
+    if (query != null && query.isNotEmpty) params['query'] = query;
+    if (subjectId != null && subjectId.isNotEmpty) params['subject_id'] = subjectId;
+    if (minPrice != null) params['minPrice'] = minPrice.toStringAsFixed(0);
+    if (maxPrice != null) params['maxPrice'] = maxPrice.toStringAsFixed(0);
+    if (dayOfWeek != null && dayOfWeek.isNotEmpty) params['day_of_week'] = dayOfWeek;
+    if (city != null && city.isNotEmpty) params['city'] = city;
+
+    final uri = Uri.parse('$baseUrl/users/mentors')
+        .replace(queryParameters: params.isNotEmpty ? params : null);
+
+    try {
+      final response = await http.get(uri).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final fallbackBase = baseUrl.contains('10.0.2.2')
+            ? 'http://localhost:5005/api'
+            : 'http://10.0.2.2:5005/api';
+        final fallbackUri = Uri.parse('$fallbackBase/users/mentors')
+            .replace(queryParameters: params.isNotEmpty ? params : null);
+        final response = await http.get(fallbackUri).timeout(const Duration(seconds: 10));
+        return jsonDecode(response.body);
+      }
+      rethrow;
+    }
+  }
+
   static Future<Map<String, dynamic>> updateProfile({
     required String accessToken,
     required String name,

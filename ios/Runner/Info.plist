@@ -115,5 +115,15 @@
 		<string>fbauth2</string>
 		<string>fbshareextension</string>
 	</array>
+
+
+
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Jomnes needs access to your photos to upload a profile picture.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Jomnes needs access to your camera to take a profile photo.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Jomnes needs access to your microphone (for video profile features).</string>
+
 </dict>
 </plist>

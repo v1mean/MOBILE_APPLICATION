@@ -5,6 +5,8 @@ import {
   uploadAvatar,
   uploadAvatarMiddleware,
   updateProfile,
+  getFilteredMentors,
+  getSubjects,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -26,6 +28,8 @@ router.post(
 );
 
 // ── Mentor search ──────────────────────────────────────────────────────────
+router.get("/mentors/subjects", getSubjects);
+router.get("/mentors", getFilteredMentors);
 router.get("/mentors/search", searchMentors);
 
 export default router;
