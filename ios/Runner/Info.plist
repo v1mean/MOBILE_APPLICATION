@@ -102,6 +102,12 @@
 	<string>c2d86faa242f92e98f87aae8094de1ba</string>
 	<key>FacebookDisplayName</key>
 	<string>Jomnes</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Jomnes needs access to your photo library to let you set a profile picture.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Jomnes needs camera access to let you take a profile photo.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Jomnes needs permission to save photos to your library.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>fbapi</string>

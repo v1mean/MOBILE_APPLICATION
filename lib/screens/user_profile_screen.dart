@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../models/mentor.dart';
+import '../services/api_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
 
@@ -18,6 +20,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   int _navIndex = 3;
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
+  bool _isUploadingAvatar = false;
 
   List<Course> _myCourses = [];
   bool _isLoadingCourses = true;
@@ -27,6 +30,52 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     super.initState();
     _fetchUserProfile();
     _fetchMyCourses();
+  }
+
+  Future<void> _pickAndUploadAvatar() async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) return;
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 512,
+    );
+    if (picked == null) return;
+
+    if (!mounted) return;
+    setState(() => _isUploadingAvatar = true);
+
+    try {
+      final result = await ApiService.uploadAvatar(
+        picked.path,
+        session.accessToken,
+      );
+      if (result['success'] == true && mounted) {
+        // Refresh profile from Supabase to pick up the new URL and bust cache
+        _avatarTimestamp = DateTime.now().millisecondsSinceEpoch;
+        await _fetchUserProfile();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile photo updated!')),
+          );
+        }
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text(result['message'] ?? 'Upload failed. Try again.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Upload error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
+    }
   }
 
   Future<void> _fetchUserProfile() async {
@@ -82,11 +131,23 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         'Student';
   }
 
+  int _avatarTimestamp = DateTime.now().millisecondsSinceEpoch;
+
   String? get _avatarUrl {
-    if (_userProfile?.profileImage.isNotEmpty == true) return _userProfile!.profileImage;
-    final user = JomnesDB.auth.currentUser;
-    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
-    return pic is String && pic.isNotEmpty ? pic : null;
+    String? url;
+    if (_userProfile?.profileImage.isNotEmpty == true) {
+      url = _userProfile!.profileImage;
+    } else {
+      final user = JomnesDB.auth.currentUser;
+      final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+      if (pic is String && pic.isNotEmpty) url = pic;
+    }
+    
+    if (url != null) {
+      // Bust cache using timestamp
+      return url.contains('?') ? url : '$url?t=$_avatarTimestamp';
+    }
+    return null;
   }
 
   String get _joinedText {
@@ -153,33 +214,71 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 10),
-                  // Avatar
-                  ClipOval(
-                    child: SizedBox(
-                      width: 90,
-                      height: 90,
-                      child: _isLoadingProfile
-                          ? const CircularProgressIndicator(color: Color(0xFF3B82F6))
-                          : avatar != null
-                              ? Image.network(
-                                  avatar,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) => CircleAvatar(
-                                    radius: 45,
-                                    backgroundColor: const Color(0xFFFFD5DC),
-                                    child: Text(initial,
-                                        style: const TextStyle(
-                                            fontSize: 32, fontWeight: FontWeight.w700, color: Colors.black)),
-                                  ),
-                                )
-                              : CircleAvatar(
-                                  radius: 45,
-                                  backgroundColor: const Color(0xFFFFD5DC),
-                                  child: Text(initial,
-                                      style: const TextStyle(
-                                          fontSize: 32, fontWeight: FontWeight.w700, color: Colors.black)),
-                                ),
-                    ),
+                  // Avatar with Edit Button
+                  Stack(
+                    children: [
+                      ClipOval(
+                        child: SizedBox(
+                          width: 90,
+                          height: 90,
+                          child: _isLoadingProfile || _isUploadingAvatar
+                              ? Container(
+                                  color: const Color(0xFFFFD5DC),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Color(0xFF3B82F6)),
+                                  ))
+                              : avatar != null
+                                  ? Image.network(
+                                      avatar,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => CircleAvatar(
+                                        radius: 45,
+                                        backgroundColor:
+                                            const Color(0xFFFFD5DC),
+                                        child: Text(initial,
+                                            style: const TextStyle(
+                                                fontSize: 32,
+                                                fontWeight: FontWeight.w700,
+                                                color: Colors.black)),
+                                      ),
+                                    )
+                                  : CircleAvatar(
+                                      radius: 45,
+                                      backgroundColor:
+                                          const Color(0xFFFFD5DC),
+                                      child: Text(initial,
+                                          style: const TextStyle(
+                                              fontSize: 32,
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black)),
+                                    ),
+                        ),
+                      ),
+                      // Edit icon overlay
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: _isUploadingAvatar
+                              ? null
+                              : _pickAndUploadAvatar,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF3B82F6),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white, width: 2),
+                            ),
+                            child: const Icon(Icons.edit,
+                                size: 14, color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
                   Text(

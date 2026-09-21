@@ -32,7 +32,6 @@ class ApiService {
           .post(Uri.parse('$baseUrl$endpoint'), headers: defaultHeaders, body: body)
           .timeout(timeout);
     } catch (e) {
-      // On Android, seamlessly retry between 10.0.2.2 (emulator) and localhost (physical device via adb reverse)
       if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
         final fallbackBase = baseUrl.contains('10.0.2.2')
             ? 'http://localhost:5005/api'
@@ -40,6 +39,33 @@ class ApiService {
         try {
           return await http
               .post(Uri.parse('$fallbackBase$endpoint'), headers: defaultHeaders, body: body)
+              .timeout(timeout);
+        } catch (_) {}
+      }
+      rethrow;
+    }
+  }
+
+  static Future<http.Response> _patchWithFallback(
+    String endpoint, {
+    Map<String, String>? headers,
+    Object? body,
+    Duration timeout = const Duration(seconds: 10),
+  }) async {
+    final defaultHeaders = {'Content-Type': 'application/json', ...?headers};
+
+    try {
+      return await http
+          .patch(Uri.parse('$baseUrl$endpoint'), headers: defaultHeaders, body: body)
+          .timeout(timeout);
+    } catch (e) {
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final fallbackBase = baseUrl.contains('10.0.2.2')
+            ? 'http://localhost:5005/api'
+            : 'http://10.0.2.2:5005/api';
+        try {
+          return await http
+              .patch(Uri.parse('$fallbackBase$endpoint'), headers: defaultHeaders, body: body)
               .timeout(timeout);
         } catch (_) {}
       }
@@ -104,6 +130,103 @@ class ApiService {
       log('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
       log('Social sync error: $e');
+    }
+  }
+
+  // ── Mentor Search ───────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> searchMentors({
+    String? query,
+    String? subject,
+    double? minPrice,
+    double? maxPrice,
+    String? city,
+    String? day,
+  }) async {
+    final params = <String, String>{};
+    if (query != null && query.isNotEmpty) params['query'] = query;
+    if (subject != null && subject.isNotEmpty) params['subject'] = subject;
+    if (minPrice != null) params['minPrice'] = minPrice.toStringAsFixed(0);
+    if (maxPrice != null) params['maxPrice'] = maxPrice.toStringAsFixed(0);
+    if (city != null && city.isNotEmpty) params['city'] = city;
+    if (day != null && day.isNotEmpty) params['day'] = day;
+
+    final uri = Uri.parse('$baseUrl/users/mentors/search')
+        .replace(queryParameters: params.isNotEmpty ? params : null);
+
+    try {
+      final response =
+          await http.get(uri).timeout(const Duration(seconds: 10));
+      return jsonDecode(response.body);
+    } catch (e) {
+      // Android fallback
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final fallbackBase = baseUrl.contains('10.0.2.2')
+            ? 'http://localhost:5005/api'
+            : 'http://10.0.2.2:5005/api';
+        final fallbackUri = Uri.parse('$fallbackBase/users/mentors/search')
+            .replace(queryParameters: params.isNotEmpty ? params : null);
+        final response =
+            await http.get(fallbackUri).timeout(const Duration(seconds: 10));
+        return jsonDecode(response.body);
+      }
+      rethrow;
+    }
+  }
+
+  // ── Update Profile ──────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> updateProfile({
+    required String accessToken,
+    required String name,
+    String? phone,
+    String? location,
+    String? role,
+    String? profileImage,
+  }) async {
+    final body = jsonEncode({
+      'name': name,
+      'phone': phone ?? '',
+      'location': location ?? '',
+      'role': role ?? 'Student',
+      if (profileImage != null && profileImage.isNotEmpty)
+        'profileImage': profileImage,
+    });
+
+    final response = await _patchWithFallback(
+      '/users/profile',
+      headers: {'Authorization': 'Bearer $accessToken'},
+      body: body,
+    );
+    return jsonDecode(response.body);
+  }
+
+  static Future<Map<String, dynamic>> uploadAvatar(
+    String filePath,
+    String accessToken,
+  ) async {
+    final uri = Uri.parse('$baseUrl/users/upload-avatar');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $accessToken'
+      ..files.add(await http.MultipartFile.fromPath('avatar', filePath));
+
+    try {
+      final streamedResponse =
+          await request.send().timeout(const Duration(seconds: 30));
+      final response = await http.Response.fromStream(streamedResponse);
+      return jsonDecode(response.body);
+    } catch (e) {
+      // Android fallback
+      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+        final fallbackUri =
+            Uri.parse('http://10.0.2.2:5005/api/users/upload-avatar');
+        final fallbackRequest = http.MultipartRequest('POST', fallbackUri)
+          ..headers['Authorization'] = 'Bearer $accessToken'
+          ..files.add(await http.MultipartFile.fromPath('avatar', filePath));
+        final streamedResponse =
+            await fallbackRequest.send().timeout(const Duration(seconds: 30));
+        final response = await http.Response.fromStream(streamedResponse);
+        return jsonDecode(response.body);
+      }
+      rethrow;
     }
   }
 }

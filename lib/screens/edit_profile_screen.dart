@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
+import '../services/api_service.dart';
 import '../theme/app_colors.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -23,6 +25,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   String? _avatarUrl;
   bool _isLoading = false;
   bool _isFetching = true;
+  bool _isUploadingAvatar = false;
   UserProfile? _profile;
 
   // Preset avatar URLs for selection
@@ -118,20 +121,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final payload = {
-        'user_id': session.user.id,
-        'name': name,
-        'phone': _phoneController.text.trim(),
-        'location': _locationController.text.trim(),
-        'role': _roleController.text.trim().isNotEmpty ? _roleController.text.trim() : 'Student',
-        if (_avatarUrl != null && _avatarUrl!.isNotEmpty) 'profile_image': _avatarUrl,
-        if (session.user.email != null) 'email': session.user.email,
-        'updated_at': DateTime.now().toIso8601String(),
-      };
+      final result = await ApiService.updateProfile(
+        accessToken: session.accessToken,
+        name: name,
+        phone: _phoneController.text.trim(),
+        location: _locationController.text.trim(),
+        role: _roleController.text.trim().isNotEmpty
+            ? _roleController.text.trim()
+            : 'Student',
+        profileImage: _avatarUrl,
+      );
 
-      await JomnesDB.from('Users').upsert(payload);
+      if (!mounted) return;
 
-      if (mounted) {
+      if (result['success'] == true) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -148,6 +151,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ),
         );
         context.pop(true);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Failed to update profile.'),
+            backgroundColor: AppColors.liveRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -161,6 +172,67 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _pickFromGallery(BuildContext sheetContext) async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) return;
+
+    // Close the bottom sheet first so the picker can open
+    Navigator.pop(sheetContext);
+
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+      maxWidth: 512,
+    );
+    if (picked == null) return;
+    if (!mounted) return;
+
+    setState(() => _isUploadingAvatar = true);
+    try {
+      final result = await ApiService.uploadAvatar(picked.path, session.accessToken);
+      if (result['success'] == true && mounted) {
+        final timestamp = DateTime.now().millisecondsSinceEpoch;
+        final newUrl = '${result['avatarUrl']}?t=$timestamp';
+        setState(() => _avatarUrl = newUrl);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text('Photo uploaded!',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ]),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['message'] ?? 'Upload failed. Try again.'),
+            backgroundColor: AppColors.liveRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload error: $e'),
+            backgroundColor: AppColors.liveRed,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isUploadingAvatar = false);
     }
   }
 
@@ -273,7 +345,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 16),
+              // ── Upload from Gallery ────────────────────────────────────
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _pickFromGallery(ctx),
+                  icon: const Icon(Icons.photo_library_rounded, size: 18),
+                  label: Text('Upload from Gallery',
+                      style: GoogleFonts.inter(
+                          fontSize: 15, fontWeight: FontWeight.w700)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.accentBlue,
+                    side: const BorderSide(color: AppColors.accentBlue, width: 1.5),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -411,7 +502,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         child: ClipOval(
                                           child: Container(
                                             color: const Color(0xFFFFD5DC),
-                                            child: _avatarUrl != null && _avatarUrl!.isNotEmpty
+                                            child: _isUploadingAvatar
+                                                ? const Center(
+                                                    child: SizedBox(
+                                                      width: 36,
+                                                      height: 36,
+                                                      child: CircularProgressIndicator(
+                                                          strokeWidth: 3,
+                                                          color: Color(0xFF3B82F6)),
+                                                    ),
+                                                  )
+                                                : _avatarUrl != null && _avatarUrl!.isNotEmpty
                                                 ? Image.network(
                                                     _avatarUrl!,
                                                     fit: BoxFit.cover,
