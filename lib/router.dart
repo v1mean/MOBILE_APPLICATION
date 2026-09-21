@@ -20,6 +20,16 @@ import 'screens/change_password_screen.dart';
 import 'screens/privacy_security_screen.dart';
 import 'screens/payment_methods_screen.dart';
 import 'screens/course_listing_screen.dart';
+import 'screens/role_selection_screen.dart';
+import 'screens/teacher_login_screen.dart';
+import 'screens/teacher_register_screen.dart';
+import 'screens/teacher_forgot_password_screen.dart';
+import 'screens/teacher_home_screen.dart';
+import 'screens/teacher_students_screen.dart';
+import 'screens/teacher_pc_request_screen.dart';
+import 'screens/teacher_schedules_screen.dart';
+import 'screens/teacher_upload_course_screen.dart';
+import 'screens/teacher_settings_screen.dart';
 import 'services/api_service.dart';
 
 void setupDeepLinkListener() {
@@ -95,25 +105,56 @@ final GoRouter router = GoRouter(
     final isGoingToSplash = state.matchedLocation == '/';
     final isGoingToForgotPassword = state.matchedLocation == '/forgot-password';
     final isGoingToResetPassword = state.matchedLocation == '/reset-password';
+    final isGoingToRoleSelect = state.matchedLocation == '/role-select';
+    final isGoingToTeacherLogin = state.matchedLocation == '/teacher-login';
+    final isGoingToTeacherRegister = state.matchedLocation == '/teacher-register';
+    final isGoingToTeacherForgotPassword = state.matchedLocation == '/teacher-forgot-password';
+    final isGoingToTeacherHome = state.matchedLocation == '/teacher-home';
+    final isGoingToTeacherStudents = state.matchedLocation == '/teacher-students';
+    final isGoingToTeacherPcRequest = state.matchedLocation == '/teacher-pc-request';
+    final isGoingToTeacherSchedules = state.matchedLocation == '/teacher-schedules';
+    final isGoingToTeacherUpload = state.matchedLocation == '/teacher-upload';
+    final isGoingToTeacherSettings = state.matchedLocation == '/teacher-settings';
 
     final isAuthPage = isGoingToLogin ||
         isGoingToRegister ||
         isGoingToSplash ||
         isGoingToForgotPassword ||
-        isGoingToResetPassword;
+        isGoingToResetPassword ||
+        isGoingToRoleSelect ||
+        isGoingToTeacherLogin ||
+        isGoingToTeacherRegister ||
+        isGoingToTeacherForgotPassword ||
+        isGoingToTeacherHome ||
+        isGoingToTeacherStudents ||
+        isGoingToTeacherPcRequest ||
+        isGoingToTeacherSchedules ||
+        isGoingToTeacherUpload ||
+        isGoingToTeacherSettings;
 
     // If unauthenticated (and not guest) and trying to access a protected route
     if (!loggedIn && !isAuthPage) {
       return '/login';
     }
     // If logged in (real session OR guest) and on an auth/splash page → go home
-    if (loggedIn && (isGoingToLogin || isGoingToRegister || isGoingToSplash)) {
+    if (loggedIn && (isGoingToLogin || isGoingToRegister || isGoingToSplash ||
+        isGoingToRoleSelect || isGoingToTeacherLogin)) {
       return '/home';
     }
     return null; // No redirection needed
   },
   routes: [
     GoRoute(path: '/', pageBuilder: (c, s) => _instant(s, const SplashScreen())),
+    GoRoute(path: '/role-select', pageBuilder: (c, s) => _instant(s, const RoleSelectionScreen())),
+    GoRoute(path: '/teacher-login', pageBuilder: (c, s) => _instant(s, const TeacherLoginScreen())),
+    GoRoute(path: '/teacher-register', pageBuilder: (c, s) => _instant(s, const TeacherRegisterScreen())),
+    GoRoute(path: '/teacher-forgot-password', pageBuilder: (c, s) => _instant(s, const TeacherForgotPasswordScreen())),
+    GoRoute(path: '/teacher-home', pageBuilder: (c, s) => _instant(s, const TeacherHomeScreen())),
+    GoRoute(path: '/teacher-students', pageBuilder: (c, s) => _instant(s, const TeacherStudentsScreen())),
+    GoRoute(path: '/teacher-pc-request', pageBuilder: (c, s) => _instant(s, const TeacherPcRequestScreen())),
+    GoRoute(path: '/teacher-schedules', pageBuilder: (c, s) => _instant(s, const TeacherSchedulesScreen())),
+    GoRoute(path: '/teacher-upload', pageBuilder: (c, s) => _instant(s, const TeacherUploadCourseScreen())),
+    GoRoute(path: '/teacher-settings', pageBuilder: (c, s) => _instant(s, const TeacherSettingsScreen())),
     GoRoute(
       path: '/login',
       pageBuilder: (c, s) {
