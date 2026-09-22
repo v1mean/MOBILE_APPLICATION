@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'screens/splash_screen.dart';
 import 'screens/login_screen.dart';
@@ -44,11 +45,26 @@ void setupDeepLinkListener() {
     if (event == AuthChangeEvent.passwordRecovery && session != null) {
       router.go('/reset-password?access_token=${session.accessToken}');
     } else if (event == AuthChangeEvent.signedIn && session != null) {
-      // Ensure backend profile is created/synced for social logins
-      ApiService.syncSocialUser(session.accessToken);
-      
-      // Navigate to home screen after sign in.
-      router.go('/home');
+      // Fetch role from SharedPreferences
+      SharedPreferences.getInstance().then((prefs) async {
+        final role = prefs.getString('pending_role') ?? 'student';
+        await ApiService.syncSocialUser(session.accessToken, role);
+        await prefs.remove('pending_role');
+
+        String finalRole = role;
+        try {
+          final data = await JomnesDB.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+          if (data != null && data['role'] != null) {
+            finalRole = data['role'];
+          }
+        } catch (_) {}
+
+        if (finalRole == 'mentor' || finalRole == 'teacher') {
+          router.go('/teacher-home');
+        } else {
+          router.go('/home');
+        }
+      });
     } else if (event == AuthChangeEvent.signedOut) {
       router.go('/');
     }
@@ -138,6 +154,10 @@ final GoRouter router = GoRouter(
     }
     // If logged in (real session OR guest) and on student login/register -> go home
     if (loggedIn && (isGoingToLogin || isGoingToRegister)) {
+      final appRole = session?.user.appMetadata['role'];
+      if (appRole == 'mentor' || appRole == 'teacher') {
+        return '/teacher-home';
+      }
       return '/home';
     }
     return null; // No redirection needed
@@ -158,10 +178,17 @@ final GoRouter router = GoRouter(
       path: '/login',
       pageBuilder: (c, s) {
         final resetSuccess = s.uri.queryParameters['reset'] == 'success';
-        return _instant(s, LoginScreen(passwordResetSuccess: resetSuccess));
+        final role = s.uri.queryParameters['role'] ?? 'student';
+        return _instant(s, LoginScreen(passwordResetSuccess: resetSuccess, role: role));
       },
     ),
-    GoRoute(path: '/register', pageBuilder: (c, s) => _instant(s, const RegisterScreen())),
+    GoRoute(
+      path: '/register', 
+      pageBuilder: (c, s) {
+        final role = s.uri.queryParameters['role'] ?? 'student';
+        return _instant(s, RegisterScreen(role: role));
+      }
+    ),
     GoRoute(path: '/forgot-password', pageBuilder: (c, s) => _instant(s, const ForgotPasswordScreen())),
     GoRoute(
       path: '/reset-password',

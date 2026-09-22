@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
+import '../main.dart';
 
 class TeacherSettingsScreen extends StatefulWidget {
   const TeacherSettingsScreen({super.key});
@@ -18,12 +19,40 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   bool _darkMode = false;
   String _selectedLanguage = 'English';
 
-  // Mock teacher profile — replace with real data later
-  final String _name = 'Jessica Carl';
-  final String _email = 'jessica.carl@jomnes.com';
-  final String _phone = '012 345 678';
-  final String _subject = 'Chemistry';
-  final String _role = 'Teacher';
+  String _name = 'Teacher';
+  String _email = '';
+  String _phone = '';
+  String _subject = 'General';
+  String _role = 'Lecturer';
+  String? _avatarUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return;
+      
+      // We query the Users table because it contains the phone number.
+      final data = await JomnesDB.from('Users').select('name, email, phone, profile_image, role').eq('user_id', session.user.id).maybeSingle();
+      if (data != null && mounted) {
+        setState(() {
+          _name = data['name'] ?? 'Teacher';
+          _email = data['email'] ?? '';
+          _phone = data['phone'] ?? '';
+          if (data['role'] != null) {
+             _role = data['role'] == 'mentor' || data['role'] == 'tutor' ? 'Teacher / Mentor' : data['role'];
+          }
+          _avatarUrl = data['profile_image'];
+          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
+        });
+      }
+    } catch (_) {}
+  }
 
   void _showLanguagePicker() {
     showModalBottomSheet(
@@ -57,6 +86,15 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
     );
   }
 
+  void _handleLogout() async {
+    try {
+      await JomnesDB.auth.signOut();
+      if (mounted) context.go('/login');
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error logging out: $e')));
+    }
+  }
+
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -73,7 +111,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              context.go('/');
+              _handleLogout();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.liveRed,
@@ -131,12 +169,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: const Color(0xFF7B3FC8),
-                    child: ClipOval(
-                      child: Image.asset('assets/images/jessica_avatar.png',
-                          width: 48, height: 48, fit: BoxFit.cover,
-                          errorBuilder: (ctx, e, st) => Text(initial,
-                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white))),
-                    ),
+                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                    child: _avatarUrl == null
+                        ? Text(initial, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white))
+                        : null,
                   ),
                   const SizedBox(width: 14),
                   Column(
@@ -193,7 +229,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           icon: Icons.person_outline_rounded,
                           iconColor: AppColors.accentBlue,
                           title: 'Edit Profile',
-                          onTap: () {},
+                          onTap: () async {
+                            await context.push('/edit-profile');
+                            _fetchProfile();
+                          },
                         ),
                         _SettingsTile(
                           icon: Icons.phone_outlined,
@@ -400,7 +439,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () {},
+            onTap: () async {
+              await context.push('/edit-profile');
+              _fetchProfile();
+            },
             child: Padding(
               padding: const EdgeInsets.all(18),
               child: Row(
@@ -409,13 +451,18 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                     child: Container(
                       width: 60, height: 60,
                       color: Colors.white24,
-                      child: Image.asset('assets/images/jessica_avatar.png',
-                          fit: BoxFit.cover,
-                          errorBuilder: (ctx, e, st) => CircleAvatar(
+                      child: _avatarUrl != null
+                        ? Image.network(_avatarUrl!, fit: BoxFit.cover,
+                            errorBuilder: (ctx, e, st) => CircleAvatar(
+                              backgroundColor: const Color(0xFFFFD5DC),
+                              child: Text(initial,
+                                  style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
+                            ))
+                        : CircleAvatar(
                             backgroundColor: const Color(0xFFFFD5DC),
                             child: Text(initial,
                                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
-                          )),
+                          ),
                     ),
                   ),
                   const SizedBox(width: 14),

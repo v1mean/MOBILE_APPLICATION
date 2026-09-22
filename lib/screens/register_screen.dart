@@ -8,9 +8,11 @@ import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../router.dart';
+import '../main.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final String role;
+  const RegisterScreen({super.key, this.role = 'student'});
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -59,12 +61,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ApiService.registerUser(email, password, fullName);
+      final response = await ApiService.registerUser(email, password, fullName, widget.role);
       
       if (response['success'] == true) {
         if (mounted) {
           if (response['session'] != null) {
-            context.go('/login');
+            final session = JomnesDB.auth.currentSession;
+            String finalRole = widget.role;
+            if (session != null) {
+               try {
+                  final data = await JomnesDB.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+                  if (data != null && data['role'] != null) {
+                    finalRole = data['role'];
+                  }
+               } catch (_) {}
+            }
+            if (finalRole == 'teacher' || finalRole == 'mentor') {
+               context.go('/teacher-home');
+            } else {
+               context.go('/home');
+            }
           } else {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Registration successful! Please check your email to verify your account before logging in.')),
@@ -93,12 +109,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithGoogle();
-      if (mounted) context.go('/home');
+      await _authService.signInWithGoogle(widget.role);
+      // Dynamic routing handled in router.dart
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Sign-In failed: $e')),
+          SnackBar(content: Text('Google Login failed: $e')),
         );
       }
     } finally {
@@ -109,7 +125,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleFacebookLogin() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithFacebook();
+      await _authService.signInWithFacebook(widget.role);
       // No navigation here — signInWithOAuth returns as soon as the browser is
       // launched, before login completes. router.dart's onAuthStateChange
       // listener sends us to /home once the session actually arrives.

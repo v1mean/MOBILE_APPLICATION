@@ -24,6 +24,7 @@ dependencies:
   flutter_local_notifications: ^22.3.1
   add_2_calendar: ^3.1.1
   flutter_rating_bar: ^4.0.1
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

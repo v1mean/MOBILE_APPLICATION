@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
+import '../main.dart';
 
 class _RequestItem {
   final String name;
@@ -10,8 +11,16 @@ class _RequestItem {
   _RequestItem(this.name, this.avatarUrl);
 }
 
-class TeacherPcRequestScreen extends StatelessWidget {
+class TeacherPcRequestScreen extends StatefulWidget {
   const TeacherPcRequestScreen({super.key});
+
+  @override
+  State<TeacherPcRequestScreen> createState() => _TeacherPcRequestScreenState();
+}
+
+class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
+  String _userName = 'Teacher';
+  String? _avatarUrl;
 
   static final _requests = [
     _RequestItem(
@@ -33,6 +42,27 @@ class TeacherPcRequestScreen extends StatelessWidget {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return;
+      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
+      if (data != null && mounted) {
+        setState(() {
+          _userName = data['full_name'] ?? 'Teacher';
+          _avatarUrl = data['avatar_url'];
+          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     return Scaffold(
@@ -49,26 +79,17 @@ class TeacherPcRequestScreen extends StatelessWidget {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: const Color(0xFF7B3FC8),
-                    child: ClipOval(
-                      child: Image.asset(
-                        'assets/images/jessica_avatar.png',
-                        width: 48,
-                        height: 48,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, e, st) => const Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 28,
-                        ),
-                      ),
-                    ),
+                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                    child: _avatarUrl == null
+                        ? const Icon(Icons.person, color: Colors.white, size: 28)
+                        : null,
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Jessica Carl',
+                        _userName,
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

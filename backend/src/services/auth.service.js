@@ -58,7 +58,25 @@ export async function registerUser({
       console.warn("Could not insert user profile:", insertError.message);
     }
   } catch (err) {
-    console.warn("Could not insert user profile:", err.message);
+    console.warn("Could not insert user profile catch:", err.message);
+  }
+
+  if (role === 'mentor') {
+    try {
+      const { error: tutorError } = await supabaseAdmin.from('tutor_profiles').insert({
+        user_id: data.user.id,
+        bio: 'New mentor profile',
+        hourly_rate: 0,
+        experience_years: 0,
+        teaching_mode: 'online',
+        location: '',
+        rating: 5.0,
+        is_available: true,
+      });
+      if (tutorError) console.warn("Could not insert tutor profile:", tutorError.message);
+    } catch (err) {
+      console.warn("Could not insert tutor profile catch:", err.message);
+    }
   }
 
   return {

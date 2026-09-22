@@ -4,6 +4,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../router.dart';
 import 'api_service.dart';
 
@@ -31,7 +32,10 @@ class AuthService {
   }
 
   //Google Sign-In (Native / Web)
-  Future<void> signInWithGoogle() async {
+  Future<void> signInWithGoogle(String role) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('pending_role', role);
+
     if (kIsWeb) {
       log('DEBUG: Initiating Google OAuth sign-in for Web');
       await supabase.auth.signInWithOAuth(
@@ -88,7 +92,7 @@ class AuthService {
 
       final session = supabase.auth.currentSession;
       if (session != null) {
-        ApiService.syncSocialUser(session.accessToken); 
+        ApiService.syncSocialUser(session.accessToken, role); 
       }
     } on AuthApiException catch (e) {
       log('DEBUG: AuthApiException — statusCode: ${e.statusCode}, message: ${e.message}');
@@ -100,8 +104,11 @@ class AuthService {
   }
 
   // ── Facebook Sign-In (Native SDK) ──────────────────────────────────────────
-  Future<void> signInWithFacebook() async {
+  Future<void> signInWithFacebook(String role) async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('pending_role', role);
+      
       log('DEBUG: Initiating Facebook OAuth sign-in');
       // ignore: avoid_print
       print('>>> FB: calling signInWithOAuth, kIsWeb=$kIsWeb');

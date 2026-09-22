@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
+import '../main.dart';
 
 class _ScheduleItem {
   final String name;
@@ -21,8 +22,16 @@ class _CourseItem {
   _CourseItem(this.title, this.description, this.rating, this.timeAgo, this.color);
 }
 
-class TeacherHomeScreen extends StatelessWidget {
+class TeacherHomeScreen extends StatefulWidget {
   const TeacherHomeScreen({super.key});
+
+  @override
+  State<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
+}
+
+class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
+  String _userName = 'Teacher';
+  String? _avatarUrl;
 
   static final _schedule = [
     _ScheduleItem('Socheatre', 'Chroy Chongva', '10am - 11am', const Color(0xFFF3E8FF)),
@@ -34,6 +43,27 @@ class TeacherHomeScreen extends StatelessWidget {
     _CourseItem('Master Chemistry Formular /\nBac II Preparation Course', 'Practice Exercise/ understand\nmore about formula.', 4.5, '1 day ago', const Color(0xFFF3D0FF)),
     _CourseItem('Bac II Chemistry Most\nPractice Exercises', 'Practice Exercise/ understand\nmore about formula.', 4.3, '10hrs ago', const Color(0xFFBFEFFF)),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return;
+      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
+      if (data != null && mounted) {
+        setState(() {
+          _userName = data['full_name'] ?? 'Teacher';
+          _avatarUrl = data['avatar_url'];
+          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
+        });
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,17 +84,16 @@ class TeacherHomeScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: const Color(0xFF7B3FC8),
-                      child: ClipOval(
-                        child: Image.asset('assets/images/jessica_avatar.png',
-                            width: 48, height: 48, fit: BoxFit.cover,
-                            errorBuilder: (ctx, e, st) => const Icon(Icons.person, color: Colors.white, size: 28)),
-                      ),
+                      backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                      child: _avatarUrl == null
+                          ? const Icon(Icons.person, color: Colors.white, size: 28)
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Jessica Carl', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                        Text(_userName, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
                         Text('Teacher', style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
                       ],
                     ),

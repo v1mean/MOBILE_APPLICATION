@@ -3,7 +3,7 @@ import { supabase, supabaseAdmin } from "../config/supabase.js";
 
 export async function register(req, res) {
   try {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, role } = req.body;
 
     if (!email || !password || !fullName) {
       return res.status(400).json({
@@ -27,11 +27,13 @@ export async function register(req, res) {
       });
     }
 
+    const finalRole = (role === 'mentor' || role === 'teacher') ? 'mentor' : 'student';
+
     const result = await registerUser({
       email,
       password,
       fullName,
-      role: "student",
+      role: finalRole,
     });
 
     return res.status(201).json({
@@ -199,6 +201,9 @@ export async function socialSyncController(req, res) {
     const user = req.user;
     const provider = user.app_metadata?.provider || "social";
     const isNewUser = !user.app_metadata?.role;
+    
+    let requestedRole = req.body?.role;
+    let finalRole = (requestedRole === 'mentor' || requestedRole === 'teacher') ? 'mentor' : 'student';
 
     // ── Step 1: Set the role in Supabase Auth app_metadata ──────────────────
     // This is checked by requireRole() middleware and is the source of truth
@@ -206,11 +211,14 @@ export async function socialSyncController(req, res) {
     if (isNewUser) {
       const { error: metaError } = await supabaseAdmin.auth.admin.updateUserById(
         user.id,
-        { app_metadata: { role: "student" } }
+        { app_metadata: { role: finalRole } }
       );
       if (metaError) {
         console.warn(`[${provider}] Could not set app_metadata role:`, metaError.message);
       }
+    } else {
+      // If returning user, ignore the passed role and use their existing app_metadata role
+      finalRole = user.app_metadata?.role || 'student';
     }
 
     // ── Step 2: Upsert a row in the public.profiles table ───────────────────
@@ -235,8 +243,8 @@ export async function socialSyncController(req, res) {
         {
           user_id: user.id,
           email: user.email ?? user.user_metadata?.email ?? "",
-          name: fullName || "Student",
-          role: "student",
+          name: fullName || "User",
+          role: finalRole,
           phone: "",
           profile_image: avatarUrl || "",
           location: "",
@@ -254,7 +262,7 @@ export async function socialSyncController(req, res) {
             email: user.email ?? user.user_metadata?.email ?? "",
             full_name: fullName,
             avatar_url: avatarUrl,
-            role: "student",
+            role: finalRole,
             created_at: new Date().toISOString(),
           },
           {
@@ -275,6 +283,27 @@ export async function socialSyncController(req, res) {
         console.error("ERROR: Profiles table missing in Supabase. Please run the SQL initialization script.");
       } else {
         console.error(`[${provider}] Profile upsert catch error:`, profileCatchError.message);
+      }
+    }
+
+    if (isNewUser && finalRole === 'mentor') {
+      try {
+        const { error: tutorError } = await supabaseAdmin.from('tutor_profiles').upsert(
+          {
+            user_id: user.id,
+            bio: 'New mentor profile',
+            hourly_rate: 0,
+            experience_years: 0,
+            teaching_mode: 'online',
+            location: '',
+            rating: 5.0,
+            is_available: true,
+          },
+          { onConflict: "user_id", ignoreDuplicates: true }
+        );
+        if (tutorError) console.warn("Could not upsert tutor profile:", tutorError.message);
+      } catch (err) {
+        console.warn("Could not upsert tutor profile catch:", err.message);
       }
     }
 

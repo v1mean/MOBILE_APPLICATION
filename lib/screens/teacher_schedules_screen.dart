@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
+import '../main.dart';
 
 class _Student {
   final String name;
@@ -8,8 +9,16 @@ class _Student {
   _Student(this.name, this.location);
 }
 
-class TeacherSchedulesScreen extends StatelessWidget {
+class TeacherSchedulesScreen extends StatefulWidget {
   const TeacherSchedulesScreen({super.key});
+
+  @override
+  State<TeacherSchedulesScreen> createState() => _TeacherSchedulesScreenState();
+}
+
+class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
+  String _userName = 'Teacher';
+  String? _avatarUrl;
 
   static final _students = [
     _Student('Srey Pich', 'Preak Leab'),
@@ -28,6 +37,27 @@ class TeacherSchedulesScreen extends StatelessWidget {
   static final _hours = ['8am', '9am', '10am', '11am', '12pm', '1pm', '2pm', '3pm'];
 
   @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return;
+      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
+      if (data != null && mounted) {
+        setState(() {
+          _userName = data['full_name'] ?? 'Teacher';
+          _avatarUrl = data['avatar_url'];
+          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
+        });
+      }
+    } catch (_) {}
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF5F6FA),
@@ -44,17 +74,16 @@ class TeacherSchedulesScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 24,
                       backgroundColor: const Color(0xFF7B3FC8),
-                      child: ClipOval(
-                        child: Image.asset('assets/images/jessica_avatar.png',
-                            width: 48, height: 48, fit: BoxFit.cover,
-                            errorBuilder: (ctx, e, st) => const Icon(Icons.person, color: Colors.white, size: 28)),
-                      ),
+                      backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                      child: _avatarUrl == null
+                          ? const Icon(Icons.person, color: Colors.white, size: 28)
+                          : null,
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Jessica Carl', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+                        Text(_userName, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
                         Text('Teacher', style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
                       ],
                     ),

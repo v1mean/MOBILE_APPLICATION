@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -162,11 +162,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                               onPressed: _selectedRole == null
                                   ? null
                                   : () {
-                                      if (_selectedRole == 'student') {
-                                        context.push('/login');
-                                      } else {
-                                        context.push('/teacher-login');
-                                      }
+                                      final roleParams = '?role=$_selectedRole';
+                                      context.push('/login$roleParams');
                                     },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.white,

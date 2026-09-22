@@ -13,7 +13,8 @@ import '../router.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool passwordResetSuccess;
-  const LoginScreen({super.key, this.passwordResetSuccess = false});
+  final String role;
+  const LoginScreen({super.key, this.passwordResetSuccess = false, this.role = 'student'});
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -88,7 +89,21 @@ class _LoginScreenState extends State<LoginScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(response['message'] ?? 'Login Successful')),
           );
-          context.go('/home');
+          final session = JomnesDB.auth.currentSession;
+          String finalRole = widget.role;
+          if (session != null) {
+             try {
+                final data = await JomnesDB.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
+                if (data != null && data['role'] != null) {
+                  finalRole = data['role'];
+                }
+             } catch (_) {}
+          }
+          if (finalRole == 'teacher' || finalRole == 'mentor') {
+             context.go('/teacher-home');
+          } else {
+             context.go('/home');
+          }
         }
       } else {
         if (mounted) {
@@ -116,9 +131,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleGoogleLogin() async {
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithGoogle();
+      await _authService.signInWithGoogle(widget.role);
      
-      if (mounted) context.go('/home');
+      // Dynamic routing will be handled by router.dart based on DB role
     } catch (e) {
       log('Google Login error: $e');
       if (mounted) {
@@ -139,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
     print('>>> FB TAP: _handleFacebookLogin entered');
     setState(() => _isLoading = true);
     try {
-      await _authService.signInWithFacebook();
+      await _authService.signInWithFacebook(widget.role);
       // ignore: avoid_print
       print('>>> FB TAP: signInWithFacebook returned without throwing');
       // Do NOT navigate here: signInWithOAuth only launches the browser and

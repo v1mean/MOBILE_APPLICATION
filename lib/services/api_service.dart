@@ -130,6 +130,7 @@ class ApiService {
     String email,
     String password,
     String fullName,
+    String role,
   ) async {
     final response = await _postWithFallback(
       '/auth/register',
@@ -137,6 +138,7 @@ class ApiService {
         'email': email,
         'password': password,
         'fullName': fullName,
+        'role': role,
       }),
     );
 
@@ -165,11 +167,13 @@ class ApiService {
     return jsonDecode(response.body);
   }
 
-  static Future<void> syncSocialUser(String accessToken) async {
+  static Future<void> syncSocialUser(String accessToken, String role) async {
     try {
+      final body = jsonEncode({'role': role});
       final response = await _postWithFallback(
         '/auth/social-sync',
         headers: {'Authorization': 'Bearer $accessToken'},
+        body: body,
       );
       log('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
