@@ -188,13 +188,21 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
 
   Future<void> _fetchMentor() async {
     try {
-      final user = await JomnesDB.from(
+      var user = await JomnesDB.from(
+        'Users',
+      ).select().eq('user_id', widget.mentorId).maybeSingle();
+      user ??= await JomnesDB.from(
         'profiles',
       ).select().eq('id', widget.mentorId).maybeSingle();
 
-      final profile = await JomnesDB.from(
-        'tutor_profiles',
-      ).select().eq('tutor_id', widget.mentorId).maybeSingle();
+      var profile = await JomnesDB.from('tutor_profiles')
+          .select()
+          .eq('user_id', widget.mentorId)
+          .maybeSingle();
+      profile ??= await JomnesDB.from('tutor_profiles')
+          .select()
+          .eq('tutor_id', widget.mentorId)
+          .maybeSingle();
 
       final coursesData = await JomnesDB.from(
         'courses',
@@ -206,18 +214,26 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
 
       if (mounted && user != null) {
         final p = profile ?? {};
+        final rawSub = p['subject'] as String? ?? p['category'] as String?;
+        final subject = (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
+            ? rawSub
+            : Mentor.inferMentorSubject(p['bio'], p['education']);
+
         setState(() {
           _mentor = Mentor(
             id: widget.mentorId,
-            name: user['full_name'] ?? 'Mentor',
-            subject: 'General',
+            name: user?['name'] ?? user?['full_name'] ?? 'Mentor',
+            subject: subject,
             experience: '${p['experience_years'] ?? 5} years experience',
             timeSlot: 'Flexible',
             avatarUrl:
-                (user['avatar_url'] != null &&
-                    user['avatar_url'].toString().isNotEmpty)
-                ? user['avatar_url']
-                : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
+                (user?['profile_image'] != null &&
+                        user!['profile_image'].toString().isNotEmpty)
+                    ? user['profile_image']
+                    : (user?['avatar_url'] != null &&
+                            user!['avatar_url'].toString().isNotEmpty)
+                        ? user['avatar_url']
+                        : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
             rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
             students: (p['total_students'] as num?)?.toInt() ?? 120,
             classes: 50,

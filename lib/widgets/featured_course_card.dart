@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
+import '../constants/course_categories.dart';
 
 class FeaturedCourseCard extends StatelessWidget {
   final FeaturedCourse course;
@@ -11,7 +12,7 @@ class FeaturedCourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String? assetImage;
-    if (course.cardColor == 'orange') {
+    if (course.cardColor == 'orange' || course.subject.toLowerCase() == 'math') {
       assetImage = 'assets/images/featured_math.png';
     } else if (course.cardColor == 'teal') {
       assetImage = 'assets/images/featured_geography.png';
@@ -19,7 +20,7 @@ class FeaturedCourseCard extends StatelessWidget {
       assetImage = 'assets/images/featured_chemistry.png';
     }
 
-    final theme = _getCourseTheme(course.cardColor);
+    final theme = getCategoryTheme(course.subject.isNotEmpty ? course.subject : course.cardColor);
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -127,62 +128,6 @@ class FeaturedCourseCard extends StatelessWidget {
       ),
     ),
   ),
-);
+    );
   }
-
-  _CourseTheme _getCourseTheme(String color) {
-    switch (color) {
-      case 'purple': // Physic
-        return const _CourseTheme(
-          gradient: [Color(0xFF581C87), Color(0xFF7E22CE)],
-          icon: Icons.science_rounded,
-        );
-      case 'amber': // Khmer
-        return const _CourseTheme(
-          gradient: [Color(0xFF92400E), Color(0xFFD97706)],
-          icon: Icons.menu_book_rounded,
-        );
-      case 'red': // English
-        return const _CourseTheme(
-          gradient: [Color(0xFF991B1B), Color(0xFFDC2626)],
-          icon: Icons.translate_rounded,
-        );
-      case 'slate': // Gym Trainer
-        return const _CourseTheme(
-          gradient: [Color(0xFF1E293B), Color(0xFF475569)],
-          icon: Icons.fitness_center_rounded,
-        );
-      case 'blue': // Volleyball coach
-        return const _CourseTheme(
-          gradient: [Color(0xFF0369A1), Color(0xFF0284C7)],
-          icon: Icons.sports_volleyball_rounded,
-        );
-      case 'green': // Badminton coach
-        return const _CourseTheme(
-          gradient: [Color(0xFF065F46), Color(0xFF059669)],
-          icon: Icons.sports_tennis_rounded,
-        );
-      case 'cyan': // Swimming Coach
-        return const _CourseTheme(
-          gradient: [Color(0xFF155E75), Color(0xFF0891B2)],
-          icon: Icons.pool_rounded,
-        );
-      case 'crimson': // Chinese teacher
-        return const _CourseTheme(
-          gradient: [Color(0xFF9F1239), Color(0xFFE11D48)],
-          icon: Icons.draw_rounded,
-        );
-      default:
-        return const _CourseTheme(
-          gradient: [Color(0xFF1E293B), Color(0xFF3B82F6)],
-          icon: Icons.school_rounded,
-        );
-    }
-  }
-}
-
-class _CourseTheme {
-  final List<Color> gradient;
-  final IconData icon;
-  const _CourseTheme({required this.gradient, required this.icon});
-}
+}
