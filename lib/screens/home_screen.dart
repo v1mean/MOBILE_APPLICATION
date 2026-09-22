@@ -48,37 +48,46 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final usersData = await JomnesDB.from('Users')
           .select()
-          .eq('role', 'mentor')
-          .limit(5);
+          .or('role.eq.mentor,role.eq.tutor')
+          .limit(15);
 
       final userList = usersData as List;
-      final tutorIds = userList.map((u) => u['user_id']).toList();
+      final userIds = userList.map((u) => u['user_id']).toList();
 
+      // Fetch tutor profiles (joined on user_id)
       List<dynamic> profiles = [];
-      if (tutorIds.isNotEmpty) {
+      if (userIds.isNotEmpty) {
         profiles = await JomnesDB.from('tutor_profiles')
             .select()
-            .filter('tutor_id', 'in', tutorIds) as List;
+            .filter('user_id', 'in', userIds) as List;
       }
-      final profileMap = {for (var p in profiles) p['tutor_id'].toString(): p};
+      final profileMap = {for (var p in profiles) p['user_id'].toString(): p};
 
       final mentors = userList.map((u) {
         final uid = u['user_id'].toString();
         final p = profileMap[uid] ?? {};
+        // New clean data: subject column is always set correctly in tutor_profiles
+        final subject = (p['subject'] as String? ?? '').isNotEmpty
+            ? p['subject'] as String
+            : Mentor.inferMentorSubject(p['bio'], p['education']);
+
+        final avatar = (u['profile_image'] != null &&
+                u['profile_image'].toString().trim().isNotEmpty)
+            ? u['profile_image'].toString()
+            : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop';
+
         return Mentor(
           id: uid,
           name: u['name'] ?? 'Mentor',
-          subject: 'General',
+          subject: subject,
           experience: '${p['experience_years'] ?? 5} years experience',
           timeSlot: 'Flexible',
-          avatarUrl: (u['profile_image'] != null && u['profile_image'].toString().isNotEmpty)
-              ? u['profile_image']
-              : 'https://api.dicebear.com/9.x/avataaars/png?seed=$uid',
-          rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
+          avatarUrl: avatar,
+          rating: (p['rating'] as num?)?.toDouble() ?? 4.9,
           students: (p['total_students'] as num?)?.toInt() ?? 120,
           classes: 50,
           followers: 300,
-          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 250.0,
+          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 35.0,
           bio: p['bio'] ?? 'Experienced mentor.',
           courses: [],
         );
@@ -101,18 +110,21 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+
   Future<void> _fetchFeaturedCourses() async {
     try {
       final data = await JomnesDB.from('courses')
           .select('*, Users!inner(name)')
           .eq('is_featured', true)
-          .limit(5);
+          .order('id', ascending: true);
           
       if (mounted) {
         setState(() {
           _featuredCourses = (data as List).map((e) => FeaturedCourse.fromJson(e)).toList();
           _isLoadingFeatured = false;
         });
+        // ignore: avoid_print
+        print('DEBUG fetched featured courses count: ${_featuredCourses.length}');
       }
     } catch (e, st) {
       // ignore: avoid_print

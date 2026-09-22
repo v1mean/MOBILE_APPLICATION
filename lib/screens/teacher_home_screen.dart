@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
+import '../services/teacher_course_service.dart';
 
 class _ScheduleItem {
   final String name;
@@ -10,15 +11,6 @@ class _ScheduleItem {
   final String time;
   final Color color;
   _ScheduleItem(this.name, this.location, this.time, this.color);
-}
-
-class _CourseItem {
-  final String title;
-  final String description;
-  final double rating;
-  final String timeAgo;
-  final Color color;
-  _CourseItem(this.title, this.description, this.rating, this.timeAgo, this.color);
 }
 
 class TeacherHomeScreen extends StatelessWidget {
@@ -30,10 +22,210 @@ class TeacherHomeScreen extends StatelessWidget {
     _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', const Color(0xFFDCFCE7)),
   ];
 
-  static final _courses = [
-    _CourseItem('Master Chemistry Formular /\nBac II Preparation Course', 'Practice Exercise/ understand\nmore about formula.', 4.5, '1 day ago', const Color(0xFFF3D0FF)),
-    _CourseItem('Bac II Chemistry Most\nPractice Exercises', 'Practice Exercise/ understand\nmore about formula.', 4.3, '10hrs ago', const Color(0xFFBFEFFF)),
-  ];
+  void _showCourseDetailModal(BuildContext context, TeacherCourse course) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (course.thumbnailBytes != null) ...[
+              Container(
+                height: 140,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  image: DecorationImage(
+                    image: MemoryImage(course.thumbnailBytes!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2563EB).withAlpha(20),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          course.category,
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF2563EB)),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        course.title.replaceAll('\n', ' '),
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${course.rating}',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              course.description,
+              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF4B5563), height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            if (course.materialName != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.picture_as_pdf, color: Colors.red, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.materialName!,
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (course.materialSize != null)
+                            Text(
+                              course.materialSize!,
+                              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.download_rounded, size: 18, color: Colors.black),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (course.videoName != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.play_circle_fill, color: Colors.blue, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.videoName!,
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (course.videoDuration != null)
+                            Text(
+                              course.videoDuration!,
+                              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Text('Watch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.blue)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      TeacherCourseService.instance.removeCourse(course.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Course deleted.')),
+                      );
+                    },
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                    label: Text(
+                      'Delete',
+                      style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: Colors.redAccent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +234,7 @@ class TeacherHomeScreen extends StatelessWidget {
       backgroundColor: const Color(0xFFF5F6FA),
       body: Column(
         children: [
-          // Dark header
+          // ── Dark Top Header ──
           Container(
             color: const Color(0xFF0A0A12),
             child: SafeArea(
@@ -55,22 +247,33 @@ class TeacherHomeScreen extends StatelessWidget {
                       radius: 24,
                       backgroundColor: const Color(0xFF7B3FC8),
                       child: ClipOval(
-                        child: Image.asset('assets/images/jessica_avatar.png',
-                            width: 48, height: 48, fit: BoxFit.cover,
-                            errorBuilder: (ctx, e, st) => const Icon(Icons.person, color: Colors.white, size: 28)),
+                        child: Image.asset(
+                          'assets/images/jessica_avatar.png',
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          errorBuilder: (ctx, e, st) => const Icon(Icons.person, color: Colors.white, size: 28),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Jessica Carl', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                        Text('Teacher', style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
+                        Text(
+                          'Jessica Carl',
+                          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white),
+                        ),
+                        Text(
+                          'Lecturer',
+                          style: GoogleFonts.inter(fontSize: 12, color: Colors.white54),
+                        ),
                       ],
                     ),
                     const Spacer(),
                     Container(
-                      width: 40, height: 40,
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: const Color(0xFF16161E),
                         borderRadius: BorderRadius.circular(12),
@@ -84,7 +287,7 @@ class TeacherHomeScreen extends StatelessWidget {
             ),
           ),
 
-          // Scrollable body
+          // ── Scrollable Body ──
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
@@ -92,13 +295,16 @@ class TeacherHomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Today Schedule
-                  Text('Today Schedule', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                  Text(
+                    'Today Schedule',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E)),
+                  ),
                   const SizedBox(height: 12),
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(16),
-                      boxShadow: [const BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4))],
+                      boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4))],
                     ),
                     child: Column(
                       children: [
@@ -107,7 +313,13 @@ class TeacherHomeScreen extends StatelessWidget {
                           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
                           child: Align(
                             alignment: Alignment.centerRight,
-                            child: Text('See more', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600)),
+                            child: GestureDetector(
+                              onTap: () => context.go('/teacher-schedules'),
+                              child: Text(
+                                'See more',
+                                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
+                              ),
+                            ),
                           ),
                         ),
                       ],
@@ -116,13 +328,95 @@ class TeacherHomeScreen extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  // Latest Courses
-                  Text('Your Latest Courses', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                  // Latest Courses Section Header with "+ Add Course" (Requirement 1)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Latest Courses',
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E)),
+                      ),
+                      GestureDetector(
+                        onTap: () => context.push('/teacher-upload'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.add_rounded, color: Colors.white, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Add Course',
+                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 12),
-                  ..._courses.map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _CourseCard(item: c),
-                  )),
+
+                  AnimatedBuilder(
+                    animation: TeacherCourseService.instance,
+                    builder: (context, _) {
+                      final courses = TeacherCourseService.instance.courses;
+                      return Column(
+                        children: [
+                          ...courses.map((c) => Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: _CourseCard(
+                                  item: c,
+                                  onTap: () => _showCourseDetailModal(context, c),
+                                ),
+                              )),
+                          // Option to create/add other course (Requirement 1)
+                          GestureDetector(
+                            onTap: () => context.push('/teacher-upload'),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD5E1),
+                                  style: BorderStyle.solid,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: Color(0xFFF3F4F6),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add_rounded, size: 18, color: Colors.black),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Create or Add Another Course',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: const Color(0xFF1E293B),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ],
               ),
             ),
@@ -134,6 +428,7 @@ class TeacherHomeScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 4,
+        shape: const CircleBorder(),
         child: const Icon(Icons.add_rounded, size: 28),
       ),
       bottomNavigationBar: const TeacherBottomNavBar(currentTab: TeacherNavTab.course),
@@ -179,41 +474,93 @@ class _ScheduleRow extends StatelessWidget {
 }
 
 class _CourseCard extends StatelessWidget {
-  final _CourseItem item;
-  const _CourseCard({required this.item});
+  final TeacherCourse item;
+  final VoidCallback onTap;
+  const _CourseCard({required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: item.color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(item.title, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: item.color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (item.thumbnailBytes != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.memory(
+                  item.thumbnailBytes!,
+                  height: 110,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
               ),
-              const SizedBox(width: 8),
-              Icon(Icons.edit_outlined, size: 18, color: Colors.grey[600]),
+              const SizedBox(height: 10),
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(item.description, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Text('${item.rating} rating', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A2E))),
-              const Spacer(),
-              Text(item.timeAgo, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
-            ],
-          ),
-        ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (item.category.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(200),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            item.category,
+                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E293B)),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      Text(
+                        item.title,
+                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E)),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.edit_outlined, size: 18, color: Colors.grey[700]),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              item.description,
+              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF4B5563)),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text(
+                  '${item.rating} rating',
+                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A2E)),
+                ),
+                const Spacer(),
+                Text(
+                  item.timeAgo,
+                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

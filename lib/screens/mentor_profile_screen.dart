@@ -36,7 +36,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
 
       final profile = await JomnesDB.from('tutor_profiles')
           .select()
-          .eq('tutor_id', widget.mentorId)
+          .eq('user_id', widget.mentorId)
           .maybeSingle();
 
       final coursesData = await JomnesDB.from('courses')
@@ -47,11 +47,16 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
 
       if (mounted && user != null) {
         final p = profile ?? {};
+        final rawSub = p['subject'] as String? ?? p['category'] as String?;
+        final subject = (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
+            ? rawSub
+            : Mentor.inferMentorSubject(p['bio'], p['education']);
+
         setState(() {
           _mentor = Mentor(
             id: widget.mentorId,
             name: user['name'] ?? 'Mentor',
-            subject: 'General',
+            subject: subject,
             experience: '${p['experience_years'] ?? 5} years experience',
             timeSlot: 'Flexible',
             avatarUrl: (user['profile_image'] != null && user['profile_image'].toString().isNotEmpty)
