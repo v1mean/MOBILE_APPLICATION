@@ -51,59 +51,85 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 36, height: 4,
+                width: 36,
+                height: 4,
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFFE5E7EB),
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
-              Text('Update Profile Photo',
-                  style: GoogleFonts.inter(
-                      fontSize: 16, fontWeight: FontWeight.w700,
-                      color: const Color(0xFF111827))),
+              Text(
+                'Update Profile Photo',
+                style: GoogleFonts.inter(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF111827),
+                ),
+              ),
               const SizedBox(height: 16),
               ListTile(
                 leading: Container(
-                  width: 42, height: 42,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: const Color(0xFF3B82F6).withAlpha(20),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.photo_library_rounded,
-                      color: Color(0xFF3B82F6)),
+                  child: const Icon(
+                    Icons.photo_library_rounded,
+                    color: Color(0xFF3B82F6),
+                  ),
                 ),
-                title: Text('Choose from Gallery',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                subtitle: Text('Select a photo from your library',
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: const Color(0xFF6B7280))),
+                title: Text(
+                  'Choose from Gallery',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Select a photo from your library',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
                 onTap: () => Navigator.pop(ctx, ImageSource.gallery),
               ),
               ListTile(
                 leading: Container(
-                  width: 42, height: 42,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: const Color(0xFF10B981).withAlpha(20),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: const Icon(Icons.camera_alt_rounded,
-                      color: Color(0xFF10B981)),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Color(0xFF10B981),
+                  ),
                 ),
-                title: Text('Take a Photo',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-                subtitle: Text('Use your camera to take a new photo',
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: const Color(0xFF6B7280))),
+                title: Text(
+                  'Take a Photo',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+                ),
+                subtitle: Text(
+                  'Use your camera to take a new photo',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: const Color(0xFF6B7280),
+                  ),
+                ),
                 onTap: () => Navigator.pop(ctx, ImageSource.camera),
               ),
               const SizedBox(height: 4),
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: Text('Cancel',
-                    style: GoogleFonts.inter(
-                        color: const Color(0xFF6B7280),
-                        fontWeight: FontWeight.w500)),
+                child: Text(
+                  'Cancel',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),
@@ -145,29 +171,37 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Row(children: [
-                const Icon(Icons.check_circle_rounded,
-                    color: Colors.white, size: 18),
-                const SizedBox(width: 8),
-                const Text('Profile photo updated!'),
-              ]),
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.white,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  const Text('Profile photo updated!'),
+                ],
+              ),
               backgroundColor: const Color(0xFF10B981),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text(result['message'] ?? 'Upload failed. Try again.')),
+            content: Text(result['message'] ?? 'Upload failed. Try again.'),
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('Upload error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Upload error: $e')));
       }
     } finally {
       if (mounted) setState(() => _isUploadingAvatar = false);
@@ -181,13 +215,25 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       return;
     }
     try {
-      final data = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+      final data = await JomnesDB.from(
+        'profiles',
+      ).select().eq('id', session.user.id).maybeSingle();
       if (mounted) {
         setState(() {
-          if (data != null) _userProfile = UserProfile.fromJson(data);
+          if (data != null) {
+            _userProfile = UserProfile(
+              userId: data['id'],
+              createdAt: data['created_at'] != null
+                  ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
+                  : DateTime.now(),
+              name: data['full_name'] ?? '',
+              email: data['email'] ?? '',
+              phone: data['phone'] ?? '',
+              role: data['role'] ?? 'Student',
+              profileImage: data['avatar_url'] ?? '',
+              location: data['city'] ?? '',
+            );
+          }
           _isLoadingProfile = false;
         });
       }
@@ -197,15 +243,16 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _fetchMyCourses() async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) {
+      if (mounted) setState(() => _isLoadingCourses = false);
+      return;
+    }
     try {
-      final data = await JomnesDB.from('courses')
-          .select()
-          .eq('is_featured', false)
-          .limit(3);
-          
+      final data = await ApiService.fetchMyCourses(session.accessToken);
       if (mounted) {
         setState(() {
-          _myCourses = (data as List).map((e) => Course.fromJson(e)).toList();
+          _myCourses = data.map((e) => Course.fromJson(e)).toList();
           _isLoadingCourses = false;
         });
       }
@@ -235,10 +282,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       url = _userProfile!.profileImage;
     } else {
       final user = JomnesDB.auth.currentUser;
-      final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+      final dynamic pic =
+          user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
       if (pic is String && pic.isNotEmpty) url = pic;
     }
-    
+
     if (url != null) {
       // Bust cache using timestamp
       return url.contains('?') ? url : '$url?t=$_avatarTimestamp';
@@ -251,7 +299,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       final now = DateTime.now();
       final diff = now.difference(_userProfile!.createdAt);
       final days = diff.inDays;
-      if (days < 30) return 'Joined Jomnes $days day${days == 1 ? '' : 's'} ago.';
+      if (days < 30)
+        return 'Joined Jomnes $days day${days == 1 ? '' : 's'} ago.';
       if (days < 365) {
         final months = (days / 30).round();
         return 'Joined Jomnes $months month${months == 1 ? '' : 's'} ago.';
@@ -266,11 +315,20 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (i == _navIndex) return;
     setState(() => _navIndex = i);
     switch (i) {
-      case 0: context.go('/home'); break;
-      case 1: context.go('/search'); break;
-      case 2: context.go('/courses'); break;
-      case 4: context.go('/settings'); break;
-      default: break;
+      case 0:
+        context.go('/home');
+        break;
+      case 1:
+        context.go('/search');
+        break;
+      case 2:
+        context.go('/courses');
+        break;
+      case 4:
+        context.go('/settings');
+        break;
+      default:
+        break;
     }
   }
 
@@ -297,7 +355,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                     width: 32,
                     height: 32,
                     decoration: const BoxDecoration(color: Colors.transparent),
-                    child: const Icon(Icons.close_rounded, size: 22, color: Color(0xFF111827)),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 22,
+                      color: Color(0xFF111827),
+                    ),
                   ),
                 ),
               ),
@@ -322,34 +384,40 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                   color: const Color(0xFFFFD5DC),
                                   child: const Center(
                                     child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Color(0xFF3B82F6)),
-                                  ))
-                              : avatar != null
-                                  ? Image.network(
-                                      avatar,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => CircleAvatar(
-                                        radius: 45,
-                                        backgroundColor:
-                                            const Color(0xFFFFD5DC),
-                                        child: Text(initial,
-                                            style: const TextStyle(
-                                                fontSize: 32,
-                                                fontWeight: FontWeight.w700,
-                                                color: Colors.black)),
-                                      ),
-                                    )
-                                  : CircleAvatar(
-                                      radius: 45,
-                                      backgroundColor:
-                                          const Color(0xFFFFD5DC),
-                                      child: Text(initial,
-                                          style: const TextStyle(
-                                              fontSize: 32,
-                                              fontWeight: FontWeight.w700,
-                                              color: Colors.black)),
+                                      strokeWidth: 2,
+                                      color: Color(0xFF3B82F6),
                                     ),
+                                  ),
+                                )
+                              : avatar != null
+                              ? Image.network(
+                                  avatar,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, _, _) => CircleAvatar(
+                                    radius: 45,
+                                    backgroundColor: const Color(0xFFFFD5DC),
+                                    child: Text(
+                                      initial,
+                                      style: const TextStyle(
+                                        fontSize: 32,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : CircleAvatar(
+                                  radius: 45,
+                                  backgroundColor: const Color(0xFFFFD5DC),
+                                  child: Text(
+                                    initial,
+                                    style: const TextStyle(
+                                      fontSize: 32,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
                         ),
                       ),
                       // Edit icon overlay
@@ -366,11 +434,13 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                             decoration: BoxDecoration(
                               color: const Color(0xFF3B82F6),
                               shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: Colors.white, width: 2),
+                              border: Border.all(color: Colors.white, width: 2),
                             ),
-                            child: const Icon(Icons.edit,
-                                size: 14, color: Colors.white),
+                            child: const Icon(
+                              Icons.edit,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -417,14 +487,21 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   const SizedBox(height: 20),
                   // Course Cards
                   if (_isLoadingCourses)
-                    const Center(child: Padding(
-                      padding: EdgeInsets.all(20.0),
-                      child: CircularProgressIndicator(color: Color(0xFF3B82F6)),
-                    ))
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF3B82F6),
+                        ),
+                      ),
+                    )
                   else if (_myCourses.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text('No courses enrolled.', style: GoogleFonts.inter(color: Colors.grey)),
+                      child: Text(
+                        'No courses enrolled.',
+                        style: GoogleFonts.inter(color: Colors.grey),
+                      ),
                     )
                   else
                     ..._myCourses.map((c) => CourseCard(course: c)),
@@ -435,7 +512,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _navIndex,
+        onTap: _onNavTap,
+      ),
     );
   }
 }

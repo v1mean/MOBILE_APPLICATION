@@ -76,6 +76,7 @@ class Mentor {
 
 class Course {
   final int id;
+  final String? tutorId;
   final String title;
   final String description;
   final double rating;
@@ -88,6 +89,7 @@ class Course {
 
   const Course({
     required this.id,
+    this.tutorId,
     required this.title,
     required this.description,
     required this.rating,
@@ -102,6 +104,7 @@ class Course {
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
       id: json['id'] as int? ?? 0,
+      tutorId: json['tutor_id'] as String?,
       title: json['title'] as String? ?? 'Untitled Course',
       description: json['description'] as String? ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,

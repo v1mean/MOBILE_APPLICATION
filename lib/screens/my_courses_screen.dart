@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../main.dart';
 import '../models/user_profile.dart';
 import '../models/mentor.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/course_card.dart';
 import '../theme/app_colors.dart';
+import '../main.dart';
+import '../services/api_service.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
@@ -19,22 +20,26 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   int _navIndex = 2;
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
-  
-  List<Course> _myCourses = [];
-  bool _isLoadingCourses = true;
+  late Future<List<Course>> _coursesFuture;
 
   @override
   void initState() {
     super.initState();
     _fetchUserProfile();
-    _fetchMyCourses();
+    _coursesFuture = _fetchMyCourses();
   }
 
-  @override
-  void reassemble() {
-    super.reassemble();
-    _fetchUserProfile();
-    _fetchMyCourses();
+  Future<List<Course>> _fetchMyCourses() async {
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) return [];
+    try {
+      final data = await ApiService.fetchMyCourses(session.accessToken);
+      return data.map((e) => Course.fromJson(e)).toList();
+    } catch (e) {
+      // ignore: avoid_print
+      print('DEBUG fetch courses error: $e');
+      return [];
+    }
   }
 
   Future<void> _fetchUserProfile() async {
@@ -43,14 +48,27 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
       if (mounted) setState(() => _isLoadingProfile = false);
       return;
     }
+
     try {
-      final data = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
+      final data = await JomnesDB.from(
+        'profiles',
+      ).select().eq('id', session.user.id).maybeSingle();
       if (mounted) {
         setState(() {
-          if (data != null) _userProfile = UserProfile.fromJson(data);
+          if (data != null) {
+            _userProfile = UserProfile(
+              userId: data['id'],
+              createdAt: data['created_at'] != null
+                  ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
+                  : DateTime.now(),
+              name: data['full_name'] ?? '',
+              email: data['email'] ?? '',
+              phone: data['phone'] ?? '',
+              role: data['role'] ?? 'Student',
+              profileImage: data['avatar_url'] ?? '',
+              location: data['city'] ?? '',
+            );
+          }
           _isLoadingProfile = false;
         });
       }
@@ -59,30 +77,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     }
   }
 
-  Future<void> _fetchMyCourses() async {
-    try {
-      final data = await JomnesDB.from('courses')
-          .select()
-          .eq('is_featured', false)
-          .limit(3);
-          
-      if (mounted) {
-        setState(() {
-          _myCourses = (data as List).map((e) => Course.fromJson(e)).toList();
-          _isLoadingCourses = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isLoadingCourses = false;
-        });
-      }
-    }
-  }
-
   String get _displayName {
-    if (_userProfile?.name.isNotEmpty == true) return _userProfile!.name;
+    if (_userProfile?.name != null && _userProfile!.name.isNotEmpty)
+      return _userProfile!.name;
     final user = JomnesDB.auth.currentUser;
     return user?.userMetadata?['full_name'] ??
         user?.userMetadata?['name'] ??
@@ -91,14 +88,18 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 
   String get _displayRole {
-    if (_userProfile?.role.isNotEmpty == true) return _userProfile!.role;
+    if (_userProfile?.role != null && _userProfile!.role.isNotEmpty)
+      return _userProfile!.role;
     return 'Student';
   }
 
   String? get _avatarUrl {
-    if (_userProfile?.profileImage.isNotEmpty == true) return _userProfile!.profileImage;
+    if (_userProfile?.profileImage != null &&
+        _userProfile!.profileImage.isNotEmpty)
+      return _userProfile!.profileImage;
     final user = JomnesDB.auth.currentUser;
-    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+    final dynamic pic =
+        user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
     return pic is String && pic.isNotEmpty ? pic : null;
   }
 
@@ -106,12 +107,175 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     if (i == _navIndex) return;
     setState(() => _navIndex = i);
     switch (i) {
-      case 0: context.go('/home'); break;
-      case 1: context.go('/search'); break;
-      case 3: context.go('/profile'); break;
-      case 4: context.go('/settings'); break;
-      default: break;
+      case 0:
+        context.go('/home');
+        break;
+      case 1:
+        context.go('/search');
+        break;
+      case 3:
+        context.go('/profile');
+        break;
+      case 4:
+        context.go('/settings');
+        break;
+      default:
+        break;
     }
+  }
+
+  void _showRatingSheet(BuildContext context, Course course) {
+    double rating = 5.0;
+    final TextEditingController commentController = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateSB) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Rate Lesson',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: const Color(0xFF111827),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    course.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star_rounded : Icons.star_border_rounded,
+                          color: Colors.amber,
+                          size: 40,
+                        ),
+                        onPressed: () {
+                          setStateSB(() => rating = index + 1.0);
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Write a review (optional)...',
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              setStateSB(() => isSubmitting = true);
+                              try {
+                                final session = JomnesDB.auth.currentSession;
+                                if (session != null && course.tutorId != null) {
+                                  await ApiService.submitReview(
+                                    accessToken: session.accessToken,
+                                    mentorId: course.tutorId!,
+                                    rating: rating,
+                                    comment: commentController.text,
+                                  );
+                                  if (mounted) {
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Review submitted!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                setStateSB(() => isSubmitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Submit Review',
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -131,7 +295,6 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  // Current User Avatar & Info (clickable to Settings)
                   GestureDetector(
                     onTap: () => context.go('/settings'),
                     behavior: HitTestBehavior.opaque,
@@ -145,22 +308,37 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                               width: 48,
                               height: 48,
                               child: _isLoadingProfile
-                                  ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
+                                  ? const CircularProgressIndicator(
+                                      color: AppColors.accentBlue,
+                                      strokeWidth: 2,
+                                    )
                                   : avatar != null
-                                      ? Image.network(
-                                          avatar,
-                                          fit: BoxFit.cover,
-                                          errorBuilder: (_, _, _) => CircleAvatar(
-                                            backgroundColor: const Color(0xFFFFD5DC),
-                                            child: Text(initial,
-                                                style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                          ),
-                                        )
-                                      : CircleAvatar(
-                                          backgroundColor: const Color(0xFFFFD5DC),
-                                          child: Text(initial,
-                                              style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
+                                  ? Image.network(
+                                      avatar,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => CircleAvatar(
+                                        backgroundColor: const Color(
+                                          0xFFFFD5DC,
                                         ),
+                                        child: Text(
+                                          initial,
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  : CircleAvatar(
+                                      backgroundColor: const Color(0xFFFFD5DC),
+                                      child: Text(
+                                        initial,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -169,12 +347,19 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                             children: [
                               Text(
                                 name,
-                                style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white),
+                                style: GoogleFonts.inter(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
                               ),
                               const SizedBox(height: 2),
                               Text(
                                 _displayRole,
-                                style: GoogleFonts.inter(fontSize: 12, color: Colors.white70),
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: Colors.white70,
+                                ),
                               ),
                             ],
                           ),
@@ -185,7 +370,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                   const Spacer(),
                   IconButton(
                     onPressed: () {},
-                    icon: const Icon(Icons.notifications_none_rounded, color: Colors.white, size: 26),
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 26,
+                    ),
                   ),
                 ],
               ),
@@ -209,53 +398,107 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                 child: RefreshIndicator(
                   color: AppColors.accentBlue,
                   onRefresh: () async {
-                    await Future.wait([
-                      _fetchUserProfile(),
-                      _fetchMyCourses(),
-                    ]);
+                    setState(() {
+                      _coursesFuture = _fetchMyCourses();
+                    });
+                    await Future.wait([_fetchUserProfile(), _coursesFuture]);
                   },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 24),
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 22),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Text(
-                          'My Courses',
-                          style: GoogleFonts.inter(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w900,
-                            color: const Color(0xFF111827),
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      if (_isLoadingCourses)
-                        const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(color: AppColors.accentBlue),
-                        ))
-                      else if (_myCourses.isEmpty)
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 22),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: Text('You have not enrolled in any courses yet.', style: GoogleFonts.inter(color: Colors.grey)),
-                        )
-                      else
-                        ..._myCourses.map((c) => CourseCard(course: c)),
-                    ],
+                          child: Text(
+                            'My Courses',
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: const Color(0xFF111827),
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        FutureBuilder<List<Course>>(
+                          future: _coursesFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.accentBlue,
+                                  ),
+                                ),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Text(
+                                  'Error loading courses',
+                                  style: GoogleFonts.inter(color: Colors.red),
+                                ),
+                              );
+                            }
+                            final courses = snapshot.data ?? [];
+                            if (courses.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 40,
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      const Icon(
+                                        Icons.menu_book,
+                                        size: 64,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No courses enrolled',
+                                        style: GoogleFonts.inter(
+                                          color: Colors.grey,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                            return Column(
+                              children: courses
+                                  .map((c) => CourseCard(
+                                        course: c,
+                                        onRateLesson: () => _showRatingSheet(context, c),
+                                      ))
+                                  .toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
-    ),
-      bottomNavigationBar: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
+        ],
+      ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _navIndex,
+        onTap: _onNavTap,
+      ),
     );
   }
 }

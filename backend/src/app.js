@@ -6,6 +6,10 @@ import rateLimit from "express-rate-limit";
 import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 
+import bookingRoutes from "./routes/booking.routes.js";
+
+import reviewRoutes from "./routes/review.routes.js";
+
 const app = express();
 
 app.use(helmet());
@@ -30,6 +34,9 @@ const authLimiter = rateLimit({
 
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/reviews", reviewRoutes);
+
 
 app.get("/api/health", (req, res) => {
   res.json({

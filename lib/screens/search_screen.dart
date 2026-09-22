@@ -102,8 +102,21 @@ class _SearchScreenState extends State<SearchScreen> {
     final session = JomnesDB.auth.currentSession;
     if (session == null) return;
     try {
-      final data = await JomnesDB.from('Users').select().eq('user_id', session.user.id).maybeSingle();
-      if (mounted && data != null) setState(() => _userProfile = UserProfile.fromJson(data));
+      final data = await JomnesDB.from('profiles').select().eq('id', session.user.id).maybeSingle();
+      if (mounted && data != null) {
+        setState(() {
+          _userProfile = UserProfile(
+            userId: data['id'],
+            createdAt: data['created_at'] != null ? DateTime.tryParse(data['created_at']) ?? DateTime.now() : DateTime.now(),
+            name: data['full_name'] ?? '',
+            email: data['email'] ?? '',
+            phone: data['phone'] ?? '',
+            role: data['role'] ?? 'Student',
+            profileImage: data['avatar_url'] ?? '',
+            location: data['city'] ?? '',
+          );
+        });
+      }
     } catch (_) {}
   }
 

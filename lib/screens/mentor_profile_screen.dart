@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:add_2_calendar/add_2_calendar.dart';
 import '../models/mentor.dart';
 import '../widgets/course_card.dart';
 import '../main.dart';
+import '../services/api_service.dart';
+import '../services/notification_service.dart';
+
 
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;
@@ -13,49 +17,206 @@ class MentorProfileScreen extends StatefulWidget {
   State<MentorProfileScreen> createState() => _MentorProfileScreenState();
 }
 
-class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTickerProviderStateMixin {
+class _MentorProfileScreenState extends State<MentorProfileScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _following = false;
-  
+  bool _isBooking = false;
+
   Mentor? _mentor;
   bool _isLoading = true;
+  List<Map<String, dynamic>> _reviews = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (mounted) setState(() {});
+    });
     _fetchMentor();
+    _fetchReviews();
+  }
+
+  Future<void> _fetchReviews() async {
+    try {
+      final reviews = await ApiService.fetchMentorReviews(widget.mentorId);
+      if (mounted) setState(() => _reviews = reviews);
+    } catch (_) {}
+  }
+
+  Future<void> _showBookingSheet() async {
+    if (_mentor == null) return;
+    DateTime? selectedDate;
+    String? selectedTime;
+    final timeSlots = ['9:00 AM', '11:00 AM', '2:00 PM', '4:00 PM'];
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
+                left: 20, right: 20, top: 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Book Session', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(selectedDate == null ? 'Select Date' : '${selectedDate!.toLocal()}'.split(' ')[0], 
+                           style: GoogleFonts.inter(fontSize: 16)),
+                      TextButton(
+                        onPressed: () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: DateTime.now().add(const Duration(days: 1)),
+                            firstDate: DateTime.now(),
+                            lastDate: DateTime.now().add(const Duration(days: 60)),
+                          );
+                          if (date != null) {
+                            setSheetState(() => selectedDate = date);
+                          }
+                        },
+                        child: const Text('Pick Date'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text('Time Slot', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 10,
+                    children: timeSlots.map((slot) {
+                      return ChoiceChip(
+                        label: Text(slot),
+                        selected: selectedTime == slot,
+                        onSelected: (selected) {
+                          setSheetState(() => selectedTime = selected ? slot : null);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: (selectedDate != null && selectedTime != null && !_isBooking)
+                          ? () {
+                              Navigator.pop(context);
+                              _confirmBooking(selectedDate!, selectedTime!);
+                            }
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF2563EB),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                      child: Text('Confirm Booking', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Future<void> _confirmBooking(DateTime date, String time) async {
+    setState(() => _isBooking = true);
+
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) {
+      context.go('/login');
+      return;
+    }
+
+    try {
+      // Calculate start time
+      int hour = int.parse(time.split(':')[0]);
+      if (time.contains('PM') && hour != 12) hour += 12;
+      final startTime = DateTime(date.year, date.month, date.day, hour, 0);
+      final endTime = startTime.add(const Duration(hours: 1));
+
+      final res = await ApiService.createBooking(
+        accessToken: session.accessToken,
+        tutorId: _mentor!.id,
+        hourlyRate: _mentor!.bookingPrice,
+        totalPrice: _mentor!.bookingPrice,
+      );
+
+      if (mounted) {
+        setState(() => _isBooking = false);
+        if (res['success'] == true) {
+          await NotificationService.showInstantNotification(
+            title: 'Booking Confirmed! 🎉',
+            body: 'You have booked a session with ${_mentor!.name} on ${startTime.toLocal().toString().split(' ')[0]} at $time.',
+          );
+          
+          final event = Event(
+            title: 'Lesson with ${_mentor!.name}',
+            description: 'Jomnes App - Study Session',
+            startDate: startTime,
+            endDate: endTime,
+          );
+          await Add2Calendar.addEvent2Cal(event);
+
+          context.go('/courses');
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed to book'), backgroundColor: Colors.red));
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isBooking = false);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error connecting to server'), backgroundColor: Colors.red));
+      }
+    }
   }
 
   Future<void> _fetchMentor() async {
     try {
-      final user = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', widget.mentorId)
-          .maybeSingle();
+      final user = await JomnesDB.from(
+        'profiles',
+      ).select().eq('id', widget.mentorId).maybeSingle();
 
-      final profile = await JomnesDB.from('tutor_profiles')
-          .select()
-          .eq('tutor_id', widget.mentorId)
-          .maybeSingle();
+      final profile = await JomnesDB.from(
+        'tutor_profiles',
+      ).select().eq('tutor_id', widget.mentorId).maybeSingle();
 
-      final coursesData = await JomnesDB.from('courses')
-          .select()
-          .eq('tutor_id', widget.mentorId);
+      final coursesData = await JomnesDB.from(
+        'courses',
+      ).select().eq('tutor_id', widget.mentorId);
 
-      final coursesList = (coursesData as List).map((c) => Course.fromJson(c)).toList();
+      final coursesList = (coursesData as List)
+          .map((c) => Course.fromJson(c))
+          .toList();
 
       if (mounted && user != null) {
         final p = profile ?? {};
         setState(() {
           _mentor = Mentor(
             id: widget.mentorId,
-            name: user['name'] ?? 'Mentor',
+            name: user['full_name'] ?? 'Mentor',
             subject: 'General',
             experience: '${p['experience_years'] ?? 5} years experience',
             timeSlot: 'Flexible',
-            avatarUrl: (user['profile_image'] != null && user['profile_image'].toString().isNotEmpty)
-                ? user['profile_image']
+            avatarUrl:
+                (user['avatar_url'] != null &&
+                    user['avatar_url'].toString().isNotEmpty)
+                ? user['avatar_url']
                 : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
             rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
             students: (p['total_students'] as num?)?.toInt() ?? 120,
@@ -84,7 +245,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
   }
 
   String _formatCount(int n) {
-    return n.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
+    return n.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
   }
 
   @override
@@ -116,7 +280,11 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                   onTap: () => context.pop(),
                   child: const Padding(
                     padding: EdgeInsets.all(4),
-                    child: Icon(Icons.close_rounded, size: 24, color: Color(0xFF111827)),
+                    child: Icon(
+                      Icons.close_rounded,
+                      size: 24,
+                      color: Color(0xFF111827),
+                    ),
                   ),
                 ),
               ),
@@ -137,24 +305,50 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         child: Image.network(
                           m.avatarUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            color: const Color(0xFFDFE2E6),
-                            child: const Icon(Icons.person, size: 50, color: Colors.grey),
-                          ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                color: const Color(0xFFDFE2E6),
+                                child: const Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.grey,
+                                ),
+                              ),
                         ),
                       ),
                     ),
                     const SizedBox(height: 16),
                     // Name
-                    Text(
-                      m.name,
-                      style: GoogleFonts.inter(
-                        fontSize: 27,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF111827),
-                      ),
+                    // Name & Rating
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(
+                          m.name,
+                          style: GoogleFonts.inter(
+                            fontSize: 27,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF111827),
+                          ),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: Colors.amber, size: 28),
+                            const SizedBox(width: 4),
+                            Text(
+                              m.rating.toStringAsFixed(1),
+                              style: GoogleFonts.inter(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
+                                color: const Color(0xFF111827),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     // Bio
                     Text(
                       m.bio,
@@ -172,35 +366,55 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         Expanded(
                           flex: 3,
                           child: ElevatedButton(
-                            onPressed: () {},
+                            onPressed: _isBooking ? null : _showBookingSheet,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 0,
                             ),
-                            child: Text(
-                              'Book Class | \$${m.bookingPrice.toInt()}',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
-                            ),
+                            child: _isBooking
+                                ? const SizedBox(
+                                    height: 20,
+                                    width: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : Text(
+                                    'Book Class | \$${m.bookingPrice.toInt()}',
+                                    style: GoogleFonts.inter(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14,
+                                    ),
+                                  ),
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           flex: 2,
                           child: ElevatedButton(
-                            onPressed: () => setState(() => _following = !_following),
+                            onPressed: () =>
+                                setState(() => _following = !_following),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFFE5E7EB),
                               foregroundColor: const Color(0xFF111827),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 0,
                             ),
                             child: Text(
                               _following ? 'Following' : 'Follow',
-                              style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 14),
+                              style: GoogleFonts.inter(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
                         ),
@@ -210,11 +424,20 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                     // Stats Row
                     Row(
                       children: [
-                        _StatItem(label: 'Students', value: _formatCount(m.students)),
+                        _StatItem(
+                          label: 'Students',
+                          value: _formatCount(m.students),
+                        ),
                         _divider(),
-                        _StatItem(label: 'Classes', value: _formatCount(m.classes)),
+                        _StatItem(
+                          label: 'Classes',
+                          value: _formatCount(m.classes),
+                        ),
                         _divider(),
-                        _StatItem(label: 'Followers', value: _formatCount(m.followers)),
+                        _StatItem(
+                          label: 'Followers',
+                          value: _formatCount(m.followers),
+                        ),
                       ],
                     ),
                     const SizedBox(height: 22),
@@ -228,8 +451,14 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                       ),
                       child: TabBar(
                         controller: _tabController,
-                        labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 13),
-                        unselectedLabelStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+                        labelStyle: GoogleFonts.inter(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                        ),
+                        unselectedLabelStyle: GoogleFonts.inter(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
                         labelColor: const Color(0xFF111827),
                         unselectedLabelColor: const Color(0xFF6B7280),
                         indicatorSize: TabBarIndicatorSize.tab,
@@ -247,16 +476,129 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
                         tabs: const [
                           Tab(text: 'Courses'),
                           Tab(text: 'Source Files'),
-                          Tab(text: 'Discussion'),
+                          Tab(text: 'Reviews'),
                         ],
                       ),
                     ),
                     const SizedBox(height: 20),
-                    // Courses List
-                    ...m.courses.map((c) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: CourseCard(course: c),
-                    )),
+                    
+                    // Tab Content
+                    if (_tabController.index == 0)
+                      // Courses List
+                      ...m.courses.map(
+                        (c) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: CourseCard(course: c),
+                        ),
+                      )
+                    else if (_tabController.index == 2)
+                      // Reviews List
+                      _reviews.isEmpty
+                          ? Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 40),
+                              child: Center(
+                                child: Column(
+                                  children: [
+                                    Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey.shade400),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'No reviews yet.\nBe the first to leave one!',
+                                      textAlign: TextAlign.center,
+                                      style: GoogleFonts.inter(
+                                        color: Colors.grey.shade500,
+                                        fontSize: 15,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Column(
+                              children: _reviews.map((r) {
+                                final profile = r['profiles'] ?? {};
+                                final name = profile['full_name'] ?? 'Student';
+                                final avatar = profile['avatar_url'];
+                                final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
+                                
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 16),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(color: Colors.grey.shade200),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 16,
+                                            backgroundColor: const Color(0xFFFFD5DC),
+                                            backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                                            child: avatar == null
+                                                ? Text(
+                                                    initial,
+                                                    style: const TextStyle(
+                                                        fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black),
+                                                  )
+                                                : null,
+                                          ),
+                                          const SizedBox(width: 10),
+                                          Expanded(
+                                            child: Text(
+                                              name,
+                                              style: GoogleFonts.inter(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w700,
+                                                color: const Color(0xFF111827),
+                                              ),
+                                            ),
+                                          ),
+                                          Row(
+                                            children: [
+                                              const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                '${r['rating']}',
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                      if (r['comment'] != null && r['comment'].toString().trim().isNotEmpty) ...[
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          r['comment'],
+                                          style: GoogleFonts.inter(
+                                            fontSize: 14,
+                                            color: const Color(0xFF4B5563),
+                                            height: 1.4,
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            )
+                    else
+                      Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Center(
+                          child: Text(
+                            'No source files attached.',
+                            style: GoogleFonts.inter(color: Colors.grey),
+                          ),
+                        ),
+                      ),
+                    
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -268,7 +610,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen> with SingleTi
     );
   }
 
-  Widget _divider() => Container(width: 1, height: 38, color: const Color(0xFFD1D5DB));
+  Widget _divider() =>
+      Container(width: 1, height: 38, color: const Color(0xFFD1D5DB));
 }
 
 class _StatItem extends StatelessWidget {
@@ -281,9 +624,23 @@ class _StatItem extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(label, style: GoogleFonts.inter(fontSize: 11.5, fontWeight: FontWeight.w600, color: const Color(0xFF6B7280))),
+          Text(
+            label,
+            style: GoogleFonts.inter(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: const Color(0xFF6B7280),
+            ),
+          ),
           const SizedBox(height: 5),
-          Text(value, style: GoogleFonts.inter(fontSize: 14.5, fontWeight: FontWeight.w800, color: const Color(0xFF111827))),
+          Text(
+            value,
+            style: GoogleFonts.inter(
+              fontSize: 14.5,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFF111827),
+            ),
+          ),
         ],
       ),
     );

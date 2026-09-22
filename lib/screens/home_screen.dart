@@ -21,10 +21,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
   UserProfile? _userProfile;
   bool _isLoadingProfile = true;
-  
+
   List<Mentor> _popularMentors = [];
   bool _isLoadingMentors = true;
-  
+
   List<FeaturedCourse> _featuredCourses = [];
   bool _isLoadingFeatured = true;
 
@@ -32,94 +32,77 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _fetchUserProfile();
-    _fetchPopularMentors();
-    _fetchFeaturedCourses();
+    fetchDashboardData();
   }
 
   @override
   void reassemble() {
     super.reassemble();
     _fetchUserProfile();
-    _fetchPopularMentors();
-    _fetchFeaturedCourses();
+    fetchDashboardData();
   }
 
-  Future<void> _fetchPopularMentors() async {
+  Future<void> fetchDashboardData() async {
     try {
-      final usersData = await JomnesDB.from('Users')
-          .select()
-          .eq('role', 'mentor')
-          .limit(5);
+      final data = await JomnesDB.from('tutor_search_view').select();
 
-      final userList = usersData as List;
-      final tutorIds = userList.map((u) => u['user_id']).toList();
+      final featuredData = (data as List)
+          .where((row) => row['is_featured'] == true)
+          .toList();
 
-      List<dynamic> profiles = [];
-      if (tutorIds.isNotEmpty) {
-        profiles = await JomnesDB.from('tutor_profiles')
-            .select()
-            .filter('tutor_id', 'in', tutorIds) as List;
+      final Map<String, dynamic> uniqueMentorsMap = {};
+      for (var row in data) {
+        final tutorId = row['tutor_id']?.toString() ?? '';
+        if (tutorId.isNotEmpty && !uniqueMentorsMap.containsKey(tutorId)) {
+          uniqueMentorsMap[tutorId] = row;
+        }
       }
-      final profileMap = {for (var p in profiles) p['tutor_id'].toString(): p};
-
-      final mentors = userList.map((u) {
-        final uid = u['user_id'].toString();
-        final p = profileMap[uid] ?? {};
-        return Mentor(
-          id: uid,
-          name: u['name'] ?? 'Mentor',
-          subject: 'General',
-          experience: '${p['experience_years'] ?? 5} years experience',
-          timeSlot: 'Flexible',
-          avatarUrl: (u['profile_image'] != null && u['profile_image'].toString().isNotEmpty)
-              ? u['profile_image']
-              : 'https://api.dicebear.com/9.x/avataaars/png?seed=$uid',
-          rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
-          students: (p['total_students'] as num?)?.toInt() ?? 120,
-          classes: 50,
-          followers: 300,
-          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 250.0,
-          bio: p['bio'] ?? 'Experienced mentor.',
-          courses: [],
-        );
-      }).toList();
+      final mentorsData = uniqueMentorsMap.values.take(5).toList();
 
       if (mounted) {
         setState(() {
-          _popularMentors = mentors;
+          _featuredCourses = featuredData.map((row) {
+            return FeaturedCourse(
+              id: (row['course_id'] as num?)?.toInt() ?? 0,
+              mentorName: row['tutor_name'] ?? 'Unknown Mentor',
+              subject: row['course_title'] ?? 'General',
+              cardColor: row['card_color'] ?? 'orange',
+              imageUrl:
+                  row['course_image'] ??
+                  'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=200&q=80',
+            );
+          }).toList();
+          _isLoadingFeatured = false;
+
+          _popularMentors = mentorsData.map((row) {
+            return Mentor(
+              id: row['tutor_id']?.toString() ?? '',
+              name: row['tutor_name'] ?? 'Mentor',
+              subject: row['course_title'] ?? 'General',
+              experience: '${row['experience_years'] ?? 5} years experience',
+              timeSlot: 'Flexible',
+              avatarUrl:
+                  row['tutor_avatar'] ??
+                  'https://api.dicebear.com/9.x/avataaars/png?seed=${row['tutor_id']}',
+              rating: (row['mentor_rating'] as num?)?.toDouble() ?? 4.8,
+              students: 120,
+              classes: 50,
+              followers: 300,
+              bookingPrice: (row['hourly_rate'] as num?)?.toDouble() ?? 20.0,
+              bio: 'Experienced mentor.',
+              courses: [],
+            );
+          }).toList();
           _isLoadingMentors = false;
         });
       }
     } catch (e, st) {
       // ignore: avoid_print
-      print('ERROR fetching mentors: $e\n$st');
+      print('ERROR fetching dashboard data: $e\n$st');
       if (mounted) {
         setState(() {
+          _isLoadingFeatured = false;
           _isLoadingMentors = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _fetchFeaturedCourses() async {
-    try {
-      final data = await JomnesDB.from('courses')
-          .select('*, Users!inner(name)')
-          .eq('is_featured', true)
-          .limit(5);
-          
-      if (mounted) {
-        setState(() {
-          _featuredCourses = (data as List).map((e) => FeaturedCourse.fromJson(e)).toList();
-          _isLoadingFeatured = false;
-        });
-      }
-    } catch (e, st) {
-      // ignore: avoid_print
-      print('ERROR fetching featured courses: $e\n$st');
-      if (mounted) {
-        setState(() {
-          _isLoadingFeatured = false;
         });
       }
     }
@@ -127,36 +110,40 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchUserProfile() async {
     final session = JomnesDB.auth.currentSession;
-    // ignore: avoid_print
-    print('DEBUG session: ${session?.user.id} | email: ${session?.user.email}');
-    // ignore: avoid_print
-    print('DEBUG userMeta: ${JomnesDB.auth.currentUser?.userMetadata}');
     if (session == null) {
       if (mounted) setState(() => _isLoadingProfile = false);
       return;
     }
 
     try {
-      final data = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-      // ignore: avoid_print
-      print('DEBUG Users row: $data');
+      // Task 3: Use profiles table for name and avatar
+      final data = await JomnesDB.from(
+        'profiles',
+      ).select().eq('id', session.user.id).maybeSingle();
       if (mounted) {
         setState(() {
           if (data != null) {
-            _userProfile = UserProfile.fromJson(data);
+            // Map 'profiles' schema to UserProfile
+            _userProfile = UserProfile(
+              userId: data['id'],
+              createdAt: data['created_at'] != null
+                  ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
+                  : DateTime.now(),
+              name: data['full_name'] ?? '',
+              email: data['email'] ?? '',
+              phone: data['phone'] ?? '',
+              role: data['role'] ?? 'Student',
+              profileImage: data['avatar_url'] ?? '',
+              location: data['city'] ?? '',
+            );
           }
           _isLoadingProfile = false;
         });
       }
     } catch (e) {
       // ignore: avoid_print
-      print('DEBUG Users fetch error: $e');
-      if (mounted) {
-        setState(() => _isLoadingProfile = false);
-      }
+      print('DEBUG profile fetch error: $e');
+      if (mounted) setState(() => _isLoadingProfile = false);
     }
   }
 
@@ -165,21 +152,26 @@ class _HomeScreenState extends State<HomeScreen> {
       return _userProfile!.name;
     }
     final user = JomnesDB.auth.currentUser;
-    final metaName = user?.userMetadata?['full_name'] ??
+    final metaName =
+        user?.userMetadata?['full_name'] ??
         user?.userMetadata?['name'] ??
         user?.email?.split('@').first;
     if (metaName != null && metaName.toString().isNotEmpty) {
       return metaName.toString();
     }
-    return isGuestMode ? 'Guest' : (_isLoadingProfile ? 'Loading...' : 'Student');
+    return isGuestMode
+        ? 'Guest'
+        : (_isLoadingProfile ? 'Loading...' : 'Student');
   }
 
   String? get _displayAvatar {
-    if (_userProfile?.profileImage != null && _userProfile!.profileImage.isNotEmpty) {
+    if (_userProfile?.profileImage != null &&
+        _userProfile!.profileImage.isNotEmpty) {
       return _userProfile!.profileImage;
     }
     final user = JomnesDB.auth.currentUser;
-    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
+    final dynamic pic =
+        user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
     final String? metaAvatar = pic is String ? pic : null;
     if (metaAvatar != null && metaAvatar.isNotEmpty) {
       return metaAvatar;
@@ -235,26 +227,44 @@ class _HomeScreenState extends State<HomeScreen> {
                               width: 48,
                               height: 48,
                               child: _isLoadingProfile
-                                ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
-                                : _displayAvatar != null
-                                    ? Image.network(
-                                        _displayAvatar!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) {
-                                          final initial = _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U';
-                                          return CircleAvatar(
-                                            backgroundColor: const Color(0xFFFFD5DC),
-                                            child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                          );
-                                        },
-                                      )
-                                    : CircleAvatar(
-                                        backgroundColor: const Color(0xFFFFD5DC),
-                                        child: Text(
-                                          _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U',
-                                          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+                                  ? const CircularProgressIndicator(
+                                      color: AppColors.accentBlue,
+                                      strokeWidth: 2,
+                                    )
+                                  : _displayAvatar != null
+                                  ? Image.network(
+                                      _displayAvatar!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) {
+                                        final initial = _displayName.isNotEmpty
+                                            ? _displayName[0].toUpperCase()
+                                            : 'U';
+                                        return CircleAvatar(
+                                          backgroundColor: const Color(
+                                            0xFFFFD5DC,
+                                          ),
+                                          child: Text(
+                                            initial,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                              color: Colors.black,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    )
+                                  : CircleAvatar(
+                                      backgroundColor: const Color(0xFFFFD5DC),
+                                      child: Text(
+                                        _displayName.isNotEmpty
+                                            ? _displayName[0].toUpperCase()
+                                            : 'U',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.black,
                                         ),
                                       ),
+                                    ),
                             ),
                           ),
                           const SizedBox(width: 14),
@@ -318,186 +328,203 @@ class _HomeScreenState extends State<HomeScreen> {
                   onRefresh: () async {
                     await Future.wait([
                       _fetchUserProfile(),
-                      _fetchPopularMentors(),
-                      _fetchFeaturedCourses(),
+                      fetchDashboardData(),
                     ]);
                   },
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 20),
                     child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SizedBox(height: 18),
-                      // Combined Search & Recent Card
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Container(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
-                              color: const Color(0xFFE5E7EB),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(6),
-                                blurRadius: 8,
-                                offset: const Offset(0, 2),
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 18),
+                        // Combined Search & Recent Card
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: const Color(0xFFE5E7EB),
+                                width: 1,
                               ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Search Input Row
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.search_rounded,
-                                    color: Color(0xFF6B7280),
-                                    size: 22,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: GestureDetector(
-                                      onTap: () => context.go('/search'),
-                                      behavior: HitTestBehavior.opaque,
-                                      child: Text(
-                                        'Search Mentors',
-                                        style: GoogleFonts.inter(
-                                          color: const Color(0xFF374151),
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w400,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withAlpha(6),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Search Input Row
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.search_rounded,
+                                      color: Color(0xFF6B7280),
+                                      size: 22,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => context.go('/search'),
+                                        behavior: HitTestBehavior.opaque,
+                                        child: Text(
+                                          'Search Mentors',
+                                          style: GoogleFonts.inter(
+                                            color: const Color(0xFF374151),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400,
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  const Icon(
-                                    Icons.tune_rounded,
-                                    color: Color(0xFF111827),
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 14),
-                              // Recent Tags Row
-                              Row(
-                                children: [
-                                  Text(
-                                    'Recent',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF111827),
+                                    const Icon(
+                                      Icons.tune_rounded,
+                                      color: Color(0xFF111827),
+                                      size: 20,
                                     ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  _RecentChip(
-                                    label: 'Chey Thavy',
-                                    bg: const Color(0xFFF3E8FF),
-                                    textColor: const Color(0xFF7E22CE),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  _RecentChip(
-                                    label: 'Math',
-                                    bg: const Color(0xFFDBEAFE),
-                                    textColor: const Color(0xFF1D4ED8),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  _RecentChip(
-                                    label: 'Chemistry',
-                                    bg: const Color(0xFFDCFCE7),
-                                    textColor: const Color(0xFF15803D),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      // Featured Courses Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        child: Text(
-                          'Featured Courses',
-                          style: GoogleFonts.inter(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      // Featured Courses Horizontal List
-                      if (_isLoadingFeatured)
-                        const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(color: AppColors.accentBlue),
-                        ))
-                      else if (_featuredCourses.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          child: Text('No featured courses available yet.', style: GoogleFonts.inter(color: Colors.grey)),
-                        )
-                      else
-                        SizedBox(
-                          height: 135,
-                          child: ListView.builder(
-                            scrollDirection: Axis.horizontal,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _featuredCourses.length,
-                            itemBuilder: (context, i) => FeaturedCourseCard(
-                              course: _featuredCourses[i],
-                              onTap: () {
-                                context.go(
-                                  '/course-listing/${Uri.encodeComponent(_featuredCourses[i].subject)}',
-                                );
-                              },
+                                  ],
+                                ),
+                                const SizedBox(height: 14),
+                                // Recent Tags Row
+                                Row(
+                                  children: [
+                                    Text(
+                                      'Recent',
+                                      style: GoogleFonts.inter(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w500,
+                                        color: const Color(0xFF111827),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _RecentChip(
+                                      label: 'Chey Thavy',
+                                      bg: const Color(0xFFF3E8FF),
+                                      textColor: const Color(0xFF7E22CE),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _RecentChip(
+                                      label: 'Math',
+                                      bg: const Color(0xFFDBEAFE),
+                                      textColor: const Color(0xFF1D4ED8),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    _RecentChip(
+                                      label: 'Chemistry',
+                                      bg: const Color(0xFFDCFCE7),
+                                      textColor: const Color(0xFF15803D),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                      const SizedBox(height: 24),
-                      // Popular Mentors Header
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        child: Text(
-                          'Popular Mentors',
-                          style: GoogleFonts.inter(
-                            fontSize: 19,
-                            fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      // Popular Mentors List
-                      if (_isLoadingMentors) 
-                        const Center(child: Padding(
-                          padding: EdgeInsets.all(20.0),
-                          child: CircularProgressIndicator(color: AppColors.accentBlue),
-                        ))
-                      else if (_popularMentors.isEmpty)
+                        const SizedBox(height: 24),
+                        // Featured Courses Header
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 18),
-                          child: Text('No mentors available yet.', style: GoogleFonts.inter(color: Colors.grey)),
-                        )
-                      else
-                        ..._popularMentors.map((m) => MentorCardWithButton(
-                          mentor: m,
-                          onCheckOut: () => context.push('/mentor/${m.id}'),
-                        )),
-                    ],
+                          child: Text(
+                            'Featured Courses',
+                            style: GoogleFonts.inter(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        // Featured Courses Horizontal List
+                        if (_isLoadingFeatured)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: CircularProgressIndicator(
+                                color: AppColors.accentBlue,
+                              ),
+                            ),
+                          )
+                        else if (_featuredCourses.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            child: Text(
+                              'No featured courses available yet.',
+                              style: GoogleFonts.inter(color: Colors.grey),
+                            ),
+                          )
+                        else
+                          SizedBox(
+                            height: 135,
+                            child: ListView.builder(
+                              scrollDirection: Axis.horizontal,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              itemCount: _featuredCourses.length,
+                              itemBuilder: (context, i) => FeaturedCourseCard(
+                                course: _featuredCourses[i],
+                                onTap: () {
+                                  context.go(
+                                    '/course-listing/${Uri.encodeComponent(_featuredCourses[i].subject)}',
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 24),
+                        // Popular Mentors Header
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 18),
+                          child: Text(
+                            'Popular Mentors',
+                            style: GoogleFonts.inter(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w800,
+                              color: const Color(0xFF111827),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        // Popular Mentors List
+                        if (_isLoadingMentors)
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: CircularProgressIndicator(
+                                color: AppColors.accentBlue,
+                              ),
+                            ),
+                          )
+                        else if (_popularMentors.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
+                            child: Text(
+                              'No mentors available yet.',
+                              style: GoogleFonts.inter(color: Colors.grey),
+                            ),
+                          )
+                        else
+                          ..._popularMentors.map(
+                            (m) => MentorCardWithButton(
+                              mentor: m,
+                              onCheckOut: () => context.push('/mentor/${m.id}'),
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
       ),
       bottomNavigationBar: BottomNavBar(
         currentIndex: _navIndex,

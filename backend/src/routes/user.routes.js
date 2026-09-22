@@ -7,6 +7,7 @@ import {
   updateProfile,
   getFilteredMentors,
   getSubjects,
+  getMyCourses,
 } from "../controllers/user.controller.js";
 
 const router = express.Router();
@@ -15,6 +16,9 @@ const router = express.Router();
 router.get("/me", requireAuth, (req, res) => {
   res.json({ success: true, user: req.user });
 });
+
+router.get("/my-courses", requireAuth, getMyCourses);
+
 
 // PATCH /api/users/profile  — admin upsert to bypass Users table RLS
 router.patch("/profile", requireAuth, updateProfile);

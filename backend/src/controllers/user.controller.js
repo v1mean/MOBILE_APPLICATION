@@ -202,7 +202,7 @@ export async function getFilteredMentors(req, res) {
   try {
     const { query, subject_id, minPrice, maxPrice, day_of_week, city } = req.query;
 
-    // Step 1: Build tutor_profiles query
+    // Step 1: Build base tutor_profiles query (NO JOINING availability/subjects in SQL)
     let dbQuery = supabaseAdmin
       .from('tutor_profiles')
       .select(`
@@ -216,77 +216,97 @@ export async function getFilteredMentors(req, res) {
         teaching_mode,
         is_available,
         total_students,
-        review_count,
-        availability!inner(day_of_week, start_time, end_time, is_available),
-        tutor_subjects(subject_id, Subjects(id, name))
+        review_count
       `)
       .eq('is_available', true);
 
-    // Price filters
     if (minPrice && minPrice !== '') dbQuery = dbQuery.gte('hourly_rate', parseFloat(minPrice));
     if (maxPrice && maxPrice !== '') dbQuery = dbQuery.lte('hourly_rate', parseFloat(maxPrice));
-
-    // Location filter
     if (city && city.trim()) dbQuery = dbQuery.ilike('location', `%${city.trim()}%`);
-
-    // Availability filter
-    if (day_of_week && day_of_week.trim()) {
-      dbQuery = dbQuery
-        .eq('availability.day_of_week', day_of_week.trim())
-        .eq('availability.is_available', true);
-    }
 
     const { data: tutors, error: tutorError } = await dbQuery
       .order('rating', { ascending: false })
       .limit(50);
 
     if (tutorError) {
-      console.error('[getFilteredMentors] tutor query error:', tutorError.message);
       return res.status(500).json({ success: false, message: tutorError.message });
     }
-
     if (!tutors || tutors.length === 0) {
       return res.status(200).json({ success: true, mentors: [] });
     }
 
-    // Step 2: Filter by subject_id if provided
-    let filteredTutors = tutors;
-    if (subject_id && subject_id.trim()) {
-      filteredTutors = tutors.filter(t =>
-        (t.tutor_subjects || []).some(ts => ts.subject_id === subject_id.trim())
+    const tutorIds = tutors.map(t => t.tutor_id);
+
+    // Step 2: Manually fetch availability
+    const { data: availData } = await supabaseAdmin
+      .from('availability')
+      .select('tutor_id, day_of_week, start_time, end_time, is_available')
+      .in('tutor_id', tutorIds);
+
+    // Step 3: Manually fetch subjects
+    const { data: subjData } = await supabaseAdmin
+      .from('tutor_subjects')
+      .select('tutor_id, subject_id')
+      .in('tutor_id', tutorIds);
+      
+    // Fetch actual subject names
+    const { data: allSubjects } = await supabaseAdmin.from('Subjects').select('id, name');
+    const subjMap = {};
+    (allSubjects || []).forEach(s => subjMap[s.id] = s);
+
+    // Step 4: Manually fetch users (profiles table)
+    const { data: usersData } = await supabaseAdmin
+      .from('profiles')
+      .select('id, full_name, avatar_url')
+      .in('id', tutorIds);
+    const usersMap = {};
+    (usersData || []).forEach(u => usersMap[u.id] = u);
+
+    // Step 5: Assemble and filter
+    let result = tutors.map(t => {
+      const myAvail = (availData || []).filter(a => a.tutor_id === t.tutor_id);
+      const mySubj = (subjData || []).filter(s => s.tutor_id === t.tutor_id).map(s => ({
+        subject_id: s.subject_id,
+        Subjects: subjMap[s.subject_id] || { id: s.subject_id, name: 'Unknown' }
+      }));
+      
+      const p = usersMap[t.tutor_id];
+
+      return {
+        ...t,
+        availability: myAvail,
+        tutor_subjects: mySubj,
+        user: p ? {
+          user_id: p.id,
+          name: p.full_name,
+          profile_image: p.avatar_url
+        } : null
+      };
+    }).filter(t => t.user !== null); // Drop if missing profile
+
+    // Filter by day_of_week locally
+    if (day_of_week && day_of_week.trim()) {
+      const reqDay = day_of_week.trim();
+      result = result.filter(t => 
+        t.availability.some(a => a.day_of_week === reqDay && a.is_available)
       );
     }
 
-    // Step 3: Manual join with Users table
-    const userIds = [...new Set(filteredTutors.map(t => t.user_id))];
-    const { data: users, error: usersError } = await supabaseAdmin
-      .from('Users')
-      .select('user_id, name, email, profile_image')
-      .in('user_id', userIds);
-
-    if (usersError) {
-      console.warn('[getFilteredMentors] Users join warning:', usersError.message);
+    // Filter by subject_id locally
+    if (subject_id && subject_id.trim()) {
+      const reqSubj = subject_id.trim();
+      result = result.filter(t => 
+        t.tutor_subjects.some(ts => ts.subject_id === reqSubj)
+      );
     }
 
-    const usersMap = {};
-    (users || []).forEach(u => { usersMap[u.user_id] = u; });
-
-    // Step 4: Keyword search after join
-    let result = filteredTutors
-      .map(t => ({
-        ...t,
-        user: usersMap[t.user_id] || null,
-      }))
-      .filter(t => t.user !== null);
-
+    // Search query
     if (query && query.trim()) {
       const q = query.trim().toLowerCase();
       result = result.filter(t =>
         (t.bio || '').toLowerCase().includes(q) ||
         (t.user?.name || '').toLowerCase().includes(q) ||
-        (t.tutor_subjects || []).some(ts =>
-          (ts.Subjects?.name || '').toLowerCase().includes(q)
-        )
+        t.tutor_subjects.some(ts => ts.Subjects.name.toLowerCase().includes(q))
       );
     }
 
@@ -294,6 +314,70 @@ export async function getFilteredMentors(req, res) {
   } catch (err) {
     console.error('[getFilteredMentors] Unexpected error:', err);
     return res.status(500).json({ success: false, message: 'Search failed.' });
+  }
+}
+
+// ── GET /api/users/my-courses ──────────────────────────────────────────────
+export async function getMyCourses(req, res) {
+  try {
+    const userId = req.user.id;
+    const { data, error } = await supabaseAdmin
+      .from('user_courses')
+      .select(`
+        id,
+        course_id,
+        progress,
+        is_favorited,
+        enrolled_at,
+        status,
+        courses (
+          id,
+          tutor_id,
+          title,
+          description,
+          rating,
+          duration_hours,
+          image_url,
+          card_color,
+          is_live,
+          minutes_remaining,
+          Users ( name )
+        )
+      `)
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('[getMyCourses] query error:', error.message);
+      return res.status(200).json({ success: true, courses: [] }); // Fallback for Task 5
+    }
+
+    if (!data || data.length === 0) {
+      return res.status(200).json({ success: true, courses: [] });
+    }
+
+    // Flatten logic so it conforms to the Course.fromJson structure
+    const flattenedCourses = data.map(item => {
+      const courseObj = item.courses || {};
+      return {
+        id: item.course_id || courseObj.id,
+        tutor_id: courseObj.tutor_id,
+        title: courseObj.title,
+        description: courseObj.description,
+        rating: courseObj.rating,
+        duration_hours: courseObj.duration_hours,
+        is_favorited: item.is_favorited,
+        is_live: courseObj.is_live,
+        minutes_remaining: courseObj.minutes_remaining,
+        progress: item.progress,
+        card_color: courseObj.card_color,
+        mentor_name: courseObj.Users?.name,
+      };
+    });
+
+    return res.status(200).json({ success: true, courses: flattenedCourses });
+  } catch (err) {
+    console.error('[getMyCourses] Unexpected error:', err);
+    return res.status(200).json({ success: true, courses: [] });
   }
 }
 

@@ -1,12 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
 
 class CourseCard extends StatefulWidget {
   final Course course;
   final VoidCallback? onFavorite;
+  final VoidCallback? onRateLesson;
 
-  const CourseCard({super.key, required this.course, this.onFavorite});
+  const CourseCard({super.key, required this.course, this.onFavorite, this.onRateLesson});
 
   @override
   State<CourseCard> createState() => _CourseCardState();
@@ -118,26 +119,59 @@ class _CourseCardState extends State<CourseCard> {
                     ),
                   )
                 else if (widget.course.progress != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 10, bottom: 4),
-                    child: Container(
-                      height: 7,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(200),
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: FractionallySizedBox(
-                        alignment: Alignment.centerLeft,
-                        widthFactor: widget.course.progress ?? 0.35,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10, bottom: 4),
                         child: Container(
+                          height: 7,
+                          width: double.infinity,
                           decoration: BoxDecoration(
-                            color: Colors.black,
+                            color: Colors.white.withAlpha(200),
                             borderRadius: BorderRadius.circular(50),
+                          ),
+                          child: FractionallySizedBox(
+                            alignment: Alignment.centerLeft,
+                            widthFactor: widget.course.progress ?? 0.35,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black,
+                                borderRadius: BorderRadius.circular(50),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                      if (widget.course.progress == 1.0) ...[
+                        const SizedBox(height: 12),
+                        GestureDetector(
+                          onTap: widget.onRateLesson,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Rate Lesson',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      ]
+                    ]
                   )
                 else
                   Row(
