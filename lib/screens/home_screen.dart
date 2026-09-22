@@ -44,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> fetchDashboardData() async {
     try {
-      final data = await JomnesDB.from('tutor_search_view').select();
+      final data = await JomnesDB.from('tutor_search_view').select().order('course_id', ascending: false);
 
       final featuredData = (data as List)
           .where((row) => row['is_featured'] == true)

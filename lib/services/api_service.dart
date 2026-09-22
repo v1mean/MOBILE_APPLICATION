@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../main.dart';
 
 class ApiService {
   static String get baseUrl {
@@ -416,6 +417,43 @@ class ApiService {
         return jsonDecode(response.body);
       }
       rethrow;
+    }
+  }
+
+  // ── Upload Course ────────────────────────────────────────────────────────
+  static Future<bool> uploadCourse({
+    required String title,
+    required String description,
+    String? thumbnailPath,
+    String? materialPath,
+    String? videoPath,
+  }) async {
+    try {
+      final token = JomnesDB.auth.currentSession?.accessToken;
+      if (token == null) return false;
+
+      final uri = Uri.parse('$baseUrl/courses/upload');
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+
+      request.fields['title'] = title;
+      request.fields['description'] = description;
+
+      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('thumbnail', thumbnailPath));
+      }
+      if (materialPath != null && materialPath.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('material', materialPath));
+      }
+      if (videoPath != null && videoPath.isNotEmpty) {
+        request.files.add(await http.MultipartFile.fromPath('video', videoPath));
+      }
+
+      final streamedResponse = await request.send().timeout(const Duration(minutes: 5));
+      return streamedResponse.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error uploading course: $e');
+      return false;
     }
   }
 }

@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../main.dart';
+import '../services/api_service.dart';
 
 class TeacherUploadCourseScreen extends StatefulWidget {
   const TeacherUploadCourseScreen({super.key});
@@ -15,6 +18,13 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
   
   String _userName = 'Teacher';
   String? _avatarUrl;
+  
+  String? _thumbnailPath;
+  String? _materialPath;
+  String? _videoPath;
+  
+  bool _isUploading = false;
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -26,11 +36,11 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
     try {
       final session = JomnesDB.auth.currentSession;
       if (session == null) return;
-      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
+      final data = await JomnesDB.from('Users').select('name, profile_image').eq('user_id', session.user.id).maybeSingle();
       if (data != null && mounted) {
         setState(() {
-          _userName = data['full_name'] ?? 'Teacher';
-          _avatarUrl = data['avatar_url'];
+          _userName = data['name'] ?? 'Teacher';
+          _avatarUrl = data['profile_image'];
           if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
         });
       }
@@ -42,6 +52,54 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
     _titleController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickThumbnail() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _thumbnailPath = image.path);
+    }
+  }
+
+  Future<void> _pickMaterial() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() => _materialPath = image.path);
+    }
+  }
+
+  Future<void> _pickVideo() async {
+    final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
+    if (video != null) {
+      setState(() => _videoPath = video.path);
+    }
+  }
+
+  Future<void> _uploadCourse() async {
+    if (_titleController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+      return;
+    }
+
+    setState(() => _isUploading = true);
+
+    final success = await ApiService.uploadCourse(
+      title: _titleController.text.trim(),
+      description: _descController.text.trim(),
+      thumbnailPath: _thumbnailPath,
+      materialPath: _materialPath,
+      videoPath: _videoPath,
+    );
+
+    if (!mounted) return;
+    setState(() => _isUploading = false);
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Course uploaded successfully!')));
+      context.pop();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload course. Check your connection.')));
+    }
   }
 
   @override
@@ -140,7 +198,12 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
                         children: [
-                          Expanded(child: _UploadBox(icon: Icons.add_photo_alternate_outlined, label: 'Upload New Thumbnail', onTap: () {})),
+                          Expanded(child: _UploadBox(
+                            icon: Icons.add_photo_alternate_outlined, 
+                            label: _thumbnailPath != null ? 'Thumbnail Selected' : 'Upload New Thumbnail',
+                            isSelected: _thumbnailPath != null,
+                            onTap: _pickThumbnail,
+                          )),
                           const SizedBox(width: 10),
                           Expanded(child: _UploadBox(icon: Icons.video_library_outlined, label: 'Select Thumbnail From Video', onTap: () {})),
                         ],
@@ -154,7 +217,12 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _UploadBox(icon: Icons.insert_drive_file_outlined, label: 'Upload Material', onTap: () {}),
+                      child: _UploadBox(
+                        icon: Icons.insert_drive_file_outlined, 
+                        label: _materialPath != null ? 'Material Selected' : 'Upload Material', 
+                        isSelected: _materialPath != null,
+                        onTap: _pickMaterial,
+                      ),
                     ),
 
                     const SizedBox(height: 22),
@@ -164,7 +232,12 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _UploadBox(icon: Icons.video_camera_back_outlined, label: 'Upload Video', onTap: () {}),
+                      child: _UploadBox(
+                        icon: Icons.video_camera_back_outlined, 
+                        label: _videoPath != null ? 'Video Selected' : 'Upload Video', 
+                        isSelected: _videoPath != null,
+                        onTap: _pickVideo,
+                      ),
                     ),
 
                     const SizedBox(height: 24),
@@ -175,12 +248,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Course uploaded successfully!')),
-                            );
-                            context.pop();
-                          },
+                          onPressed: _isUploading ? null : _uploadCourse,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
                             foregroundColor: Colors.white,
@@ -188,7 +256,9 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          child: Text('Upload Course', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
+                          child: _isUploading 
+                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : Text('Upload Course', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
                         ),
                       ),
                     ),
@@ -211,16 +281,17 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
           decoration: BoxDecoration(
-            border: Border.all(color: const Color(0xFFE5E7EB)),
+            color: const Color(0xFF16161E), // Dark background for input
+            border: Border.all(color: const Color(0xFF2A2A3E)),
             borderRadius: BorderRadius.circular(10),
           ),
           child: TextField(
             controller: ctrl,
             maxLines: maxLines,
-            style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1A1A2E)),
+            style: GoogleFonts.inter(fontSize: 14, color: Colors.white), // White text when typing
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF)),
+              hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280)), // Gray hint
               contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
               border: InputBorder.none,
             ),
@@ -233,26 +304,39 @@ class _UploadBox extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _UploadBox({required this.icon, required this.label, required this.onTap});
+  final bool isSelected;
+  const _UploadBox({required this.icon, required this.label, required this.onTap, this.isSelected = false});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+        height: 100,
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFD1D5DB)),
+          color: isSelected ? const Color(0xFFEEF2FF) : Colors.white,
+          border: Border.all(color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFE5E7EB)),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 28, color: const Color(0xFF6B7280)),
+            Icon(
+              isSelected ? Icons.check_circle_rounded : icon, 
+              color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF9CA3AF), 
+              size: 28
+            ),
             const SizedBox(height: 8),
-            Text(label, textAlign: TextAlign.center,
-                style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280), height: 1.4)),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.inter(
+                fontSize: 12, 
+                fontWeight: FontWeight.w500, 
+                color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF6B7280)
+              ),
+            ),
           ],
         ),
       ),

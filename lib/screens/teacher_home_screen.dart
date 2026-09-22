@@ -39,15 +39,63 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', const Color(0xFFDCFCE7)),
   ];
 
-  static final _courses = [
-    _CourseItem('Master Chemistry Formular /\nBac II Preparation Course', 'Practice Exercise/ understand\nmore about formula.', 4.5, '1 day ago', const Color(0xFFF3D0FF)),
-    _CourseItem('Bac II Chemistry Most\nPractice Exercises', 'Practice Exercise/ understand\nmore about formula.', 4.3, '10hrs ago', const Color(0xFFBFEFFF)),
-  ];
+  List<_CourseItem> _courses = [];
+  bool _isLoadingCourses = true;
 
   @override
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchCourses();
+  }
+
+  Future<void> _fetchCourses() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return;
+      final data = await JomnesDB.from('courses')
+          .select()
+          .eq('tutor_id', session.user.id)
+          .order('created_at', ascending: false);
+          
+      if (mounted) {
+        setState(() {
+          _courses = (data as List).map((c) => _CourseItem(
+            c['title'] ?? 'Course Title',
+            c['description'] ?? 'No description',
+            (c['rating'] as num?)?.toDouble() ?? 5.0,
+            _formatTimeAgo(c['created_at']),
+            _parseColor(c['card_color']),
+          )).toList();
+          _isLoadingCourses = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingCourses = false);
+    }
+  }
+
+  String _formatTimeAgo(String? dateStr) {
+    if (dateStr == null) return 'Just now';
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return 'Just now';
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 0) return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+    if (diff.inHours > 0) return '${diff.inHours} hr${diff.inHours == 1 ? '' : 's'} ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes} min${diff.inMinutes == 1 ? '' : 's'} ago';
+    return 'Just now';
+  }
+
+  Color _parseColor(String? colorStr) {
+    switch (colorStr) {
+      case 'pink': return const Color(0xFFF3D0FF);
+      case 'blue': return const Color(0xFFE0F2FE);
+      case 'green': return const Color(0xFFDCFCE7);
+      case 'orange': return const Color(0xFFFFEDD5);
+      case 'slate': return const Color(0xFFE2E8F0);
+      case 'cyan': return const Color(0xFFCFFAFE);
+      default: return const Color(0xFFF3D0FF);
+    }
   }
 
   Future<void> _fetchProfile() async {
@@ -148,10 +196,27 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   // Latest Courses
                   Text('Your Latest Courses', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
                   const SizedBox(height: 12),
-                  ..._courses.map((c) => Padding(
-                    padding: const EdgeInsets.only(bottom: 14),
-                    child: _CourseCard(item: c),
-                  )),
+                  if (_isLoadingCourses)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(color: Color(0xFF7B3FC8)),
+                      ),
+                    )
+                  else if (_courses.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text('No courses uploaded yet.\nClick + to upload one!',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(color: Colors.grey, fontSize: 14)),
+                      ),
+                    )
+                  else
+                    ..._courses.map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _CourseCard(item: c),
+                    )),
                 ],
               ),
             ),
@@ -159,7 +224,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/teacher-upload'),
+        onPressed: () async {
+          await context.push('/teacher-upload');
+          _fetchCourses();
+        },
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 4,

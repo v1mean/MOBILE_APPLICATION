@@ -25,6 +25,7 @@ dependencies:
   add_2_calendar: ^3.1.1
   flutter_rating_bar: ^4.0.1
   shared_preferences: ^2.5.5
+  file_picker: ^13.1.0
 
 dev_dependencies:
   flutter_test:
