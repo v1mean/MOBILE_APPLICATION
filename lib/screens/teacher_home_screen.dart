@@ -31,7 +31,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', const Color(0xFFDCFCE7)),
   ];
 
-  List<_CourseItem> _courses = [];
+  List<TeacherCourse> _courses = [];
   bool _isLoadingCourses = true;
   void _showCourseDetailModal(BuildContext context, TeacherCourse course) {
     showModalBottomSheet(
@@ -256,12 +256,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           
       if (mounted) {
         setState(() {
-          _courses = (data as List).map((c) => _CourseItem(
-            c['title'] ?? 'Course Title',
-            c['description'] ?? 'No description',
-            (c['rating'] as num?)?.toDouble() ?? 5.0,
-            _formatTimeAgo(c['created_at']),
-            _parseColor(c['card_color']),
+          _courses = (data as List).map((c) => TeacherCourse(
+            id: c['id']?.toString() ?? '',
+            title: c['title'] ?? 'Course Title',
+            description: c['description'] ?? 'No description',
+            rating: (c['rating'] as num?)?.toDouble() ?? 5.0,
+            timeAgo: _formatTimeAgo(c['created_at']),
+            color: _parseColor(c['card_color']),
           )).toList();
           _isLoadingCourses = false;
         });
@@ -461,7 +462,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   else
                     ..._courses.map((c) => Padding(
                       padding: const EdgeInsets.only(bottom: 14),
-                      child: _CourseCard(item: c),
+                      child: _CourseCard(
+                        item: c,
+                        onTap: () => _showCourseDetailModal(context, c),
+                      ),
                     )),
 
                   AnimatedBuilder(
