@@ -8,7 +8,6 @@ import '../main.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
 
-
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;
   const MentorProfileScreen({super.key, required this.mentorId});
@@ -63,26 +62,42 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 20, right: 20, top: 20,
+                left: 20,
+                right: 20,
+                top: 20,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Book Session', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Book Session',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(selectedDate == null ? 'Select Date' : '${selectedDate!.toLocal()}'.split(' ')[0], 
-                           style: GoogleFonts.inter(fontSize: 16)),
+                      Text(
+                        selectedDate == null
+                            ? 'Select Date'
+                            : '${selectedDate!.toLocal()}'.split(' ')[0],
+                        style: GoogleFonts.inter(fontSize: 16),
+                      ),
                       TextButton(
                         onPressed: () async {
                           final date = await showDatePicker(
                             context: context,
-                            initialDate: DateTime.now().add(const Duration(days: 1)),
+                            initialDate: DateTime.now().add(
+                              const Duration(days: 1),
+                            ),
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 60)),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 60),
+                            ),
                           );
                           if (date != null) {
                             setSheetState(() => selectedDate = date);
@@ -93,7 +108,13 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text('Time Slot', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Time Slot',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 10,
@@ -102,7 +123,9 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         label: Text(slot),
                         selected: selectedTime == slot,
                         onSelected: (selected) {
-                          setSheetState(() => selectedTime = selected ? slot : null);
+                          setSheetState(
+                            () => selectedTime = selected ? slot : null,
+                          );
                         },
                       );
                     }).toList(),
@@ -111,7 +134,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (selectedDate != null && selectedTime != null && !_isBooking)
+                      onPressed:
+                          (selectedDate != null &&
+                              selectedTime != null &&
+                              !_isBooking)
                           ? () {
                               Navigator.pop(context);
                               _confirmBooking(selectedDate!, selectedTime!);
@@ -121,7 +147,13 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         backgroundColor: const Color(0xFF2563EB),
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: Text('Confirm Booking', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+                      child: Text(
+                        'Confirm Booking',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -153,6 +185,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
       final res = await ApiService.createBooking(
         accessToken: session.accessToken,
         tutorId: _mentor!.id,
+        startTime: startTime.toIso8601String(),
+        endTime: endTime.toIso8601String(),
         hourlyRate: _mentor!.bookingPrice,
         totalPrice: _mentor!.bookingPrice,
       );
@@ -162,9 +196,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         if (res['success'] == true) {
           await NotificationService.showInstantNotification(
             title: 'Booking Confirmed! 🎉',
-            body: 'You have booked a session with ${_mentor!.name} on ${startTime.toLocal().toString().split(' ')[0]} at $time.',
+            body:
+                'You have booked a session with ${_mentor!.name} on ${startTime.toLocal().toString().split(' ')[0]} at $time.',
           );
-          
+
           final event = Event(
             title: 'Lesson with ${_mentor!.name}',
             description: 'Jomnes App - Study Session',
@@ -175,13 +210,23 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
 
           context.go('/courses');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed to book'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Failed to book'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isBooking = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error connecting to server'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error connecting to server'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -195,14 +240,12 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         'profiles',
       ).select().eq('id', widget.mentorId).maybeSingle();
 
-      var profile = await JomnesDB.from('tutor_profiles')
-          .select()
-          .eq('user_id', widget.mentorId)
-          .maybeSingle();
-      profile ??= await JomnesDB.from('tutor_profiles')
-          .select()
-          .eq('tutor_id', widget.mentorId)
-          .maybeSingle();
+      var profile = await JomnesDB.from(
+        'tutor_profiles',
+      ).select().eq('user_id', widget.mentorId).maybeSingle();
+      profile ??= await JomnesDB.from(
+        'tutor_profiles',
+      ).select().eq('tutor_id', widget.mentorId).maybeSingle();
 
       final coursesData = await JomnesDB.from(
         'courses',
@@ -215,7 +258,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
       if (mounted && user != null) {
         final p = profile ?? {};
         final rawSub = p['subject'] as String? ?? p['category'] as String?;
-        final subject = (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
+        final subject =
+            (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
             ? rawSub
             : Mentor.inferMentorSubject(p['bio'], p['education']);
 
@@ -228,12 +272,12 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
             timeSlot: 'Flexible',
             avatarUrl:
                 (user?['profile_image'] != null &&
-                        user!['profile_image'].toString().isNotEmpty)
-                    ? user['profile_image']
-                    : (user?['avatar_url'] != null &&
-                            user!['avatar_url'].toString().isNotEmpty)
-                        ? user['avatar_url']
-                        : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
+                    user!['profile_image'].toString().isNotEmpty)
+                ? user['profile_image']
+                : (user?['avatar_url'] != null &&
+                      user!['avatar_url'].toString().isNotEmpty)
+                ? user['avatar_url']
+                : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
             rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
             students: (p['total_students'] as num?)?.toInt() ?? 120,
             classes: 50,
@@ -350,7 +394,11 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: Colors.amber, size: 28),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber,
+                              size: 28,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               m.rating.toStringAsFixed(1),
@@ -497,7 +545,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Tab Content
                     if (_tabController.index == 0)
                       // Courses List
@@ -515,7 +563,11 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                               child: Center(
                                 child: Column(
                                   children: [
-                                    Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey.shade400),
+                                    Icon(
+                                      Icons.rate_review_outlined,
+                                      size: 48,
+                                      color: Colors.grey.shade400,
+                                    ),
                                     const SizedBox(height: 12),
                                     Text(
                                       'No reviews yet.\nBe the first to leave one!',
@@ -535,30 +587,43 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                 final profile = r['profiles'] ?? {};
                                 final name = profile['full_name'] ?? 'Student';
                                 final avatar = profile['avatar_url'];
-                                final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
-                                
+                                final initial = name.isNotEmpty
+                                    ? name[0].toUpperCase()
+                                    : 'S';
+
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 16),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.shade200),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           CircleAvatar(
                                             radius: 16,
-                                            backgroundColor: const Color(0xFFFFD5DC),
-                                            backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                                            backgroundColor: const Color(
+                                              0xFFFFD5DC,
+                                            ),
+                                            backgroundImage: avatar != null
+                                                ? NetworkImage(avatar)
+                                                : null,
                                             child: avatar == null
                                                 ? Text(
                                                     initial,
                                                     style: const TextStyle(
-                                                        fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Colors.black,
+                                                    ),
                                                   )
                                                 : null,
                                           ),
@@ -575,7 +640,11 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                           ),
                                           Row(
                                             children: [
-                                              const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                                              const Icon(
+                                                Icons.star_rounded,
+                                                color: Colors.amber,
+                                                size: 16,
+                                              ),
                                               const SizedBox(width: 4),
                                               Text(
                                                 '${r['rating']}',
@@ -588,7 +657,11 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                           ),
                                         ],
                                       ),
-                                      if (r['comment'] != null && r['comment'].toString().trim().isNotEmpty) ...[
+                                      if (r['comment'] != null &&
+                                          r['comment']
+                                              .toString()
+                                              .trim()
+                                              .isNotEmpty) ...[
                                         const SizedBox(height: 12),
                                         Text(
                                           r['comment'],
@@ -614,7 +687,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           ),
                         ),
                       ),
-                    
+
                     const SizedBox(height: 20),
                   ],
                 ),

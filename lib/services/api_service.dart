@@ -159,7 +159,7 @@ class ApiService {
     String newPassword,
     String accessToken,
   ) async {
-    final response = await _postWithFallback(
+    final response = await _patchWithFallback(
       '/auth/update-password',
       headers: {'Authorization': 'Bearer $accessToken'},
       body: jsonEncode({'newPassword': newPassword}),
@@ -323,6 +323,41 @@ class ApiService {
     }
   }
 
+  // ── Fetch Teacher Bookings ────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> fetchTeacherBookings(
+    String accessToken,
+  ) async {
+    final response = await _getWithFallback(
+      '/bookings/teachers',
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    final body = jsonDecode(response.body);
+
+    if (body['success'] != true) {
+      throw Exception(body['message'] ?? 'Failed to fetch teacher bookings');
+    }
+
+    final raw = body['bookings'] as List? ?? [];
+
+    return raw.cast<Map<String, dynamic>>();
+  }
+
+  static Future<Map<String, dynamic>> updateBookingStatus({
+    required String accessToken,
+    required String bookingId,
+    required String status,
+  }) async {
+    final response = await _patchWithFallback(
+      '/bookings/$bookingId/status',
+      headers: {'Authorization': 'Bearer $accessToken'},
+      body: jsonEncode({'status': status}),
+    );
+
+    return jsonDecode(response.body);
+  }
+
   // ── Create Booking ────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> createBooking({
     required String accessToken,
@@ -372,7 +407,9 @@ class ApiService {
   }
 
   // ── Fetch Mentor Reviews ─────────────────────────────────────────────────
-  static Future<List<Map<String, dynamic>>> fetchMentorReviews(String mentorId) async {
+  static Future<List<Map<String, dynamic>>> fetchMentorReviews(
+    String mentorId,
+  ) async {
     try {
       final response = await _getWithFallback(
         '/reviews/mentor/$mentorId',
@@ -440,16 +477,24 @@ class ApiService {
       request.fields['description'] = description;
 
       if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('thumbnail', thumbnailPath));
+        request.files.add(
+          await http.MultipartFile.fromPath('thumbnail', thumbnailPath),
+        );
       }
       if (materialPath != null && materialPath.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('material', materialPath));
+        request.files.add(
+          await http.MultipartFile.fromPath('material', materialPath),
+        );
       }
       if (videoPath != null && videoPath.isNotEmpty) {
-        request.files.add(await http.MultipartFile.fromPath('video', videoPath));
+        request.files.add(
+          await http.MultipartFile.fromPath('video', videoPath),
+        );
       }
 
-      final streamedResponse = await request.send().timeout(const Duration(minutes: 5));
+      final streamedResponse = await request.send().timeout(
+        const Duration(minutes: 5),
+      );
       return streamedResponse.statusCode == 200;
     } catch (e) {
       debugPrint('Error uploading course: $e');
