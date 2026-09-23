@@ -48,7 +48,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     if (_mentor == null) return;
     DateTime? selectedDate;
     String? selectedTime;
-    final timeSlots = ['9:00 AM', '11:00 AM', '2:00 PM', '4:00 PM'];
+    final timeSlots = [
+      '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+      '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
+    ];
 
     await showModalBottomSheet(
       context: context,
@@ -187,6 +190,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         tutorId: _mentor!.id,
         startTime: startTime.toIso8601String(),
         endTime: endTime.toIso8601String(),
+        bookingDate: date.toIso8601String().split('T')[0],
+        timeSlot: time,
         hourlyRate: _mentor!.bookingPrice,
         totalPrice: _mentor!.bookingPrice,
       );
@@ -196,8 +201,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         if (res['success'] == true) {
           await NotificationService.showInstantNotification(
             title: 'Booking Confirmed! 🎉',
-            body:
-                'You have booked a session with ${_mentor!.name} on ${startTime.toLocal().toString().split(' ')[0]} at $time.',
+            body: 'Request sent to ${_mentor!.name}!',
           );
 
           final event = Event(

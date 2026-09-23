@@ -365,6 +365,8 @@ class ApiService {
     String? courseId,
     String? startTime,
     String? endTime,
+    String? bookingDate,
+    String? timeSlot,
     double? hourlyRate,
     double? totalPrice,
   }) async {
@@ -373,6 +375,8 @@ class ApiService {
       if (courseId != null) 'course_id': courseId,
       if (startTime != null) 'start_time': startTime,
       if (endTime != null) 'end_time': endTime,
+      if (bookingDate != null) 'booking_date': bookingDate,
+      if (timeSlot != null) 'time_slot': timeSlot,
       if (hourlyRate != null) 'hourly_rate': hourlyRate,
       if (totalPrice != null) 'total_price': totalPrice,
     });

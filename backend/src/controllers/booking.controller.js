@@ -22,6 +22,8 @@ export async function createBooking(req, res) {
         hourly_rate: hourly_rate || 0,
         total_price: total_price || 0,
         status: 'pending',
+        booking_date: req.body.booking_date || start_time?.split('T')[0] || new Date().toISOString().split('T')[0],
+        time_slot: req.body.time_slot || null,
       })
       .select()
       .single();
