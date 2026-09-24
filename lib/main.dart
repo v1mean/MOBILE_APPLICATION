@@ -7,6 +7,7 @@ import 'package:mobile_application/services/notification_service.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 // Handy shortcut you'll use everywhere in the app
 final JomnesDB = Supabase.instance.client;
@@ -14,6 +15,8 @@ final JomnesDB = Supabase.instance.client;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.initialize();
+
+  Stripe.publishableKey = 'pk_test_51UJ6f2B0wqWK1qEi3bVUPVjkVgMHvDSNYX5uPE5upF8jspWGXdpWMrxK5HTuoUkgrlqT1p2YlBzm1U2qUxD6dCnV003xsA7fWa';
 
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);

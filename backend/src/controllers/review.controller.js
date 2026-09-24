@@ -44,7 +44,7 @@ export async function getMentorReviews(req, res) {
     
     const { data: reviews, error } = await supabaseAdmin
       .from('reviews')
-      .select('id, rating, comment, created_at, profiles!student_id(full_name, avatar_url)')
+      .select('id, rating, comment, created_at, Users!student_id(name, profile_image)')
       .eq('tutor_id', mentorId)
       .order('created_at', { ascending: false })
       .limit(10);

@@ -124,6 +124,8 @@
 	<string>Jomnes needs access to your camera to take a profile photo.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Jomnes needs access to your microphone (for video profile features).</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Scan your card for faster payment.</string>
 
 </dict>
 </plist>

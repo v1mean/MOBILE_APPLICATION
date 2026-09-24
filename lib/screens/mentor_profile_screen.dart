@@ -7,6 +7,7 @@ import '../widgets/course_card.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
+import '../services/payment_service.dart';
 
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;
@@ -167,6 +168,44 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         );
       },
     );
+  }
+
+  Future<void> _handleInitialPayment() async {
+    setState(() => _isBooking = true);
+
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) {
+      context.go('/login');
+      return;
+    }
+
+    try {
+      final paymentSuccess = await PaymentService.initPaymentSheet(_mentor!.bookingPrice);
+      
+      if (!paymentSuccess) {
+         if (mounted) {
+           setState(() => _isBooking = false);
+           ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Payment failed or was cancelled.')),
+           );
+         }
+         return;
+      }
+      
+      // Payment success! Proceed to booking sheet.
+      if (mounted) {
+        setState(() => _isBooking = false);
+        _showBookingSheet();
+      }
+    } catch (e) {
+      debugPrint('Stripe initialization error: $e');
+      if (mounted) {
+        setState(() => _isBooking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error initializing payment.')),
+        );
+      }
+    }
   }
 
   Future<void> _confirmBooking(DateTime date, String time) async {
@@ -434,7 +473,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         Expanded(
                           flex: 3,
                           child: ElevatedButton(
-                            onPressed: _isBooking ? null : _showBookingSheet,
+                            onPressed: _isBooking ? null : _handleInitialPayment,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xFF2563EB),
                               foregroundColor: Colors.white,
@@ -588,9 +627,9 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                             )
                           : Column(
                               children: _reviews.map((r) {
-                                final profile = r['profiles'] ?? {};
-                                final name = profile['full_name'] ?? 'Student';
-                                final avatar = profile['avatar_url'];
+                                final user = r['Users'] ?? r['profiles'] ?? {};
+                                final name = user['name'] ?? user['full_name'] ?? 'Student';
+                                final avatar = user['profile_image'] ?? user['avatar_url'];
                                 final initial = name.isNotEmpty
                                     ? name[0].toUpperCase()
                                     : 'S';
