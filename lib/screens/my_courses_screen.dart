@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/user_avatar_header.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../models/user_profile.dart';
@@ -19,7 +20,6 @@ class MyCoursesScreen extends StatefulWidget {
 class _MyCoursesScreenState extends State<MyCoursesScreen> {
   int _navIndex = 2;
   UserProfile? _userProfile;
-  bool _isLoadingProfile = true;
   late Future<List<Course>> _coursesFuture;
 
   @override
@@ -36,8 +36,6 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
       final data = await ApiService.fetchMyCourses(session.accessToken);
       return data.map((e) => Course.fromJson(e)).toList();
     } catch (e) {
-      // ignore: avoid_print
-      print('DEBUG fetch courses error: $e');
       return [];
     }
   }
@@ -45,7 +43,6 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   Future<void> _fetchUserProfile() async {
     final session = JomnesDB.auth.currentSession;
     if (session == null) {
-      if (mounted) setState(() => _isLoadingProfile = false);
       return;
     }
 
@@ -69,11 +66,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
               location: data['city'] ?? '',
             );
           }
-          _isLoadingProfile = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoadingProfile = false);
     }
   }
 
@@ -281,7 +276,6 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   @override
   Widget build(BuildContext context) {
     final name = _displayName;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     final avatar = _avatarUrl;
 
     return Scaffold(
@@ -295,77 +289,11 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  GestureDetector(
+                  UserAvatarHeader(
+                    name: name,
+                    role: _displayRole,
+                    avatarUrl: avatar,
                     onTap: () => context.go('/settings'),
-                    behavior: HitTestBehavior.opaque,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ClipOval(
-                            child: SizedBox(
-                              width: 48,
-                              height: 48,
-                              child: _isLoadingProfile
-                                  ? const CircularProgressIndicator(
-                                      color: AppColors.accentBlue,
-                                      strokeWidth: 2,
-                                    )
-                                  : avatar != null
-                                  ? Image.network(
-                                      avatar,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, _, _) => CircleAvatar(
-                                        backgroundColor: const Color(
-                                          0xFFFFD5DC,
-                                        ),
-                                        child: Text(
-                                          initial,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w700,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ),
-                                    )
-                                  : CircleAvatar(
-                                      backgroundColor: const Color(0xFFFFD5DC),
-                                      child: Text(
-                                        initial,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w700,
-                                          color: Colors.black,
-                                        ),
-                                      ),
-                                    ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                name,
-                                style: GoogleFonts.inter(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _displayRole,
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                   const Spacer(),
                   IconButton(
@@ -502,3 +430,4 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
     );
   }
 }
+

@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/primary_auth_button.dart';
+import '../widgets/social_auth_row.dart';
+import '../theme/app_text_styles.dart';
 
 class _DomeClipper extends CustomClipper<Path> {
   const _DomeClipper();
@@ -113,37 +116,14 @@ class _TeacherRegisterScreenState extends State<TeacherRegisterScreen> {
                         ),
                       ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 28),
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: () => context.go('/teacher-home'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.white,
-                            foregroundColor: AppColors.darkBg,
-                            padding: const EdgeInsets.symmetric(vertical: 17),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                            elevation: 0,
-                          ),
-                          child: Text('Register Account', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-                        ),
-                      ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
+                      PrimaryAuthButton(label: 'Register Account', onPressed: () => context.go('/teacher-home')).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),
                       GestureDetector(
                         onTap: () => context.pop(),
-                        child: Text('Back to Log In', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 14)),
+                        child: Text('Back to Log In', style: AppTextStyles.bodySmWhite70),
                       ).animate(delay: 380.ms).fadeIn(),
                       const SizedBox(height: 20),
-                      Text('Registered with', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13))
-                          .animate(delay: 400.ms).fadeIn(),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SocialBtn(onTap: () {}, child: Image.network('https://www.google.com/favicon.ico', width: 24, height: 24, errorBuilder: (ctx, e, st) => const Icon(Icons.g_mobiledata, color: Colors.white, size: 28))),
-                          const SizedBox(width: 16),
-                          SocialBtn(onTap: () {}, child: const Icon(Icons.facebook, color: Color(0xFF1877F2), size: 28)),
-                        ],
-                      ).animate(delay: 420.ms).fadeIn(),
+                      SocialAuthRow(label: 'Registered with', onGoogleTap: () {}, onFacebookTap: () {}).animate(delay: 400.ms).fadeIn(),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -156,3 +136,5 @@ class _TeacherRegisterScreenState extends State<TeacherRegisterScreen> {
     );
   }
 }
+
+

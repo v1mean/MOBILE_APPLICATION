@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+﻿import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -278,8 +278,6 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
         throw Exception('No valid tutor account found to associate with course.');
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('Supabase course upload error (will fallback to local): $e');
     }
 
     if (!mounted) return;
@@ -944,3 +942,4 @@ class _DeviceVideoUploadBox extends StatelessWidget {
     );
   }
 }
+

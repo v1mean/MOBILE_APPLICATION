@@ -8,6 +8,7 @@ import '../models/mentor.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/featured_course_card.dart';
+import '../widgets/user_avatar_header.dart';
 import '../theme/app_colors.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -99,9 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
           _isLoadingMentors = false;
         });
       }
-    } catch (e, st) {
-      // ignore: avoid_print
-      print('ERROR fetching mentors: $e\n$st');
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingMentors = false;
@@ -123,12 +122,8 @@ class _HomeScreenState extends State<HomeScreen> {
           _featuredCourses = (data as List).map((e) => FeaturedCourse.fromJson(e)).toList();
           _isLoadingFeatured = false;
         });
-        // ignore: avoid_print
-        print('DEBUG fetched featured courses count: ${_featuredCourses.length}');
       }
-    } catch (e, st) {
-      // ignore: avoid_print
-      print('ERROR fetching featured courses: $e\n$st');
+    } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingFeatured = false;
@@ -139,10 +134,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchUserProfile() async {
     final session = JomnesDB.auth.currentSession;
-    // ignore: avoid_print
-    print('DEBUG session: ${session?.user.id} | email: ${session?.user.email}');
-    // ignore: avoid_print
-    print('DEBUG userMeta: ${JomnesDB.auth.currentUser?.userMetadata}');
     if (session == null) {
       if (mounted) setState(() => _isLoadingProfile = false);
       return;
@@ -153,8 +144,6 @@ class _HomeScreenState extends State<HomeScreen> {
           .select()
           .eq('user_id', session.user.id)
           .maybeSingle();
-      // ignore: avoid_print
-      print('DEBUG Users row: $data');
       if (mounted) {
         setState(() {
           if (data != null) {
@@ -164,8 +153,6 @@ class _HomeScreenState extends State<HomeScreen> {
         });
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('DEBUG Users fetch error: $e');
       if (mounted) {
         setState(() => _isLoadingProfile = false);
       }
@@ -234,67 +221,11 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Row(
                 children: [
                   // Current User Avatar & Info (clickable to Settings)
-                  GestureDetector(
+                  UserAvatarHeader(
+                    name: _displayName,
+                    role: _userProfile?.role ?? 'Student',
+                    avatarUrl: _displayAvatar,
                     onTap: () => context.go('/settings'),
-                    behavior: HitTestBehavior.opaque,
-                    child: MouseRegion(
-                      cursor: SystemMouseCursors.click,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          ClipOval(
-                            child: SizedBox(
-                              width: 48,
-                              height: 48,
-                              child: _isLoadingProfile
-                                ? const CircularProgressIndicator(color: AppColors.accentBlue, strokeWidth: 2)
-                                : _displayAvatar != null
-                                    ? Image.network(
-                                        _displayAvatar!,
-                                        fit: BoxFit.cover,
-                                        errorBuilder: (_, _, _) {
-                                          final initial = _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U';
-                                          return CircleAvatar(
-                                            backgroundColor: const Color(0xFFFFD5DC),
-                                            child: Text(initial, style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                          );
-                                        },
-                                      )
-                                    : CircleAvatar(
-                                        backgroundColor: const Color(0xFFFFD5DC),
-                                        child: Text(
-                                          _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U',
-                                          style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
-                                        ),
-                                      ),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _displayName,
-                                style: GoogleFonts.inter(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _userProfile?.role ?? 'Student',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w400,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
                   ),
                   const Spacer(),
                   // Clean outline bell icon matching Figma
@@ -549,3 +480,6 @@ class _RecentChip extends StatelessWidget {
     );
   }
 }
+
+
+

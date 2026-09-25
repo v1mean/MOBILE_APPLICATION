@@ -1,10 +1,13 @@
-import 'dart:developer';
+﻿import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/primary_auth_button.dart';
+import '../widgets/social_auth_row.dart';
+import '../theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -99,6 +102,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
              } catch (_) {}
           }
+          if (!mounted) return;
           if (finalRole == 'teacher' || finalRole == 'mentor') {
              context.go('/teacher-home');
           } else {
@@ -150,13 +154,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleFacebookLogin() async {
-    // ignore: avoid_print
-    print('>>> FB TAP: _handleFacebookLogin entered');
     setState(() => _isLoading = true);
     try {
       await _authService.signInWithFacebook(widget.role);
-      // ignore: avoid_print
-      print('>>> FB TAP: signInWithFacebook returned without throwing');
       // Do NOT navigate here: signInWithOAuth only launches the browser and
       // returns immediately, long before the user has logged in. Navigating
       // now would hit the router's auth guard (no session yet) and bounce
@@ -205,20 +205,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text(
                           'Welcome Back',
-                          style: GoogleFonts.inter(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.white,
-                          ),
+                          style: AppTextStyles.h1,
                         ).animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 8),
                         Text(
                           'Enter your detail below to log into\nyour account.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            color: AppColors.textWhite70,
-                          ),
+                          style: AppTextStyles.bodySmWhite70,
                         ).animate(delay: 150.ms).fadeIn(),
                         const SizedBox(height: 28),
                         DarkTextField(
@@ -278,46 +271,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               onTap: () => context.push('/forgot-password'),
                               child: Text(
                                 'Forgot password?',
-                                style: GoogleFonts.inter(
-                                  color: AppColors.accentBlue,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: AppTextStyles.link,
                               ),
                             ),
                           ],
                         ).animate(delay: 300.ms).fadeIn(),
                         const SizedBox(height: 28),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleLogin,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.white,
-                              foregroundColor: AppColors.darkBg,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                              elevation: 0,
-                            ),
-                            child: _isLoading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    'Log In',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                          ),
-                        ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
+                        PrimaryAuthButton(label: 'Log In', isLoading: _isLoading, onPressed: _handleLogin).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 16),
                         GestureDetector(
                           onTap: () => context.push('/register'),
@@ -329,44 +289,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ).animate(delay: 400.ms).fadeIn(),
-                        const SizedBox(height: 28),
-                        Text(
-                          'or Log In With',
-                          style: GoogleFonts.inter(
-                            color: AppColors.textWhite70,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SocialBtn(
-                              onTap: _handleGoogleLogin,
-                              child: Image.network(
-                                'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
-                                width: 24,
-                                height: 24,
-                                errorBuilder: (context, error, stackTrace) => const Text(
-                                  'G',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                    color: AppColors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            SocialBtn(
-                              onTap: _handleFacebookLogin,
-                              child: const Icon(
-                                Icons.facebook,
-                                color: Color(0xFF1877F2),
-                                size: 28,
-                              ),
-                            ),
-                          ],
-                        ).animate(delay: 450.ms).fadeIn(),
+                        SocialAuthRow(label: 'or Log In With', onGoogleTap: _handleGoogleLogin, onFacebookTap: _handleFacebookLogin).animate(delay: 450.ms).fadeIn(),
                         const SizedBox(height: 24),
                         GestureDetector(
                           onTap: () {
@@ -389,11 +312,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Text(
                                   'Continue as guest',
-                                  style: GoogleFonts.inter(
-                                    color: AppColors.textWhite70,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                  ),
+                                  style: AppTextStyles.bodySmWhite70,
                                 ),
                                 const SizedBox(width: 6),
                                 const Icon(
@@ -476,3 +395,6 @@ class _LoginScreenState extends State<LoginScreen> {
     ),
   ];
 }
+
+
+

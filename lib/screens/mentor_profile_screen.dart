@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
@@ -248,8 +248,6 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         setState(() => _isLoading = false);
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('ERROR in _fetchMentor: $e');
       if (mounted) setState(() => _isLoading = false);
     }
   }
@@ -662,3 +660,4 @@ class _StatItem extends StatelessWidget {
     );
   }
 }
+

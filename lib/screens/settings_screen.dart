@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../theme/app_colors.dart';
+import '../widgets/user_avatar_header.dart';
 import '../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -94,55 +95,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Builder(builder: (context) {
                 final name = _displayName;
-                final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
                 final avatar = _avatarUrl;
-                return Row(
-                  children: [
-                    ClipOval(
-                      child: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: avatar != null
-                            ? Image.network(
-                                avatar,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => CircleAvatar(
-                                  backgroundColor: const Color(0xFFFFD5DC),
-                                  child: Text(initial,
-                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                ),
-                              )
-                            : CircleAvatar(
-                                backgroundColor: const Color(0xFFFFD5DC),
-                                child: Text(initial,
-                                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _displayRole,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                return UserAvatarHeader(
+                  name: name,
+                  role: _displayRole,
+                  avatarUrl: avatar,
                 );
               }),
             ),
@@ -340,8 +297,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildProfileCard(BuildContext context) {
     final name = _displayName;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     final avatar = _avatarUrl;
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
@@ -659,3 +616,4 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
+

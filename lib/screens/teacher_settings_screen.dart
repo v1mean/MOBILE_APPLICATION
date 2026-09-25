@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
+import '../widgets/user_avatar_header.dart';
 import '../main.dart';
 
 class TeacherSettingsScreen extends StatefulWidget {
@@ -22,7 +23,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   String _name = 'Teacher';
   String _email = '';
   String _phone = '';
-  String _subject = 'General';
+  final String _subject = 'General';
   String _role = 'Lecturer';
   String? _avatarUrl;
 
@@ -166,22 +167,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: const Color(0xFF7B3FC8),
-                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-                    child: _avatarUrl == null
-                        ? Text(initial, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white))
-                        : null,
-                  ),
-                  const SizedBox(width: 14),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(_name, style: GoogleFonts.inter(fontSize: 17, fontWeight: FontWeight.w700, color: Colors.white)),
-                      const SizedBox(height: 2),
-                      Text(_role, style: GoogleFonts.inter(fontSize: 12, color: Colors.white70)),
-                    ],
+                  UserAvatarHeader(
+                    name: _name,
+                    role: _role,
+                    avatarUrl: _avatarUrl,
                   ),
                 ],
               ),

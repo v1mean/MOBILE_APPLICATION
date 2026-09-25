@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
-import '../theme/app_colors.dart';
 import '../constants/course_categories.dart';
 
 class MentorCard extends StatelessWidget {
@@ -43,7 +42,7 @@ class MentorCard extends StatelessWidget {
                 child: Image.network(
                   mentor.avatarUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(
+                  errorBuilder: (_, _, _) => Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: theme.gradient,
@@ -210,7 +209,7 @@ class MentorCardWithButton extends StatelessWidget {
               child: Image.network(
                 mentor.avatarUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: theme.gradient,

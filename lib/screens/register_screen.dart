@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/primary_auth_button.dart';
+import '../widgets/social_auth_row.dart';
+import '../theme/app_text_styles.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
 import '../services/auth_service.dart';
@@ -76,6 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   }
                } catch (_) {}
             }
+            if (!mounted) return;
             if (finalRole == 'teacher' || finalRole == 'mentor') {
                context.go('/teacher-home');
             } else {
@@ -172,7 +176,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     child: Column(
                       children: [
                         Text('Welcome to Jomnes',
-                            style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
+                            style: AppTextStyles.h1)
                             .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 8),
                         Text('Enter your detail below to register\nyour account.',
@@ -206,52 +210,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 28),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: _isLoading ? null : _handleRegister,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.white, foregroundColor: AppColors.darkBg,
-                              padding: const EdgeInsets.symmetric(vertical: 18),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
-                              elevation: 0,
-                            ),
-                            child: _isLoading 
-                                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                                : Text('Register Account', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
-                          ),
-                        ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
+                        PrimaryAuthButton(label: 'Register Account', isLoading: _isLoading, onPressed: _handleRegister).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 16),
                         GestureDetector(
                           onTap: () => context.pop(),
-                          child: Text('Back to Log In', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13)),
+                          child: Text('Back to Log In', style: AppTextStyles.bodySmWhite70),
                         ).animate(delay: 400.ms).fadeIn(),
                         const SizedBox(height: 28),
-                        Text('Registered with', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 12)),
-                        const SizedBox(height: 14),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            SocialBtn(
-                              onTap: _handleGoogleLogin,
-                              child: Image.network(
-                                'https://www.google.com/images/branding/googleg/1x/googleg_standard_color_128dp.png',
-                                width: 24, height: 24,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    const Text('G', style: TextStyle(fontWeight: FontWeight.w900, color: AppColors.white)),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            SocialBtn(
-                              onTap: _handleFacebookLogin,
-                              child: const Icon(
-                                Icons.facebook,
-                                color: Color(0xFF1877F2),
-                                size: 28,
-                              ),
-                            ),
-                          ],
-                        ).animate(delay: 450.ms).fadeIn(),
+                        SocialAuthRow(label: 'Registered with', onGoogleTap: _handleGoogleLogin, onFacebookTap: _handleFacebookLogin).animate(delay: 450.ms).fadeIn(),
                         const SizedBox(height: 24),
                         GestureDetector(
                           onTap: () {
@@ -311,3 +277,4 @@ class _RegisterScreenState extends State<RegisterScreen> {
     Positioned(left: 200, top: h * 0.85, child: Text('*', style: GoogleFonts.inter(color: AppColors.white.withAlpha(100), fontSize: 16))),
   ];
 }
+

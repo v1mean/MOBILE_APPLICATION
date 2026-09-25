@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/auth_widgets.dart';
+import '../widgets/social_auth_row.dart';
+import '../theme/app_text_styles.dart';
 
 class _DomeClipper extends CustomClipper<Path> {
   const _DomeClipper();
@@ -31,7 +33,7 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
   bool _obscurePassword = true;
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   @override
   void dispose() {
@@ -114,7 +116,7 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text('Remember me', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13)),
+                          Text('Remember me', style: AppTextStyles.bodySmWhite70),
                           const Spacer(),
                           GestureDetector(
                             onTap: () => context.push('/teacher-forgot-password'),
@@ -142,20 +144,10 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                       const SizedBox(height: 16),
                       GestureDetector(
                         onTap: () => context.push('/teacher-register'),
-                        child: Text('Register Account', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 14)),
+                        child: Text('Register Account', style: AppTextStyles.bodySmWhite70),
                       ).animate(delay: 380.ms).fadeIn(),
                       const SizedBox(height: 20),
-                      Text('or Log In With', style: GoogleFonts.inter(color: AppColors.textWhite70, fontSize: 13))
-                          .animate(delay: 400.ms).fadeIn(),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          SocialBtn(onTap: () {}, child: Image.network('https://www.google.com/favicon.ico', width: 24, height: 24, errorBuilder: (ctx, e, st) => const Icon(Icons.g_mobiledata, color: Colors.white, size: 28))),
-                          const SizedBox(width: 16),
-                          SocialBtn(onTap: () {}, child: const Icon(Icons.facebook, color: Color(0xFF1877F2), size: 28)),
-                        ],
-                      ).animate(delay: 420.ms).fadeIn(),
+                      SocialAuthRow(label: 'or Log In With', onGoogleTap: () {}, onFacebookTap: () {}).animate(delay: 400.ms).fadeIn(),
                       const SizedBox(height: 40),
                     ],
                   ),
@@ -168,3 +160,5 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
     );
   }
 }
+
+
