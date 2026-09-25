@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../main.dart';
@@ -175,9 +176,9 @@ class ApiService {
         headers: {'Authorization': 'Bearer $accessToken'},
         body: body,
       );
-      debugPrint('Social sync completed. Status: ${response.statusCode}');
+      log('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
-      debugPrint('Social sync error: $e');
+      log('Social sync error: $e');
     }
   }
 

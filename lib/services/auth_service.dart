@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
+import 'dart:developer';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,11 +22,11 @@ class AuthService {
     if (!kIsWeb) {
       try {
         final String? hash = await platform.invokeMethod('getKeyHash');
-        debugPrint('====================================');
-        debugPrint('FACEBOOK ANDROID KEY HASH: $hash');
-        debugPrint('====================================');
+        log('====================================');
+        log('FACEBOOK ANDROID KEY HASH: $hash');
+        log('====================================');
       } catch (e) {
-        debugPrint('Failed to get key hash: $e');
+        log('Failed to get key hash: $e');
       }
     }
   }
@@ -36,7 +37,7 @@ class AuthService {
     await prefs.setString('pending_role', role);
 
     if (kIsWeb) {
-      debugPrint('DEBUG: Initiating Google OAuth sign-in for Web');
+      log('DEBUG: Initiating Google OAuth sign-in for Web');
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
         redirectTo: 'http://localhost:8080',
@@ -59,20 +60,20 @@ class AuthService {
 
       final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
-        debugPrint('DEBUG: Google Sign-In cancelled by user.');
+        log('DEBUG: Google Sign-In cancelled by user.');
         return; 
       }
 
-      debugPrint('DEBUG: Google account selected: ${googleUser.email}');
+      log('DEBUG: Google account selected: ${googleUser.email}');
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
       final String? idToken = googleAuth.idToken;
       final String? accessToken = googleAuth.accessToken;
 
-      debugPrint('DEBUG: ID Token received. Length: ${idToken?.length ?? 0}');
-      debugPrint('DEBUG: Access Token received. Length: ${accessToken?.length ?? 0}');
-      debugPrint('DEBUG: serverClientId = $_googleWebClientId');
+      log('DEBUG: ID Token received. Length: ${idToken?.length ?? 0}');
+      log('DEBUG: Access Token received. Length: ${accessToken?.length ?? 0}');
+      log('DEBUG: serverClientId = $_googleWebClientId');
 
       if (idToken == null) {
         throw Exception(
@@ -86,18 +87,18 @@ class AuthService {
         accessToken: accessToken,
       );
 
-      debugPrint('DEBUG: Supabase signInWithIdToken succeeded. UID: ${response.user?.id}');
-      debugPrint('Google Login successful, UID: ${response.user?.id}');
+      log('DEBUG: Supabase signInWithIdToken succeeded. UID: ${response.user?.id}');
+      log('Google Login successful, UID: ${response.user?.id}');
 
       final session = supabase.auth.currentSession;
       if (session != null) {
         ApiService.syncSocialUser(session.accessToken, role); 
       }
     } on AuthApiException catch (e) {
-      debugPrint('DEBUG: AuthApiException — statusCode: ${e.statusCode}, message: ${e.message}');
+      log('DEBUG: AuthApiException — statusCode: ${e.statusCode}, message: ${e.message}');
       rethrow;
     } catch (e) {
-      debugPrint('Google Sign-In error: $e');
+      log('Google Sign-In error: $e');
       rethrow;
     }
   }
@@ -108,17 +109,22 @@ class AuthService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('pending_role', role);
       
-      debugPrint('DEBUG: Initiating Facebook OAuth sign-in');
+      log('DEBUG: Initiating Facebook OAuth sign-in');
+      // ignore: avoid_print
+      print('>>> FB: calling signInWithOAuth, kIsWeb=$kIsWeb');
       final bool launched = await supabase.auth.signInWithOAuth(
         OAuthProvider.facebook,
         redirectTo: kIsWeb ? Uri.base.origin : 'io.jomnes.app://login-callback',
       );
-      debugPrint('DEBUG: Facebook signInWithOAuth launched=$launched');
+      // ignore: avoid_print
+      print('>>> FB: signInWithOAuth launched=$launched');
       // This leaves the app and redirects back after login; the router's
       // onAuthStateChange listener (see router.dart) picks up the session
       // and navigates once it lands — nothing else to do here.
     } catch (e) {
-      debugPrint('Facebook Sign-In error: $e');
+      log('Facebook Sign-In error: $e');
+      // ignore: avoid_print
+      print('>>> FB ERROR: $e');
       rethrow;
     }
   }
