@@ -1,5 +1,4 @@
-﻿import 'dart:async';
-import 'dart:developer';
+import 'dart:async';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -39,8 +38,7 @@ void setupDeepLinkListener() {
     final AuthChangeEvent event = data.event;
     final Session? session = data.session;
 
-    log('DEBUG: onAuthStateChange fired — event=$event, hasSession=${session != null}');
-    // ignore: avoid_print
+    debugPrint('DEBUG: onAuthStateChange fired — event=$event, hasSession=${session != null}');
     if (kDebugMode) debugPrint('AUTH_EVENT: $event hasSession=${session != null}');
 
     if (event == AuthChangeEvent.passwordRecovery && session != null) {

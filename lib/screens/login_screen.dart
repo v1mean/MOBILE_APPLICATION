@@ -1,4 +1,4 @@
-﻿import 'dart:developer';
+﻿
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
      
       // Dynamic routing will be handled by router.dart based on DB role
     } catch (e) {
-      log('Google Login error: $e');
+      debugPrint('Google Login error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
