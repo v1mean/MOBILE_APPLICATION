@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../main.dart';
+import '../services/api_service.dart';
 
 class _RequestItem {
   final String name;
@@ -21,6 +22,8 @@ class TeacherPcRequestScreen extends StatefulWidget {
 class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
   String _userName = 'Teacher';
   String? _avatarUrl;
+  List<Map<String, dynamic>> _bookings = [];
+  bool _isLoadingBookings = true;
 
   static final _requests = [
     _RequestItem(
@@ -45,13 +48,16 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchBookings();
   }
 
   Future<void> _fetchProfile() async {
     try {
       final session = JomnesDB.auth.currentSession;
       if (session == null) return;
-      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
+      final data = await JomnesDB.from(
+        'profiles',
+      ).select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
       if (data != null && mounted) {
         setState(() {
           _userName = data['full_name'] ?? 'Teacher';
@@ -60,6 +66,37 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
         });
       }
     } catch (_) {}
+  }
+
+  Future<void> _fetchBookings() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+
+      if (session == null) {
+        if (mounted) {
+          setState(() => _isLoadingBookings = false);
+        }
+        return;
+      }
+
+      final bookings = await ApiService.fetchTeacherBookings(
+        session.accessToken,
+      );
+
+      if (mounted) {
+        setState(() {
+          _bookings = bookings
+              .where((booking) => booking['status'] == 'pending')
+              .toList();
+
+          _isLoadingBookings = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingBookings = false);
+      }
+    }
   }
 
   @override
@@ -79,9 +116,15 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: const Color(0xFF7B3FC8),
-                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                    backgroundImage: _avatarUrl != null
+                        ? NetworkImage(_avatarUrl!)
+                        : null,
                     child: _avatarUrl == null
-                        ? const Icon(Icons.person, color: Colors.white, size: 28)
+                        ? const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 28,
+                          )
                         : null,
                   ),
                   const SizedBox(width: 12),
@@ -168,7 +211,9 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
         shape: const CircleBorder(),
         child: const Icon(Icons.add_rounded, size: 28),
       ),
-      bottomNavigationBar: const TeacherBottomNavBar(currentTab: TeacherNavTab.pcRequest),
+      bottomNavigationBar: const TeacherBottomNavBar(
+        currentTab: TeacherNavTab.pcRequest,
+      ),
     );
   }
 }

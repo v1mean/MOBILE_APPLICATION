@@ -7,8 +7,9 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 
 import bookingRoutes from "./routes/booking.routes.js";
-
 import reviewRoutes from "./routes/review.routes.js";
+import courseRoutes from "./routes/course.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
 
 const app = express();
 
@@ -36,7 +37,8 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
-
+app.use("/api/courses", courseRoutes);
+app.use("/api/payments", paymentRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({

@@ -290,6 +290,7 @@ export async function socialSyncController(req, res) {
       try {
         const { error: tutorError } = await supabaseAdmin.from('tutor_profiles').upsert(
           {
+            tutor_id: user.id,
             user_id: user.id,
             bio: 'New mentor profile',
             hourly_rate: 0,

@@ -47,56 +47,39 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchPopularMentors() async {
     try {
-      final usersData = await JomnesDB.from('Users')
+      final data = await JomnesDB.from('tutor_search_view')
           .select()
-          .or('role.eq.mentor,role.eq.tutor')
-          .limit(15);
+          .order('course_id', ascending: false);
 
-      final userList = usersData as List;
-      final userIds = userList.map((u) => u['user_id']).toList();
+      final Map<String, Mentor> uniqueMentors = {};
+      for (var row in (data as List)) {
+        final tutorId = row['tutor_id']?.toString() ?? '';
+        if (tutorId.isEmpty || uniqueMentors.containsKey(tutorId)) continue;
 
-      // Fetch tutor profiles (joined on user_id)
-      List<dynamic> profiles = [];
-      if (userIds.isNotEmpty) {
-        profiles = await JomnesDB.from('tutor_profiles')
-            .select()
-            .filter('user_id', 'in', userIds) as List;
-      }
-      final profileMap = {for (var p in profiles) p['user_id'].toString(): p};
-
-      final mentors = userList.map((u) {
-        final uid = u['user_id'].toString();
-        final p = profileMap[uid] ?? {};
-        // New clean data: subject column is always set correctly in tutor_profiles
-        final subject = (p['subject'] as String? ?? '').isNotEmpty
-            ? p['subject'] as String
-            : Mentor.inferMentorSubject(p['bio'], p['education']);
-
-        final avatar = (u['profile_image'] != null &&
-                u['profile_image'].toString().trim().isNotEmpty)
-            ? u['profile_image'].toString()
-            : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop';
-
-        return Mentor(
-          id: uid,
-          name: u['name'] ?? 'Mentor',
-          subject: subject,
-          experience: '${p['experience_years'] ?? 5} years experience',
+        uniqueMentors[tutorId] = Mentor(
+          id: tutorId,
+          name: row['tutor_name'] ?? 'Mentor',
+          subject: (row['subject']?.toString().isNotEmpty == true)
+              ? row['subject'] as String
+              : Mentor.inferMentorSubject(row['bio']?.toString() ?? '', null),
+          experience: '${row['experience_years'] ?? 5} years experience',
           timeSlot: 'Flexible',
-          avatarUrl: avatar,
-          rating: (p['rating'] as num?)?.toDouble() ?? 4.9,
-          students: (p['total_students'] as num?)?.toInt() ?? 120,
+          avatarUrl: (row['tutor_avatar']?.toString().isNotEmpty == true)
+              ? row['tutor_avatar'] as String
+              : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop',
+          rating: (row['mentor_rating'] as num?)?.toDouble() ?? 4.9,
+          students: 120,
           classes: 50,
           followers: 300,
-          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 35.0,
-          bio: p['bio'] ?? 'Experienced mentor.',
+          bookingPrice: (row['hourly_rate'] as num?)?.toDouble() ?? 35.0,
+          bio: row['bio']?.toString() ?? 'Experienced mentor.',
           courses: [],
         );
-      }).toList();
+      }
 
       if (mounted) {
         setState(() {
-          _popularMentors = mentors;
+          _popularMentors = uniqueMentors.values.take(15).toList();
           _isLoadingMentors = false;
         });
       }
@@ -115,7 +98,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final data = await JomnesDB.from('courses')
           .select('*, Users!inner(name)')
           .eq('is_featured', true)
-          .order('id', ascending: true);
+          .order('id', ascending: false);
           
       if (mounted) {
         setState(() {
