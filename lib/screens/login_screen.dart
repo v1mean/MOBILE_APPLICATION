@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ApiService.loginUser(email, password);
+      final response = await ApiService.loginUser(email, password, widget.role);
 
       if (response['success'] == true) {
         try {
