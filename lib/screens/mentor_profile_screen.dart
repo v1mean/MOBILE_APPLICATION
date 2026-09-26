@@ -182,7 +182,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     }
 
     try {
-      final paymentSuccess = await PaymentService.initPaymentSheet(_mentor!.bookingPrice);
+      final paymentSuccess = await PaymentService.initPaymentSheet(_mentor!.id);
       
       if (!paymentSuccess) {
          if (mounted) {

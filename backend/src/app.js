@@ -15,9 +15,23 @@ const app = express();
 
 app.use(helmet());
 
+// Native mobile clients (Android/iOS) don't send an Origin header, so this
+// allowlist only restricts browser-based clients (Flutter web / local dev).
+const allowedOrigins = (
+  process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:8080"
+)
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 app.use(
   cors({
-    origin: true,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );

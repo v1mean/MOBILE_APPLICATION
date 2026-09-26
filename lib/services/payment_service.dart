@@ -6,13 +6,14 @@ import '../services/api_service.dart';
 import '../main.dart'; // For session
 
 class PaymentService {
-  static Future<bool> initPaymentSheet(double amount) async {
+  static Future<bool> initPaymentSheet(String tutorId) async {
     try {
       final session = JomnesDB.auth.currentSession;
       if (session == null) throw Exception('User not logged in');
 
-      // 1. Get client secret from backend
-      final clientSecret = await _createPaymentIntent(amount, session.accessToken);
+      // 1. Get client secret from backend (amount is derived server-side
+      // from the tutor's stored rate, not sent from the client)
+      final clientSecret = await _createPaymentIntent(tutorId, session.accessToken);
 
       // 2. Initialize the payment sheet
       await Stripe.instance.initPaymentSheet(
@@ -38,13 +39,13 @@ class PaymentService {
     }
   }
 
-  static Future<String> _createPaymentIntent(double amount, String accessToken) async {
+  static Future<String> _createPaymentIntent(String tutorId, String accessToken) async {
     final uri = Uri.parse('${ApiService.baseUrl}/payments/create-intent');
-    
+
     // For emulator testing handling localhost
     Uri finalUri = uri;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-       final fallbackBase = ApiService.baseUrl.contains('10.0.2.2') 
+       final fallbackBase = ApiService.baseUrl.contains('10.0.2.2')
            ? 'http://localhost:5005/api'
            : 'http://10.0.2.2:5005/api';
        finalUri = Uri.parse('$fallbackBase/payments/create-intent');
@@ -57,7 +58,7 @@ class PaymentService {
         'Authorization': 'Bearer $accessToken',
       },
       body: jsonEncode({
-        'amount': amount,
+        'tutor_id': tutorId,
         'currency': 'usd',
       }),
     );
