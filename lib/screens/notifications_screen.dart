@@ -18,7 +18,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.darkBg,
+      backgroundColor: const Color(0xFFF6F7F9),
       body: SafeArea(
         child: Column(
           children: [
@@ -36,9 +36,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   }
 
                   return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                     itemCount: filtered.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final item = filtered[index];
                       return _buildNotificationCard(context, item);
@@ -57,10 +58,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: const BoxDecoration(
-        color: AppColors.darkBg,
+        color: Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFF1E1E2A),
+            color: Color(0xFFE5E7EB),
             width: 1,
           ),
         ),
@@ -69,22 +70,29 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         children: [
           // Back Button
           GestureDetector(
-            onTap: () => context.pop(),
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/home');
+              }
+            },
+            behavior: HitTestBehavior.opaque,
             child: Container(
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: AppColors.darkCard,
+                color: const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: AppColors.darkBorder,
+                  color: const Color(0xFFE5E7EB),
                   width: 1,
                 ),
               ),
               alignment: Alignment.center,
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: Color(0xFF111827),
                 size: 16,
               ),
             ),
@@ -97,9 +105,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Text(
                   'Notifications',
                   style: GoogleFonts.inter(
-                    color: Colors.white,
+                    color: const Color(0xFF111827),
                     fontSize: 20,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -112,17 +120,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
-                        color: AppColors.galaxyPurple.withAlpha(60),
+                        color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: AppColors.galaxyPurple.withAlpha(120),
+                          color: const Color(0xFFBFDBFE),
                           width: 1,
                         ),
                       ),
                       child: Text(
                         '$count new',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFFD8B4FE),
+                          color: const Color(0xFF2563EB),
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -144,7 +152,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     'All notifications marked as read',
                     style: GoogleFonts.inter(color: Colors.white),
                   ),
-                  backgroundColor: AppColors.darkCard,
+                  backgroundColor: const Color(0xFF111827),
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -152,8 +160,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             },
             icon: const Icon(
               Icons.done_all_rounded,
-              color: Colors.white70,
-              size: 20,
+              color: Color(0xFF6B7280),
+              size: 22,
             ),
           ),
         ],
@@ -165,8 +173,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final filters = ['All', 'Unread', 'Bookings', 'Updates'];
 
     return Container(
-      height: 48,
-      margin: const EdgeInsets.symmetric(vertical: 8),
+      height: 46,
+      margin: const EdgeInsets.symmetric(vertical: 10),
       child: ListView.separated(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         scrollDirection: Axis.horizontal,
@@ -184,18 +192,18 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 setState(() => _selectedFilter = filter);
               }
             },
-            backgroundColor: AppColors.darkCard,
-            selectedColor: AppColors.galaxyPurple.withAlpha(80),
+            backgroundColor: Colors.white,
+            selectedColor: const Color(0xFF111827),
             side: BorderSide(
               color: isSelected
-                  ? AppColors.galaxyPurple
-                  : const Color(0xFF262636),
+                  ? const Color(0xFF111827)
+                  : const Color(0xFFE5E7EB),
               width: 1,
             ),
             labelStyle: GoogleFonts.inter(
-              color: isSelected ? Colors.white : Colors.white60,
+              color: isSelected ? Colors.white : const Color(0xFF4B5563),
               fontSize: 13,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -222,34 +230,33 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Widget _buildNotificationCard(
-      BuildContext context, AppNotification item) {
+  Widget _buildNotificationCard(BuildContext context, AppNotification item) {
     final isUnread = !item.isRead;
 
-    // Type configuration
+    // Type configuration matching light theme
     Color iconBg;
     Color iconColor;
     IconData icon;
 
     switch (item.type) {
       case 'booking':
-        iconBg = const Color(0xFF065F46).withAlpha(120);
-        iconColor = const Color(0xFF34D399);
+        iconBg = const Color(0xFFDCFCE7);
+        iconColor = const Color(0xFF16A34A);
         icon = Icons.calendar_month_rounded;
         break;
       case 'reminder':
-        iconBg = const Color(0xFF78350F).withAlpha(120);
-        iconColor = const Color(0xFFFBBF24);
+        iconBg = const Color(0xFFFEF3C7);
+        iconColor = const Color(0xFFD97706);
         icon = Icons.alarm_rounded;
         break;
       case 'course':
-        iconBg = const Color(0xFF1E3A8A).withAlpha(120);
-        iconColor = const Color(0xFF60A5FA);
+        iconBg = const Color(0xFFDBEAFE);
+        iconColor = const Color(0xFF2563EB);
         icon = Icons.menu_book_rounded;
         break;
       default:
-        iconBg = AppColors.galaxyPurple.withAlpha(90);
-        iconColor = const Color(0xFFC084FC);
+        iconBg = const Color(0xFFF3E8FF);
+        iconColor = const Color(0xFF9333EA);
         icon = Icons.auto_awesome_rounded;
     }
 
@@ -260,7 +267,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFFDC2626).withAlpha(200),
+          color: const Color(0xFFEF4444),
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
@@ -276,47 +283,39 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           }
         },
         child: Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: isUnread
-                ? const Color(0xFF191924)
-                : AppColors.darkCard.withAlpha(180),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isUnread
-                  ? AppColors.galaxyPurple.withAlpha(120)
-                  : AppColors.darkBorder,
-              width: 1,
+                  ? const Color(0xFF93C5FD)
+                  : const Color(0xFFE5E7EB),
+              width: isUnread ? 1.5 : 1.0,
             ),
-            boxShadow: isUnread
-                ? [
-                    BoxShadow(
-                      color: AppColors.galaxyPurple.withAlpha(30),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ]
-                : null,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(isUnread ? 12 : 6),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Left Icon
               Container(
-                width: 42,
-                height: 42,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: iconBg,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: iconColor.withAlpha(80),
-                    width: 1,
-                  ),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, color: iconColor, size: 20),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 14),
               // Content
               Expanded(
                 child: Column(
@@ -329,8 +328,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Text(
                             item.title,
                             style: GoogleFonts.inter(
-                              color: Colors.white,
-                              fontSize: 14,
+                              color: const Color(0xFF111827),
+                              fontSize: 15,
                               fontWeight: isUnread
                                   ? FontWeight.w700
                                   : FontWeight.w600,
@@ -344,30 +343,30 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             height: 8,
                             margin: const EdgeInsets.only(top: 4),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF38BDF8),
+                              color: Color(0xFF2563EB),
                               shape: BoxShape.circle,
                             ),
                           ),
                         ],
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       item.body,
                       style: GoogleFonts.inter(
-                        color: Colors.white70,
+                        color: const Color(0xFF4B5563),
                         fontSize: 13,
-                        height: 1.35,
+                        height: 1.4,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
                           _formatTime(item.timestamp),
                           style: GoogleFonts.inter(
-                            color: Colors.white38,
+                            color: const Color(0xFF9CA3AF),
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
@@ -381,10 +380,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                 style: GoogleFonts.inter(
                                   color: AppColors.accentBlue,
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              const SizedBox(width: 2),
+                              const SizedBox(width: 3),
                               const Icon(
                                 Icons.arrow_forward_ios_rounded,
                                 color: AppColors.accentBlue,
@@ -415,17 +414,24 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: AppColors.darkCard,
+                color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AppColors.darkBorder,
+                  color: const Color(0xFFE5E7EB),
                   width: 1,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(6),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               alignment: Alignment.center,
               child: const Icon(
                 Icons.notifications_off_outlined,
-                color: Colors.white38,
+                color: Color(0xFF9CA3AF),
                 size: 36,
               ),
             ),
@@ -433,17 +439,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Text(
               'No Notifications',
               style: GoogleFonts.inter(
-                color: Colors.white,
+                color: const Color(0xFF111827),
                 fontSize: 18,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'You are all caught up! When you book classes or receive reminders, they will appear here.',
+              'You are all caught up! When you book classes or receive mentor reminders, they will appear here.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                color: Colors.white54,
+                color: const Color(0xFF6B7280),
                 fontSize: 13,
                 height: 1.4,
               ),
