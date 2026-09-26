@@ -72,6 +72,11 @@ export async function uploadCourse(req, res) {
         .limit(1);
       if (subjectData && subjectData.length > 0) {
         subjectId = subjectData[0].id;
+        // Automatically link this tutor to this subject so they appear in Mentor searches!
+        await supabaseAdmin.from('tutor_subjects').upsert({
+          tutor_id: user.id,
+          subject_id: subjectId
+        }, { onConflict: 'tutor_id, subject_id' }).select();
       }
     }
 
@@ -88,7 +93,6 @@ export async function uploadCourse(req, res) {
       is_live: false,
       is_featured: true,
       category: category || 'General',
-      subject_id: subjectId,
       level: 'Beginner',
       price: 0,
       rating_count: 0
