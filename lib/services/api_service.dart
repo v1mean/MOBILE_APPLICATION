@@ -118,11 +118,10 @@ class ApiService {
   static Future<Map<String, dynamic>> loginUser(
     String email,
     String password,
-    String role,
   ) async {
     final response = await _postWithFallback(
       '/auth/login',
-      body: jsonEncode({'email': email, 'password': password, 'role': role}),
+      body: jsonEncode({'email': email, 'password': password}),
     );
 
     return jsonDecode(response.body);
@@ -177,14 +176,9 @@ class ApiService {
         headers: {'Authorization': 'Bearer $accessToken'},
         body: body,
       );
-      final jsonResponse = jsonDecode(response.body);
-      if (response.statusCode == 403 && jsonResponse['mismatch'] == true) {
-        throw Exception(jsonResponse['message']);
-      }
-      debugPrint('Social sync completed. Status: ${response.statusCode}');
+      log('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
-      debugPrint('Social sync error: $e');
-      rethrow;
+      log('Social sync error: $e');
     }
   }
 
@@ -471,6 +465,7 @@ class ApiService {
   static Future<bool> uploadCourse({
     required String title,
     required String description,
+    required String category,
     String? thumbnailPath,
     String? materialPath,
     String? videoPath,
@@ -485,6 +480,7 @@ class ApiService {
 
       request.fields['title'] = title;
       request.fields['description'] = description;
+      request.fields['category'] = category;
 
       if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
         request.files.add(
@@ -505,10 +501,16 @@ class ApiService {
       final streamedResponse = await request.send().timeout(
         const Duration(minutes: 5),
       );
-      return streamedResponse.statusCode == 200;
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        final jsonResponse = jsonDecode(response.body);
+        throw Exception(jsonResponse['message'] ?? 'Upload failed.');
+      }
     } catch (e) {
       debugPrint('Error uploading course: $e');
-      return false;
+      rethrow;
     }
   }
 }

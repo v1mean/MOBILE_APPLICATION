@@ -92,14 +92,13 @@ class AuthService {
 
       final session = supabase.auth.currentSession;
       if (session != null) {
-        await ApiService.syncSocialUser(session.accessToken, role); 
+        ApiService.syncSocialUser(session.accessToken, role); 
       }
     } on AuthApiException catch (e) {
       log('DEBUG: AuthApiException — statusCode: ${e.statusCode}, message: ${e.message}');
       rethrow;
     } catch (e) {
       log('Google Sign-In error: $e');
-      await supabase.auth.signOut();
       rethrow;
     }
   }

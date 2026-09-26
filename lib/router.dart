@@ -49,15 +49,7 @@ void setupDeepLinkListener() {
       // Fetch role from SharedPreferences
       SharedPreferences.getInstance().then((prefs) async {
         final role = prefs.getString('pending_role') ?? 'student';
-        
-        try {
-          await ApiService.syncSocialUser(session.accessToken, role);
-        } catch (e) {
-          await JomnesDB.auth.signOut();
-          final msg = Uri.encodeComponent(e.toString().replaceAll('Exception: ', ''));
-          router.go('/login?error=$msg');
-          return;
-        }
+        await ApiService.syncSocialUser(session.accessToken, role);
         await prefs.remove('pending_role');
 
         String finalRole = role;
@@ -134,6 +126,13 @@ final GoRouter router = GoRouter(
     final isGoingToTeacherLogin = state.matchedLocation == '/teacher-login';
     final isGoingToTeacherRegister = state.matchedLocation == '/teacher-register';
     final isGoingToTeacherForgotPassword = state.matchedLocation == '/teacher-forgot-password';
+    final isGoingToTeacherHome = state.matchedLocation == '/teacher-home';
+    final isGoingToTeacherStudents = state.matchedLocation == '/teacher-students';
+    final isGoingToTeacherPcRequest = state.matchedLocation == '/teacher-pc-request';
+    final isGoingToTeacherSchedules = state.matchedLocation == '/teacher-schedules';
+    final isGoingToTeacherUpload = state.matchedLocation == '/teacher-upload';
+    final isGoingToTeacherSettings = state.matchedLocation == '/teacher-settings';
+
     final isAuthPage = isGoingToLogin ||
         isGoingToRegister ||
         isGoingToSplash ||
@@ -142,37 +141,26 @@ final GoRouter router = GoRouter(
         isGoingToRoleSelect ||
         isGoingToTeacherLogin ||
         isGoingToTeacherRegister ||
-        isGoingToTeacherForgotPassword;
+        isGoingToTeacherForgotPassword ||
+        isGoingToTeacherHome ||
+        isGoingToTeacherStudents ||
+        isGoingToTeacherPcRequest ||
+        isGoingToTeacherSchedules ||
+        isGoingToTeacherUpload ||
+        isGoingToTeacherSettings;
 
     // If unauthenticated (and not guest) and trying to access a protected route
     if (!loggedIn && !isAuthPage) {
       return '/login';
     }
-    
-    // Strict Role-Based Redirection for logged-in users (excluding guest)
-    if (session != null) {
-      final appRole = session.user.appMetadata['role'];
-      final isTeacher = appRole == 'mentor' || appRole == 'teacher';
-      
-      final isTeacherRoute = state.matchedLocation.startsWith('/teacher-') && !isAuthPage;
-      final isStudentRoute = !state.matchedLocation.startsWith('/teacher-') && !isAuthPage && state.matchedLocation != '/';
-
-      if (isAuthPage && (isGoingToLogin || isGoingToRegister || isGoingToTeacherLogin || isGoingToTeacherRegister || isGoingToRoleSelect || isGoingToSplash)) {
-        return isTeacher ? '/teacher-home' : '/home';
-      }
-
-      if (isTeacher && isStudentRoute) {
+    // If logged in (real session OR guest) and on student login/register -> go home
+    if (loggedIn && (isGoingToLogin || isGoingToRegister)) {
+      final appRole = session?.user.appMetadata['role'];
+      if (appRole == 'mentor' || appRole == 'teacher') {
         return '/teacher-home';
       }
-      if (!isTeacher && isTeacherRoute) {
-        return '/home';
-      }
-    } else if (isGuest) {
-      if (isGoingToLogin || isGoingToRegister || isGoingToRoleSelect || isGoingToSplash) {
-        return '/home';
-      }
+      return '/home';
     }
-    
     return null; // No redirection needed
   },
   routes: [
@@ -192,8 +180,7 @@ final GoRouter router = GoRouter(
       pageBuilder: (c, s) {
         final resetSuccess = s.uri.queryParameters['reset'] == 'success';
         final role = s.uri.queryParameters['role'] ?? 'student';
-        final error = s.uri.queryParameters['error'];
-        return _instant(s, LoginScreen(passwordResetSuccess: resetSuccess, role: role, error: error));
+        return _instant(s, LoginScreen(passwordResetSuccess: resetSuccess, role: role));
       },
     ),
     GoRoute(

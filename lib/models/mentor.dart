@@ -166,16 +166,16 @@ class FeaturedCourse {
 
   factory FeaturedCourse.fromJson(Map<String, dynamic> json) {
     final users = json['Users'] as Map<String, dynamic>? ?? {};
-    final title = json['title'] as String? ?? '';
-    final rawCategory = json['category'] as String? ?? json['subject'] as String? ?? '';
+    final title = json['title'] as String? ?? json['course_title'] as String? ?? '';
+    final rawCategory = json['category'] as String? ?? json['subject_name'] as String? ?? json['subject'] as String? ?? '';
 
     String subject = rawCategory;
     if (subject.isEmpty || subject == 'General') {
       final t = title.toLowerCase();
       if (t.contains('math') || t.contains('calculus')) {
-        subject = 'Math';
+        subject = 'Mathematics';
       } else if (t.contains('physic')) {
-        subject = 'Physic';
+        subject = 'Physics';
       } else if (t.contains('khmer')) {
         subject = 'Khmer';
       } else if (t.contains('english')) {
@@ -185,37 +185,27 @@ class FeaturedCourse {
       } else if (t.contains('spanish')) {
         subject = 'Spanish';
       } else if (t.contains('primary')) {
-        subject = 'Primary School';
-      } else if (t.contains('high school')) {
-        subject = 'High School';
+        subject = 'Primary school';
       } else if (t.contains('gym') || t.contains('fitness')) {
-        subject = 'Gym Trainer';
+        subject = 'Gym trainer';
       } else if (t.contains('volleyball')) {
-        subject = 'Volleyball Coach';
+        subject = 'Volleyball coach';
       } else if (t.contains('football') || t.contains('soccer')) {
-        subject = 'Football Coach';
+        subject = 'Football coach';
       } else if (t.contains('swimming')) {
-        subject = 'Swimming Coach';
+        subject = 'Swimming coach';
       } else if (t.contains('driving')) {
-        subject = 'Teach Driving';
+        subject = 'Teaching driving';
       } else if (t.contains('badminton')) {
-        subject = 'Badminton Coach';
-      } else if (t.contains('geography')) {
-        subject = 'General';
-      } else if (t.contains('chemistry')) {
-        subject = 'Physic';
-      } else if (t.contains('history')) {
-        subject = 'High School';
-      } else if (t.contains('biology')) {
-        subject = 'High School';
+        subject = 'Badminton coach';
       } else {
         subject = 'General';
       }
     }
 
     return FeaturedCourse(
-      id: json['id'] as int? ?? 0,
-      mentorName: users['name'] as String? ?? 'Unknown Mentor',
+      id: json['id'] as int? ?? json['course_id'] as int? ?? 0,
+      mentorName: users['name'] as String? ?? json['tutor_name'] as String? ?? 'Unknown Mentor',
       subject: subject,
       cardColor: json['card_color'] as String? ?? 'orange',
       imageUrl: json['image_url'] as String? ?? 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=200&q=80',

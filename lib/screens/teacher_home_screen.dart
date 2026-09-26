@@ -256,8 +256,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
           .order('created_at', ascending: false);
           
       if (mounted) {
-        setState(() {
-          _courses = (data as List).map((c) => TeacherCourse(
+        final allCourses = (data as List).map((c) => TeacherCourse(
             id: c['id']?.toString() ?? '',
             title: c['title'] ?? 'Course Title',
             description: c['description'] ?? 'No description',
@@ -265,6 +264,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             timeAgo: _formatTimeAgo(c['created_at']),
             color: _parseColor(c['card_color']),
           )).toList();
+          
+        final seenIds = <String>{};
+        final uniqueCourses = allCourses.where((c) => seenIds.add(c.id)).toList();
+
+        setState(() {
+          _courses = uniqueCourses;
           _isLoadingCourses = false;
         });
       }

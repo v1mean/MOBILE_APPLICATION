@@ -40,29 +40,27 @@ class PaymentService {
 
   static Future<String> _createPaymentIntent(double amount, String accessToken) async {
     final uri = Uri.parse('${ApiService.baseUrl}/payments/create-intent');
-    final bodyStr = jsonEncode({
-      'amount': amount,
-      'currency': 'usd',
-    });
-    final headers = {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $accessToken',
-    };
-
-    http.Response response;
-    try {
-      response = await http.post(uri, headers: headers, body: bodyStr);
-    } catch (e) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackBase = ApiService.baseUrl.contains('10.0.2.2') 
-            ? 'http://localhost:5005/api'
-            : 'http://10.0.2.2:5005/api';
-        final fallbackUri = Uri.parse('$fallbackBase/payments/create-intent');
-        response = await http.post(fallbackUri, headers: headers, body: bodyStr);
-      } else {
-        rethrow;
-      }
+    
+    // For emulator testing handling localhost
+    Uri finalUri = uri;
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+       final fallbackBase = ApiService.baseUrl.contains('10.0.2.2') 
+           ? 'http://localhost:5005/api'
+           : 'http://10.0.2.2:5005/api';
+       finalUri = Uri.parse('$fallbackBase/payments/create-intent');
     }
+
+    final response = await http.post(
+      finalUri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      },
+      body: jsonEncode({
+        'amount': amount,
+        'currency': 'usd',
+      }),
+    );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);

@@ -2,21 +2,20 @@ import 'package:flutter/material.dart';
 
 /// The 15 standard course categories supported across Jomnes
 const List<String> kCourseCategories = [
-  'Math',
+  'Mathematics',
   'General',
-  'Physic',
+  'Physics',
   'Khmer',
   'English',
   'Chinese',
   'Spanish',
-  'Primary School',
-  'High School',
-  'Gym Trainer',
-  'Volleyball Coach',
-  'Football Coach',
-  'Swimming Coach',
-  'Teach Driving',
-  'Badminton Coach',
+  'Primary school',
+  'Gym trainer',
+  'Volleyball coach',
+  'Football coach',
+  'Swimming coach',
+  'Teaching driving',
+  'Badminton coach',
 ];
 
 /// Category theme data holding gradient colors and icon for each category

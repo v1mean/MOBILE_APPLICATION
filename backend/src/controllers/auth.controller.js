@@ -64,7 +64,7 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password, role: requestedRole } = req.body;
+    const { email, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -85,20 +85,6 @@ export async function login(req, res) {
       email,
       password,
     });
-
-    if (requestedRole) {
-      const finalRole = result.user.app_metadata?.role || 'student';
-      let normalizedRequestedRole = (requestedRole === 'mentor' || requestedRole === 'teacher') ? 'mentor' : 'student';
-      let normalizedDbRole = (finalRole === 'mentor' || finalRole === 'teacher') ? 'mentor' : 'student';
-
-      if (normalizedRequestedRole !== normalizedDbRole) {
-         return res.status(403).json({
-            success: false,
-            message: `Account mismatch: This email is registered as a ${normalizedDbRole}. please log in correctly.`,
-            mismatch: true
-         });
-      }
-    }
 
     return res.status(200).json({
       success: true,
@@ -233,16 +219,6 @@ export async function socialSyncController(req, res) {
     } else {
       // If returning user, ignore the passed role and use their existing app_metadata role
       finalRole = user.app_metadata?.role || 'student';
-      let normalizedRequestedRole = (requestedRole === 'mentor' || requestedRole === 'teacher') ? 'mentor' : 'student';
-      let normalizedDbRole = (finalRole === 'mentor' || finalRole === 'teacher') ? 'mentor' : 'student';
-
-      if (requestedRole && normalizedRequestedRole !== normalizedDbRole) {
-         return res.status(403).json({
-            success: false,
-            message: `Account mismatch: This email is registered as a ${normalizedDbRole}. please log in correctly.`,
-            mismatch: true
-         });
-      }
     }
 
     // ── Step 2: Upsert a row in the public.profiles table ───────────────────

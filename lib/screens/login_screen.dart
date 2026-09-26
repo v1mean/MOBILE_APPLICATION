@@ -17,8 +17,7 @@ import '../router.dart';
 class LoginScreen extends StatefulWidget {
   final bool passwordResetSuccess;
   final String role;
-  final String? error;
-  const LoginScreen({super.key, this.passwordResetSuccess = false, this.role = 'student', this.error});
+  const LoginScreen({super.key, this.passwordResetSuccess = false, this.role = 'student'});
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -41,17 +40,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Password updated successfully! Please log in.'),
-          ),
-        );
-      });
-    }
-    if (widget.error != null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.error!),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 5),
           ),
         );
       });
@@ -79,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await ApiService.loginUser(email, password, widget.role);
+      final response = await ApiService.loginUser(email, password);
 
       if (response['success'] == true) {
         try {

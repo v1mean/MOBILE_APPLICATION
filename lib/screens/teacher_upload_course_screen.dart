@@ -91,41 +91,36 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
 
     setState(() => _isUploading = true);
 
-    final theme = getCategoryTheme(_selectedCategory);
-
-    // 1. Persist to Supabase courses table (with is_featured: true so it shows in Featured Courses on Home Screen)
+    // 1. Upload to backend (which handles both file uploads and DB insertion securely)
     try {
-      final currentUser = JomnesDB.auth.currentUser;
-      String? tutorId = currentUser?.id;
-
-      if (tutorId == null) {
-        final existingTutor = await JomnesDB.from('Users')
-            .select('user_id')
-            .eq('role', 'tutor')
-            .limit(1)
-            .maybeSingle();
-        if (existingTutor != null && existingTutor['user_id'] != null) {
-          tutorId = existingTutor['user_id'].toString();
+      final success = await ApiService.uploadCourse(
+        title: title,
+        description: _descController.text.trim().isEmpty ? 'Practice exercise and course materials.' : _descController.text.trim(),
+        category: _selectedCategory,
+        thumbnailPath: _thumbnailPath,
+        materialPath: _materialPath,
+        videoPath: _videoPath,
+      );
+      
+      if (!success) {
+        if (mounted) {
+          setState(() => _isUploading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Upload failed. Please try again.')),
+          );
         }
-      }
-
-      if (tutorId != null) {
-        await JomnesDB.from('courses').insert({
-          'tutor_id': tutorId,
-          'title': title,
-          'description': _descController.text.trim().isEmpty
-              ? 'Practice exercise and course materials.'
-              : _descController.text.trim(),
-          'category': _selectedCategory,
-          'rating': 5.0,
-          'duration_hours': 10,
-          'card_color': theme.cardColorKey,
-          'is_live': false,
-          'is_featured': true,
-        });
+        return;
       }
     } catch (e) {
-      debugPrint('Supabase insert error: $e');
+      debugPrint('Backend upload error: $e');
+      if (mounted) {
+        setState(() => _isUploading = false);
+        String msg = e.toString().replaceAll('Exception: ', '');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+      }
+      return;
     }
 
     // 2. Add to TeacherCourseService so it shows in "Your Latest Courses" in Teacher Home
@@ -134,21 +129,6 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
       description: _descController.text.trim(),
       category: _selectedCategory,
     );
-
-    // 3. Optional backend API upload if paths are available
-    if (_thumbnailPath != null || _materialPath != null || _videoPath != null) {
-      try {
-        await ApiService.uploadCourse(
-          title: title,
-          description: _descController.text.trim(),
-          thumbnailPath: _thumbnailPath,
-          materialPath: _materialPath,
-          videoPath: _videoPath,
-        );
-      } catch (e) {
-        debugPrint('Backend upload error: $e');
-      }
-    }
 
     if (!mounted) return;
     setState(() => _isUploading = false);
