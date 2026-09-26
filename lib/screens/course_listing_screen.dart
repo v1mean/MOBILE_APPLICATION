@@ -101,7 +101,6 @@ class _CourseListingScreenState extends State<CourseListingScreen>
         });
       }
     } catch (e) {
-      debugPrint('[course_listing] _fetchMentors error: $e');
     }
   }
 
@@ -118,7 +117,6 @@ class _CourseListingScreenState extends State<CourseListingScreen>
         });
       }
     } catch (e) {
-      debugPrint('[course_listing] _fetchCourses error: $e');
     }
   }
 

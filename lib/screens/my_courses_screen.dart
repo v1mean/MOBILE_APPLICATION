@@ -73,9 +73,8 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 
   String get _displayName {
-    if (_userProfile?.name != null && _userProfile!.name.isNotEmpty) {
+    if (_userProfile?.name != null && _userProfile!.name.isNotEmpty)
       return _userProfile!.name;
-    }
     final user = JomnesDB.auth.currentUser;
     return user?.userMetadata?['full_name'] ??
         user?.userMetadata?['name'] ??
@@ -84,17 +83,15 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
   }
 
   String get _displayRole {
-    if (_userProfile?.role != null && _userProfile!.role.isNotEmpty) {
+    if (_userProfile?.role != null && _userProfile!.role.isNotEmpty)
       return _userProfile!.role;
-    }
     return 'Student';
   }
 
   String? get _avatarUrl {
     if (_userProfile?.profileImage != null &&
-        _userProfile!.profileImage.isNotEmpty) {
+        _userProfile!.profileImage.isNotEmpty)
       return _userProfile!.profileImage;
-    }
     final user = JomnesDB.auth.currentUser;
     final dynamic pic =
         user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
@@ -228,19 +225,19 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                                     rating: rating,
                                     comment: commentController.text,
                                   );
-                                  if (!ctx.mounted) return;
-                                  Navigator.pop(ctx);
-                                  ScaffoldMessenger.of(ctx).showSnackBar(
-                                    const SnackBar(
-                                      content: Text('Review submitted!'),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
+                                  if (mounted) {
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Review submitted!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
                                 }
                               } catch (e) {
                                 setStateSB(() => isSubmitting = false);
-                                if (!ctx.mounted) return;
-                                ScaffoldMessenger.of(ctx).showSnackBar(
+                                ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text('Error: $e'),
                                     backgroundColor: Colors.red,

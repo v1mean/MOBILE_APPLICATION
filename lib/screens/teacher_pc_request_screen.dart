@@ -22,9 +22,7 @@ class TeacherPcRequestScreen extends StatefulWidget {
 class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
   String _userName = 'Teacher';
   String? _avatarUrl;
-  // ignore: unused_field
   List<Map<String, dynamic>> _bookings = [];
-  // ignore: unused_field
   bool _isLoadingBookings = true;
 
   static final _requests = [

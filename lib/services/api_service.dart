@@ -249,14 +249,12 @@ class ApiService {
   }) async {
     final params = <String, String>{};
     if (query != null && query.isNotEmpty) params['query'] = query;
-    if (subjectId != null && subjectId.isNotEmpty) {
+    if (subjectId != null && subjectId.isNotEmpty)
       params['subject_id'] = subjectId;
-    }
     if (minPrice != null) params['minPrice'] = minPrice.toStringAsFixed(0);
     if (maxPrice != null) params['maxPrice'] = maxPrice.toStringAsFixed(0);
-    if (dayOfWeek != null && dayOfWeek.isNotEmpty) {
+    if (dayOfWeek != null && dayOfWeek.isNotEmpty)
       params['day_of_week'] = dayOfWeek;
-    }
     if (city != null && city.isNotEmpty) params['city'] = city;
 
     final uri = Uri.parse(
@@ -374,13 +372,13 @@ class ApiService {
   }) async {
     final body = jsonEncode({
       'tutor_id': tutorId,
-      'course_id': ?courseId,
-      'start_time': ?startTime,
-      'end_time': ?endTime,
-      'booking_date': ?bookingDate,
-      'time_slot': ?timeSlot,
-      'hourly_rate': ?hourlyRate,
-      'total_price': ?totalPrice,
+      if (courseId != null) 'course_id': courseId,
+      if (startTime != null) 'start_time': startTime,
+      if (endTime != null) 'end_time': endTime,
+      if (bookingDate != null) 'booking_date': bookingDate,
+      if (timeSlot != null) 'time_slot': timeSlot,
+      if (hourlyRate != null) 'hourly_rate': hourlyRate,
+      if (totalPrice != null) 'total_price': totalPrice,
     });
 
     final response = await _postWithFallback(

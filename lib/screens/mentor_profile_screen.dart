@@ -251,7 +251,6 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
           );
           await Add2Calendar.addEvent2Cal(event);
 
-          if (!mounted) return;
           context.go('/courses');
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
