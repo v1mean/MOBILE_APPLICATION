@@ -118,10 +118,11 @@ class ApiService {
   static Future<Map<String, dynamic>> loginUser(
     String email,
     String password,
+    String role,
   ) async {
     final response = await _postWithFallback(
       '/auth/login',
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({'email': email, 'password': password, 'role': role}),
     );
 
     return jsonDecode(response.body);
@@ -176,9 +177,14 @@ class ApiService {
         headers: {'Authorization': 'Bearer $accessToken'},
         body: body,
       );
-      log('Social sync completed. Status: ${response.statusCode}');
+      final jsonResponse = jsonDecode(response.body);
+      if (response.statusCode == 403 && jsonResponse['mismatch'] == true) {
+        throw Exception(jsonResponse['message']);
+      }
+      debugPrint('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
-      log('Social sync error: $e');
+      debugPrint('Social sync error: $e');
+      rethrow;
     }
   }
 
