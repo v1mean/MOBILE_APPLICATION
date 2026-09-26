@@ -123,20 +123,15 @@ class _CourseListingScreenState extends State<CourseListingScreen>
     try {
       List<Map<String, dynamic>> dbCourses = [];
       try {
-        final data = await JomnesDB.from('tutor_search_view')
-            .select()
-            .order('course_id', ascending: true);
-            
-        final allDb = List<Map<String, dynamic>>.from(data);
-        final seenDbIds = <String>{};
-        dbCourses = allDb.where((c) => seenDbIds.add(c['course_id']?.toString() ?? '')).toList();
-      } catch (e) {
-        debugPrint('Error fetching tutor_search_view: $e');
-      }
+        final data = await JomnesDB.from('courses')
+            .select('*, Users(name)')
+            .order('id', ascending: true);
+        dbCourses = List<Map<String, dynamic>>.from(data);
+      } catch (_) {}
 
       // Combine real uploaded courses from DB with mock courses
       final combinedCourses = <Map<String, dynamic>>[...dbCourses];
-      final seenTitles = dbCourses.map((c) => (c['course_title'] ?? c['title'] ?? '').toString().toLowerCase().trim()).toSet();
+      final seenTitles = dbCourses.map((c) => (c['title'] ?? '').toString().toLowerCase().trim()).toSet();
       for (final mc in getMockCoursesAsJson()) {
         final title = (mc['title'] ?? '').toString().toLowerCase().trim();
         if (seenTitles.add(title)) {
@@ -178,8 +173,8 @@ class _CourseListingScreenState extends State<CourseListingScreen>
 
     // Match by category column or title
     final matched = _courses.where((c) {
-      final cat = (c['subject_name'] as String? ?? c['category'] as String? ?? '').toLowerCase().trim();
-      final title = (c['course_title'] as String? ?? c['title'] as String? ?? '').toLowerCase().trim();
+      final cat = (c['category'] as String? ?? '').toLowerCase().trim();
+      final title = (c['title'] as String? ?? '').toLowerCase().trim();
       return cat == sub ||
           cat.contains(sub) ||
           sub.contains(cat) ||
@@ -435,23 +430,19 @@ class _CoursesTabContent extends StatelessWidget {
         }
         final c = courses[i - 1];
         final users = c['Users'] as Map<String, dynamic>? ?? {};
-        final category = c['subject_name'] as String? ?? c['category'] as String? ?? subject;
-        final level = c['course_level'] as String? ?? c['level'] as String? ?? 'Beginner';
-        final price = (c['course_price'] as num?)?.toDouble() ?? (c['price'] as num?)?.toDouble() ?? 0.0;
-        final rating = (c['course_rating'] as num?)?.toDouble() ?? (c['rating'] as num?)?.toDouble() ?? 4.5;
+        final category = c['category'] as String? ?? subject;
+        final level = c['level'] as String? ?? 'Beginner';
+        final price = (c['price'] as num?)?.toDouble() ?? 0.0;
+        final rating = (c['rating'] as num?)?.toDouble() ?? 4.5;
         final ratingCount = (c['rating_count'] as num?)?.toInt() ??
             (c['total_students'] as num?)?.toInt() ??
             120;
-        final duration = (c['course_duration'] as num?)?.toInt() ?? (c['duration_hours'] as num?)?.toInt() ?? 10;
-        
-        final title = c['course_title'] as String? ?? c['title'] as String? ?? 'Untitled Course';
-        final description = c['course_description'] as String? ?? c['description'] as String? ?? 'A comprehensive course covering the essentials.';
-        final instructorName = c['tutor_name'] as String? ?? users['name'] as String? ?? 'Expert Instructor';
+        final duration = (c['duration_hours'] as num?)?.toInt() ?? 10;
 
         return RichCourseCard(
-          title: title,
-          description: description,
-          instructorName: instructorName,
+          title: c['title'] as String? ?? 'Untitled Course',
+          description: c['description'] as String? ?? 'A comprehensive course covering the essentials.',
+          instructorName: users['name'] as String? ?? 'Expert Instructor',
           category: category.isEmpty ? subject : category,
           rating: rating,
           ratingCount: ratingCount,

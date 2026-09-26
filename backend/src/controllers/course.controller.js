@@ -16,24 +16,10 @@ export const uploadCourseMiddleware = upload.fields([
 export async function uploadCourse(req, res) {
   try {
     const user = req.user;
-    const { title, description, category } = req.body;
+    const { title, description } = req.body;
 
     if (!title || !title.trim()) {
       return res.status(400).json({ success: false, message: "Title is required." });
-    }
-
-    // Task 4: Backend Integrity - Block Double-Tap Duplicates
-    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
-    const { data: recentCourses } = await supabaseAdmin
-      .from('courses')
-      .select('id')
-      .eq('tutor_id', user.id)
-      .eq('title', title.trim())
-      .gte('created_at', oneMinuteAgo)
-      .limit(1);
-
-    if (recentCourses && recentCourses.length > 0) {
-      return res.status(429).json({ success: false, message: "Duplicate course creation detected. Please wait." });
     }
 
     const files = req.files || {};
@@ -62,19 +48,6 @@ export async function uploadCourse(req, res) {
       }
     }
 
-    // Task 1: Map category to subject_id
-    let subjectId = null;
-    if (category) {
-      const { data: subjectData } = await supabaseAdmin
-        .from('Subjects')
-        .select('id')
-        .ilike('name', category.trim())
-        .limit(1);
-      if (subjectData && subjectData.length > 0) {
-        subjectId = subjectData[0].id;
-      }
-    }
-
     let payload = {
       tutor_id: user.id,
       title: title.trim(),
@@ -87,8 +60,7 @@ export async function uploadCourse(req, res) {
       card_color: 'blue',
       is_live: false,
       is_featured: true,
-      category: category || 'General',
-      subject_id: subjectId,
+      category: 'General',
       level: 'Beginner',
       price: 0,
       rating_count: 0

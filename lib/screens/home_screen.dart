@@ -113,14 +113,11 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       List<FeaturedCourse> dbCourses = [];
       try {
-        final data = await JomnesDB.from('tutor_search_view')
-            .select()
+        final data = await JomnesDB.from('courses')
+            .select('*, Users(name)')
             .eq('is_featured', true)
-            .order('course_id', ascending: false);
-            
-        final allCourses = data.map((e) => FeaturedCourse.fromJson(e)).toList();
-        final seenIds = <int>{};
-        dbCourses = allCourses.where((c) => seenIds.add(c.id)).toList();
+            .order('id', ascending: false);
+        dbCourses = data.map((e) => FeaturedCourse.fromJson(e)).toList();
       } catch (err) {
         debugPrint('Error fetching db courses: $err');
       }

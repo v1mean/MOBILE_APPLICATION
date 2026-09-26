@@ -5,7 +5,6 @@ import 'package:image_picker/image_picker.dart';
 import '../main.dart';
 import '../constants/course_categories.dart';
 import '../services/api_service.dart';
-import '../services/teacher_course_service.dart';
 import '../widgets/user_avatar_header.dart';
 
 class TeacherUploadCourseScreen extends StatefulWidget {
@@ -91,6 +90,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
 
     setState(() => _isUploading = true);
 
+    
     // 1. Upload to backend (which handles both file uploads and DB insertion securely)
     try {
       final success = await ApiService.uploadCourse(
@@ -122,13 +122,6 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
       }
       return;
     }
-
-    // 2. Add to TeacherCourseService so it shows in "Your Latest Courses" in Teacher Home
-    TeacherCourseService.instance.addCourse(
-      title: title,
-      description: _descController.text.trim(),
-      category: _selectedCategory,
-    );
 
     if (!mounted) return;
     setState(() => _isUploading = false);
