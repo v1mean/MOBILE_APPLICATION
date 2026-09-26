@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/student_notification_service.dart';
+import '../theme/app_colors.dart';
 
 class NotificationBell extends StatelessWidget {
   final Color color;
@@ -39,15 +40,15 @@ class NotificationBell extends StatelessWidget {
                   child: Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEF4444), // AppColors.liveRed
+                      color: AppColors.liveRed, // AppColors.liveRed
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: const Color(0xFF0A0A12), // AppColors.darkBg
+                        color: AppColors.darkBg, // AppColors.darkBg
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFFEF4444).withAlpha(120),
+                          color: AppColors.liveRed.withAlpha(120),
                           blurRadius: 6,
                           spreadRadius: 1,
                         ),

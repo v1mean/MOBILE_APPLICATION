@@ -43,9 +43,9 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
   }
 
   List<Widget> _asterisks(double h) => [
-    Positioned(left: 20, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 18))),
+    Positioned(left: 20, top: h * 0.42, child: Text('*', style: AppTextStyles.decorativeStarLg)),
     Positioned(right: 28, top: h * 0.46, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 16))),
-    Positioned(left: 60, top: h * 0.52, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
+    Positioned(left: 60, top: h * 0.52, child: Text('*', style: AppTextStyles.decorativeStarSm)),
     Positioned(left: 18, bottom: 60, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 18))),
     Positioned(right: 22, bottom: 40, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 16))),
   ];
@@ -76,12 +76,12 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                     children: [
                       const SparkleIcon().animate(delay: 50.ms).fadeIn(),
                       const SizedBox(height: 12),
-                      Text('Welcome Back', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
+                      Text('Welcome Back', style: AppTextStyles.h1)
                           .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 6),
                       Text('Enter your detail below to log into\nyour account.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
+                          style: AppTextStyles.authCaptionWhite70)
                           .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
                       DarkTextField(
@@ -138,7 +138,7 @@ class _TeacherLoginScreenState extends State<TeacherLoginScreen> {
                           ),
                           child: _isLoading
                               ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text('Log In', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                              : Text('Log In', style: AppTextStyles.primaryButton),
                         ),
                       ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),

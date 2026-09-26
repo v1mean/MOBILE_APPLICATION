@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../main.dart';
+import '../theme/app_colors.dart';
 
 class _StudentItem {
   final String name;
@@ -88,7 +89,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: const Color(0xFF7B3FC8),
+                    backgroundColor: AppColors.galaxyPurple,
                     backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
                     child: _avatarUrl == null
                         ? const Icon(Icons.person, color: Colors.white, size: 28)
@@ -157,7 +158,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -195,7 +196,7 @@ class _StudentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -208,7 +209,7 @@ class _StudentCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: const Color(0xFFF3F4F6),
+            backgroundColor: AppColors.surfaceMuted,
             child: ClipOval(
               child: Image.network(
                 student.avatarUrl,
@@ -217,7 +218,7 @@ class _StudentCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, e, st) => CircleAvatar(
                   radius: 22,
-                  backgroundColor: const Color(0xFFE0E7FF),
+                  backgroundColor: AppColors.indigoBgLight,
                   child: Text(
                     student.name.isNotEmpty ? student.name[0] : 'S',
                     style: const TextStyle(
@@ -239,7 +240,7 @@ class _StudentCard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -247,7 +248,7 @@ class _StudentCard extends StatelessWidget {
                   student.phone,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -258,7 +259,7 @@ class _StudentCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF6B7280),
+              color: AppColors.textSecondary,
             ),
           ),
         ],

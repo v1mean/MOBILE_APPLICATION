@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme/app_text_styles.dart';
+import '../theme/app_colors.dart';
 
 /// Reusable avatar widget used in home, settings, teacher home, teacher
 /// schedules, and teacher settings screens.
@@ -75,7 +76,7 @@ class UserAvatarHeader extends StatelessWidget {
   }
 
   static Widget _fallbackAvatar(String initial) => CircleAvatar(
-        backgroundColor: const Color(0xFFFFD5DC),
+        backgroundColor: AppColors.pastelPink,
         child: Text(
           initial,
           style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black),

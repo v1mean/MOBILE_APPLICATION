@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants/course_categories.dart';
+import '../theme/app_colors.dart';
+import 'category_theme_widgets.dart';
 
 /// A rich course card used in the CourseListingScreen
 /// Shows category pill, title, description, instructor, rating, price, duration, level
@@ -41,7 +43,7 @@ class RichCourseCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFFE5E7EB), width: 1.2),
+          border: Border.all(color: AppColors.border, width: 1.2),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha(8),
@@ -101,7 +103,8 @@ class RichCourseCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Category pill
+                        // Category pill (translucent glass style over the gradient banner —
+                        // intentionally different from CategoryPillBadge's solid fill)
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -189,7 +192,7 @@ class RichCourseCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF111827),
+                      color: AppColors.textPrimary,
                       height: 1.3,
                     ),
                     maxLines: 2,
@@ -202,7 +205,7 @@ class RichCourseCard extends StatelessWidget {
                     style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: const Color(0xFF6B7280),
+                      color: AppColors.textSecondary,
                       height: 1.45,
                     ),
                     maxLines: 2,
@@ -212,27 +215,13 @@ class RichCourseCard extends StatelessWidget {
                   // Instructor row
                   Row(
                     children: [
-                      Container(
-                        width: 28,
-                        height: 28,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: LinearGradient(
-                            colors: theme.gradient,
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            instructorName.isNotEmpty ? instructorName[0].toUpperCase() : 'T',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
+                      GradientInitialAvatar(
+                        imageUrl: null,
+                        fallbackText: instructorName.isNotEmpty ? instructorName : 'T',
+                        theme: theme,
+                        size: 28,
+                        borderRadius: 14,
+                        fontSize: 12,
                       ),
                       const SizedBox(width: 8),
                       Expanded(
@@ -241,7 +230,7 @@ class RichCourseCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: const Color(0xFF374151),
+                            color: AppColors.borderDark,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -260,7 +249,7 @@ class RichCourseCard extends StatelessWidget {
                           return Icon(
                             filled ? Icons.star_rounded : Icons.star_outline_rounded,
                             size: 14,
-                            color: const Color(0xFFF59E0B),
+                            color: AppColors.warningAmber,
                           );
                         }),
                       ),
@@ -270,7 +259,7 @@ class RichCourseCard extends StatelessWidget {
                         style: GoogleFonts.inter(
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: const Color(0xFF6B7280),
+                          color: AppColors.textSecondary,
                         ),
                       ),
                       const Spacer(),
@@ -279,7 +268,7 @@ class RichCourseCard extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFDCFCE7),
+                            color: AppColors.successBgLight,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -287,7 +276,7 @@ class RichCourseCard extends StatelessWidget {
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.w800,
-                              color: const Color(0xFF15803D),
+                              color: AppColors.successTextDark,
                             ),
                           ),
                         )
@@ -297,7 +286,7 @@ class RichCourseCard extends StatelessWidget {
                           style: GoogleFonts.inter(
                             fontSize: 15,
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF0F766E),
+                            color: AppColors.tealDark,
                           ),
                         ),
                     ],
@@ -314,13 +303,13 @@ class RichCourseCard extends StatelessWidget {
   Color _levelColor(String lvl) {
     switch (lvl.toLowerCase()) {
       case 'beginner':
-        return const Color(0xFF15803D);
+        return AppColors.successTextDark;
       case 'intermediate':
         return const Color(0xFFD97706);
       case 'advanced':
         return const Color(0xFFDC2626);
       default:
-        return const Color(0xFF6B7280);
+        return AppColors.textSecondary;
     }
   }
 

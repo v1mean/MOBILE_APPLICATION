@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import '../widgets/user_avatar_header.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../main.dart';
+import '../theme/app_colors.dart';
 
 class TeacherSchedulesScreen extends StatefulWidget {
   const TeacherSchedulesScreen({super.key});
@@ -137,11 +138,11 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
     final students = _uniqueStudents;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: AppColors.surfaceSoft,
       body: Column(
         children: [
           Container(
-            color: const Color(0xFF0A0A12),
+            color: AppColors.darkBg,
             child: SafeArea(
               bottom: false,
               child: Padding(
@@ -156,7 +157,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                     const Spacer(),
                     Container(
                       width: 40, height: 40,
-                      decoration: BoxDecoration(color: const Color(0xFF16161E), borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
+                      decoration: BoxDecoration(color: AppColors.darkCard, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.white10)),
                       child: const Icon(Icons.notifications_outlined, color: Colors.white70, size: 22),
                     ),
                   ],
@@ -168,7 +169,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
             child: _isLoading 
               ? const Center(child: CircularProgressIndicator(color: Colors.black))
               : RefreshIndicator(
-                  color: const Color(0xFF7B3FC8),
+                  color: AppColors.galaxyPurple,
                   onRefresh: _fetchScheduleView,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
@@ -176,7 +177,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Schedule', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                        Text('Schedule', style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.navyText)),
                         const SizedBox(height: 14),
 
                         // Students header card
@@ -205,8 +206,8 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                                               child: (s['avatar']?.toString().isEmpty ?? true) ? Icon(Icons.person_outline, color: Colors.grey[500], size: 24) : null
                                             ),
                                             const SizedBox(height: 4),
-                                            Text(s['name'].toString().split(' ').first, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: const Color(0xFF1A1A2E))),
-                                            Text(s['location'], style: GoogleFonts.inter(fontSize: 9, color: const Color(0xFF6B7280))),
+                                            Text(s['name'].toString().split(' ').first, style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: AppColors.navyText)),
+                                            Text(s['location'], style: GoogleFonts.inter(fontSize: 9, color: AppColors.textSecondary)),
                                           ],
                                         ),
                                       )).toList(),
@@ -216,7 +217,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                                 const SizedBox(width: 12),
                                 RotatedBox(
                                   quarterTurns: 1,
-                                  child: Text('Students', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                                  child: Text('Students', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.navyText)),
                                 ),
                               ],
                             ),
@@ -244,7 +245,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                                     width: 50,
                                     padding: const EdgeInsets.symmetric(vertical: 18),
                                     child: Center(
-                                      child: Text(hourKey, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF))),
+                                      child: Text(hourKey, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
                                     ),
                                   ),
                                   const VerticalDivider(width: 1),
@@ -255,7 +256,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                                               margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                                               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                               decoration: BoxDecoration(
-                                                color: const Color(0xFFDCFCE7), // Theme color for booked slot
+                                                color: AppColors.successBgLight, // Theme color for booked slot
                                                 borderRadius: BorderRadius.circular(8),
                                               ),
                                               child: Row(

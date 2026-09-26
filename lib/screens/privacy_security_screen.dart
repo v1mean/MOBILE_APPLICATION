@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class PrivacySecurityScreen extends StatefulWidget {
   const PrivacySecurityScreen({super.key});
@@ -33,10 +34,10 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Enable Two-Factor Auth',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: const Color(0xFF0F172A))),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: AppColors.slateDark)),
         content: Text(
           'A verification code will be sent to your registered email or phone number on every new login attempt.',
-          style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF475569)),
+          style: GoogleFonts.inter(fontSize: 14, color: AppColors.slateGray),
         ),
         actions: [
           TextButton(
@@ -44,7 +45,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               Navigator.pop(ctx);
               setState(() => _twoFactor = false);
             },
-            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+            child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.slateText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -53,7 +54,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('2FA has been successfully activated.'),
-                  backgroundColor: const Color(0xFF10B981),
+                  backgroundColor: AppColors.successGreen,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
@@ -91,9 +92,9 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                     style: GoogleFonts.inter(
                         fontSize: 18,
                         fontWeight: FontWeight.w800,
-                        color: const Color(0xFF0F172A))),
+                        color: AppColors.slateDark)),
                 IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                  icon: const Icon(Icons.close_rounded, color: AppColors.slateText),
                   onPressed: () => Navigator.pop(ctx),
                 ),
               ],
@@ -112,23 +113,23 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               ),
               title: Text('Google Chrome (Current)',
                   style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700, fontSize: 14, color: const Color(0xFF0F172A))),
+                      fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.slateDark)),
               subtitle: Text('Windows 11 • Phnom Penh, KH • Active now',
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+                  style: AppTextStyles.helperTextSm),
               trailing: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF10B981).withAlpha(25),
+                  color: AppColors.successGreen.withAlpha(25),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Text('Active',
                     style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF10B981))),
+                        color: AppColors.successGreen)),
               ),
             ),
-            const Divider(height: 20, color: Color(0xFFF1F5F9)),
+            const Divider(height: 20, color: AppColors.slateBgSoft),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Container(
@@ -138,13 +139,13 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                   color: Colors.grey.withAlpha(25),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.phone_android_rounded, color: Color(0xFF64748B)),
+                child: const Icon(Icons.phone_android_rounded, color: AppColors.slateText),
               ),
               title: Text('Android Mobile App',
                   style: GoogleFonts.inter(
-                      fontWeight: FontWeight.w700, fontSize: 14, color: const Color(0xFF0F172A))),
+                      fontWeight: FontWeight.w700, fontSize: 14, color: AppColors.slateDark)),
               subtitle: Text('Mobile Device • Last active 2 days ago',
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B))),
+                  style: AppTextStyles.helperTextSm),
             ),
             const SizedBox(height: 12),
           ],
@@ -164,7 +165,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ],
         ),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.successGreen,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -177,15 +178,15 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Delete All Account Data?',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: const Color(0xFF0F172A))),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: AppColors.slateDark)),
         content: Text(
           'This action is irreversible. All course history, notes, and profile data will be permanently wiped.',
-          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF475569)),
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.slateGray),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+            child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.slateText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -261,7 +262,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
+                color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -286,7 +287,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       _buildDivider(),
                       _buildToggleTile(
                         icon: Icons.mail_outline_rounded,
-                        iconColor: const Color(0xFF8B5CF6),
+                        iconColor: AppColors.violetAccent,
                         title: 'Show Email Address',
                         subtitle: 'Display your email on public profiles',
                         value: _showEmail,
@@ -295,7 +296,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       _buildDivider(),
                       _buildToggleTile(
                         icon: Icons.phone_outlined,
-                        iconColor: const Color(0xFF10B981),
+                        iconColor: AppColors.successGreen,
                         title: 'Show Phone Number',
                         subtitle: 'Display phone number on profile view',
                         value: _showPhone,
@@ -320,7 +321,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                     _buildCard([
                       _buildToggleTile(
                         icon: Icons.security_rounded,
-                        iconColor: const Color(0xFFEF4444),
+                        iconColor: AppColors.liveRed,
                         title: 'Two-Factor Authentication',
                         subtitle: 'Extra verification step during login',
                         value: _twoFactor,
@@ -329,7 +330,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       _buildDivider(),
                       _buildToggleTile(
                         icon: Icons.notifications_active_outlined,
-                        iconColor: const Color(0xFFF59E0B),
+                        iconColor: AppColors.warningAmber,
                         title: 'Login Alerts',
                         subtitle: 'Notify on unrecognized new sign-ins',
                         value: _loginAlerts,
@@ -338,7 +339,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       _buildDivider(),
                       _buildToggleTile(
                         icon: Icons.fingerprint_rounded,
-                        iconColor: const Color(0xFF8B5CF6),
+                        iconColor: AppColors.violetAccent,
                         title: 'Biometric / App Lock',
                         subtitle: 'Require biometric scan to open app',
                         value: _biometricLock,
@@ -362,7 +363,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                     _buildCard([
                       _buildToggleTile(
                         icon: Icons.analytics_outlined,
-                        iconColor: const Color(0xFF14B8A6),
+                        iconColor: AppColors.tealAccent,
                         title: 'Usage Diagnostics',
                         subtitle: 'Share anonymous performance reports',
                         value: _dataSharing,
@@ -371,7 +372,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       _buildDivider(),
                       _buildActionTile(
                         icon: Icons.cleaning_services_outlined,
-                        iconColor: const Color(0xFFF59E0B),
+                        iconColor: AppColors.warningAmber,
                         title: 'Clear Cache Files',
                         subtitle: 'Free storage space by wiping temporary files',
                         onTap: _clearCache,
@@ -422,7 +423,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                                       style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                                 ],
                               ),
-                              backgroundColor: const Color(0xFF10B981),
+                              backgroundColor: AppColors.successGreen,
                               behavior: SnackBarBehavior.floating,
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -437,8 +438,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
                         child: Text('Save Preferences',
-                            style: GoogleFonts.inter(
-                                fontSize: 16, fontWeight: FontWeight.w700)),
+                            style: AppTextStyles.boldLabelMd),
                       ),
                     ).animate(delay: 180.ms).fadeIn(),
                   ],
@@ -459,7 +459,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
         style: GoogleFonts.inter(
           fontSize: 13,
           fontWeight: FontWeight.w800,
-          color: const Color(0xFF64748B),
+          color: AppColors.slateText,
           letterSpacing: 0.4,
         ),
       ),
@@ -484,7 +484,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
     );
   }
 
-  Widget _buildDivider() => const Divider(height: 1, indent: 68, color: Color(0xFFF1F5F9));
+  Widget _buildDivider() => const Divider(height: 1, indent: 68, color: AppColors.slateBgSoft);
 
   Widget _buildToggleTile({
     required IconData icon,
@@ -517,11 +517,10 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                     style: GoogleFonts.inter(
                         fontSize: 14.5,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF0F172A))),
+                        color: AppColors.slateDark)),
                 const SizedBox(height: 2),
                 Text(subtitle,
-                    style: GoogleFonts.inter(
-                        fontSize: 12, color: const Color(0xFF64748B))),
+                    style: AppTextStyles.helperTextSm),
               ],
             ),
           ),
@@ -569,16 +568,15 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                         style: GoogleFonts.inter(
                             fontSize: 14.5,
                             fontWeight: FontWeight.w700,
-                            color: const Color(0xFF0F172A))),
+                            color: AppColors.slateDark)),
                     const SizedBox(height: 2),
                     Text(subtitle,
-                        style: GoogleFonts.inter(
-                            fontSize: 12, color: const Color(0xFF64748B))),
+                        style: AppTextStyles.helperTextSm),
                   ],
                 ),
               ),
               const Icon(Icons.chevron_right_rounded,
-                  color: Color(0xFF94A3B8), size: 20),
+                  color: AppColors.slateIconMuted, size: 20),
             ],
           ),
         ),

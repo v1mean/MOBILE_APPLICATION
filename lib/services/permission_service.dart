@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
+import '../theme/app_colors.dart';
 
 /// Centralised permission handling for photo library and camera.
 /// Handles the full flow: check → request → guide to Settings if permanently denied.
@@ -74,7 +75,7 @@ class PermissionService {
         title: Row(
           children: [
             const Icon(Icons.lock_outline_rounded,
-                color: Color(0xFF3B82F6), size: 22),
+                color: AppColors.skyBlueAccent, size: 22),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -87,13 +88,13 @@ class PermissionService {
         ),
         content: Text(
           message,
-          style: const TextStyle(fontSize: 14, color: Color(0xFF4B5563)),
+          style: const TextStyle(fontSize: 14, color: AppColors.slateTextDark),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
             child: const Text('Not Now',
-                style: TextStyle(color: Color(0xFF6B7280))),
+                style: TextStyle(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -101,7 +102,7 @@ class PermissionService {
               openAppSettings(); // opens iOS/Android Settings for this app
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3B82F6),
+              backgroundColor: AppColors.skyBlueAccent,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),

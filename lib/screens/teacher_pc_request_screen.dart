@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../main.dart';
 import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 
 class _RequestItem {
   final String name;
@@ -115,7 +116,7 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: const Color(0xFF7B3FC8),
+                    backgroundColor: AppColors.galaxyPurple,
                     backgroundImage: _avatarUrl != null
                         ? NetworkImage(_avatarUrl!)
                         : null,
@@ -190,7 +191,7 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -230,7 +231,7 @@ class _RequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -246,7 +247,7 @@ class _RequestCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFF3F4F6),
+                backgroundColor: AppColors.surfaceMuted,
                 child: ClipOval(
                   child: Image.network(
                     item.avatarUrl,
@@ -255,7 +256,7 @@ class _RequestCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (ctx, e, st) => CircleAvatar(
                       radius: 20,
-                      backgroundColor: const Color(0xFFE0E7FF),
+                      backgroundColor: AppColors.indigoBgLight,
                       child: Text(
                         item.name.isNotEmpty ? item.name[0] : 'S',
                         style: const TextStyle(
@@ -273,7 +274,7 @@ class _RequestCard extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -283,7 +284,7 @@ class _RequestCard extends StatelessWidget {
             'Has request for a private class of yours.',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: const Color(0xFF374151),
+              color: AppColors.borderDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -296,7 +297,7 @@ class _RequestCard extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),

@@ -2,6 +2,7 @@
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class AppTheme {
   static ThemeData get theme {
@@ -36,10 +37,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(14),
           ),
           padding: const EdgeInsets.symmetric(vertical: 16),
-          textStyle: GoogleFonts.inter(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: AppTextStyles.boldLabelMd,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

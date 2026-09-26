@@ -65,4 +65,25 @@ class AppTextStyles {
   // ── Input field text ─────────────────────────────────────────────────
   static TextStyle get inputText => GoogleFonts.inter(
         fontSize: 15, fontWeight: FontWeight.w400, color: AppColors.white);
+
+  // ── Auth screens (dark hero background) ─────────────────────────────
+  static TextStyle get authCaptionWhite70 => GoogleFonts.inter(
+        fontSize: 13, color: AppColors.textWhite70);
+
+  // ── Card/section labels ──────────────────────────────────────────────
+  static TextStyle get cardLabelBold => GoogleFonts.inter(
+        fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.navyText);
+
+  static TextStyle get helperTextSm => GoogleFonts.inter(
+        fontSize: 12, color: AppColors.slateText);
+
+  static TextStyle get boldLabelMd => GoogleFonts.inter(
+        fontSize: 16, fontWeight: FontWeight.w700);
+
+  // ── Decorative splash/role-select star sparkles ─────────────────────
+  static TextStyle get decorativeStarLg => GoogleFonts.inter(
+        color: Colors.white70, fontSize: 18);
+
+  static TextStyle get decorativeStarSm => GoogleFonts.inter(
+        color: Colors.white54, fontSize: 14);
 }

@@ -296,7 +296,7 @@ class _CourseListingScreenState extends State<CourseListingScreen>
                 labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
                 unselectedLabelStyle:
                     GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
-                labelColor: const Color(0xFF111827),
+                labelColor: AppColors.textPrimary,
                 unselectedLabelColor: Colors.white70,
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
@@ -342,7 +342,7 @@ class _CourseListingScreenState extends State<CourseListingScreen>
             child: Container(
               margin: const EdgeInsets.only(top: 14),
               decoration: const BoxDecoration(
-                color: Color(0xFFF6F7F9),
+                color: AppColors.pageBg,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -402,7 +402,7 @@ class _CoursesTabContent extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'No courses found for $subject',
-                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF6B7280)),
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -423,7 +423,7 @@ class _CoursesTabContent extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF111827),
+                color: AppColors.textPrimary,
               ),
             ),
           );
@@ -520,12 +520,12 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
             decoration: BoxDecoration(
               color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
+              border: Border.all(color: AppColors.tagBlue),
             ),
             child: Row(
               children: [
                 const Icon(Icons.info_outline_rounded,
-                    color: Color(0xFF2563EB), size: 20),
+                    color: AppColors.accentBlue, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -547,7 +547,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF111827),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -560,7 +560,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
               child: Text(
                 'No mentors found for ${widget.subject}.',
                 style: GoogleFonts.inter(
-                    fontSize: 14, color: const Color(0xFF6B7280)),
+                    fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
           )
@@ -586,7 +586,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
           color: isSelected ? Colors.black : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.black : const Color(0xFFE5E7EB),
+            color: isSelected ? Colors.black : AppColors.border,
           ),
           boxShadow: [
             if (!isSelected)
@@ -602,7 +602,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : const Color(0xFF374151),
+            color: isSelected ? Colors.white : AppColors.borderDark,
           ),
         ),
       ),

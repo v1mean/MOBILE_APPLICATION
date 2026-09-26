@@ -233,26 +233,26 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                         ),
                         _SettingsTile(
                           icon: Icons.phone_outlined,
-                          iconColor: const Color(0xFF10B981),
+                          iconColor: AppColors.successGreen,
                           title: 'Phone Number',
                           subtitle: _phone,
                           onTap: () {},
                         ),
                         _SettingsTile(
                           icon: Icons.lock_outline_rounded,
-                          iconColor: const Color(0xFF8B5CF6),
+                          iconColor: AppColors.violetAccent,
                           title: 'Change Password',
                           onTap: () {},
                         ),
                         _SettingsTile(
                           icon: Icons.shield_outlined,
-                          iconColor: const Color(0xFF0EA5E9),
+                          iconColor: AppColors.cyanAccent,
                           title: 'Privacy & Security',
                           onTap: () {},
                         ),
                         _SettingsTile(
                           icon: Icons.payment_rounded,
-                          iconColor: const Color(0xFFF59E0B),
+                          iconColor: AppColors.warningAmber,
                           title: 'Payment & Earnings',
                           onTap: () {},
                           isLast: true,
@@ -272,20 +272,20 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                         ),
                         _SettingsTile(
                           icon: Icons.calendar_month_outlined,
-                          iconColor: const Color(0xFF6366F1),
+                          iconColor: AppColors.indigoAccent,
                           title: 'Availability Schedule',
                           onTap: () => context.go('/teacher-schedules'),
                         ),
                         _SettingsTile(
                           icon: Icons.attach_money_rounded,
-                          iconColor: const Color(0xFF10B981),
+                          iconColor: AppColors.successGreen,
                           title: 'Hourly Rate',
                           subtitle: '\$25 / hour',
                           onTap: () {},
                         ),
                         _SettingsTile(
                           icon: Icons.workspace_premium_outlined,
-                          iconColor: const Color(0xFFF59E0B),
+                          iconColor: AppColors.warningAmber,
                           title: 'Certificates & Credentials',
                           onTap: () {},
                           isLast: true,
@@ -298,7 +298,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                       _buildSettingsCard(delay: 200, items: [
                         _SettingsTile(
                           icon: Icons.notifications_outlined,
-                          iconColor: const Color(0xFFEF4444),
+                          iconColor: AppColors.liveRed,
                           title: 'Push Notifications',
                           trailing: Switch.adaptive(
                             value: _notificationsEnabled,
@@ -308,7 +308,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                         ),
                         _SettingsTile(
                           icon: Icons.person_add_outlined,
-                          iconColor: const Color(0xFF7B3FC8),
+                          iconColor: AppColors.galaxyPurple,
                           title: 'New Student Requests',
                           trailing: Switch.adaptive(
                             value: _studentRequestAlert,
@@ -318,7 +318,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                         ),
                         _SettingsTile(
                           icon: Icons.mail_outline_rounded,
-                          iconColor: const Color(0xFF3B82F6),
+                          iconColor: AppColors.skyBlueAccent,
                           title: 'Email Updates',
                           trailing: Switch.adaptive(
                             value: _emailUpdates,
@@ -328,7 +328,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                         ),
                         _SettingsTile(
                           icon: Icons.dark_mode_outlined,
-                          iconColor: const Color(0xFF6366F1),
+                          iconColor: AppColors.indigoAccent,
                           title: 'Dark Mode',
                           trailing: Switch.adaptive(
                             value: _darkMode,
@@ -338,7 +338,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                         ),
                         _SettingsTile(
                           icon: Icons.language_rounded,
-                          iconColor: const Color(0xFF14B8A6),
+                          iconColor: AppColors.tealAccent,
                           title: 'Language',
                           subtitle: _selectedLanguage,
                           onTap: _showLanguagePicker,
@@ -352,13 +352,13 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                       _buildSettingsCard(delay: 300, items: [
                         _SettingsTile(
                           icon: Icons.help_outline_rounded,
-                          iconColor: const Color(0xFF0EA5E9),
+                          iconColor: AppColors.cyanAccent,
                           title: 'Help & Support',
                           onTap: () {},
                         ),
                         _SettingsTile(
                           icon: Icons.star_outline_rounded,
-                          iconColor: const Color(0xFFF59E0B),
+                          iconColor: AppColors.warningAmber,
                           title: 'Rate Jomnes',
                           onTap: () {},
                         ),
@@ -418,14 +418,14 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF7B3FC8), Color(0xFF4F46E5)],
+            colors: [AppColors.galaxyPurple, AppColors.indigoDeep],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF7B3FC8).withAlpha(80),
+              color: AppColors.galaxyPurple.withAlpha(80),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
@@ -451,12 +451,12 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                       child: _avatarUrl != null
                         ? Image.network(_avatarUrl!, fit: BoxFit.cover,
                             errorBuilder: (ctx, e, st) => CircleAvatar(
-                              backgroundColor: const Color(0xFFFFD5DC),
+                              backgroundColor: AppColors.pastelPink,
                               child: Text(initial,
                                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
                             ))
                         : CircleAvatar(
-                            backgroundColor: const Color(0xFFFFD5DC),
+                            backgroundColor: AppColors.pastelPink,
                             child: Text(initial,
                                 style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
                           ),

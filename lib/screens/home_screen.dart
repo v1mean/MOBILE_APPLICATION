@@ -292,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
-                color: Color(0xFFF6F7F9),
+                color: AppColors.pageBg,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -328,7 +328,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: const Color(0xFFE5E7EB),
+                              color: AppColors.border,
                               width: 1,
                             ),
                             boxShadow: [
@@ -347,7 +347,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 children: [
                                   const Icon(
                                     Icons.search_rounded,
-                                    color: Color(0xFF6B7280),
+                                    color: AppColors.textSecondary,
                                     size: 22,
                                   ),
                                   const SizedBox(width: 10),
@@ -358,7 +358,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       child: Text(
                                         'Search Mentors',
                                         style: GoogleFonts.inter(
-                                          color: const Color(0xFF374151),
+                                          color: AppColors.borderDark,
                                           fontSize: 15,
                                           fontWeight: FontWeight.w400,
                                         ),
@@ -367,7 +367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   ),
                                   const Icon(
                                     Icons.tune_rounded,
-                                    color: Color(0xFF111827),
+                                    color: AppColors.textPrimary,
                                     size: 20,
                                   ),
                                 ],
@@ -381,26 +381,26 @@ class _HomeScreenState extends State<HomeScreen> {
                                     style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w500,
-                                      color: const Color(0xFF111827),
+                                      color: AppColors.textPrimary,
                                     ),
                                   ),
                                   const SizedBox(width: 10),
                                   _RecentChip(
                                     label: 'Chey Thavy',
-                                    bg: const Color(0xFFF3E8FF),
+                                    bg: AppColors.purpleBgLight,
                                     textColor: const Color(0xFF7E22CE),
                                   ),
                                   const SizedBox(width: 6),
                                   _RecentChip(
                                     label: 'Math',
                                     bg: const Color(0xFFDBEAFE),
-                                    textColor: const Color(0xFF1D4ED8),
+                                    textColor: AppColors.accentBlueDark,
                                   ),
                                   const SizedBox(width: 6),
                                   _RecentChip(
                                     label: 'Chemistry',
-                                    bg: const Color(0xFFDCFCE7),
-                                    textColor: const Color(0xFF15803D),
+                                    bg: AppColors.successBgLight,
+                                    textColor: AppColors.successTextDark,
                                   ),
                                 ],
                               ),
@@ -417,7 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 19,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -459,7 +459,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: GoogleFonts.inter(
                             fontSize: 19,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),

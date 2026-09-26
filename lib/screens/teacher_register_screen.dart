@@ -45,10 +45,10 @@ class _TeacherRegisterScreenState extends State<TeacherRegisterScreen> {
   }
 
   List<Widget> _asterisks(double h) => [
-    Positioned(left: 20, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 18))),
+    Positioned(left: 20, top: h * 0.42, child: Text('*', style: AppTextStyles.decorativeStarLg)),
     Positioned(right: 28, top: h * 0.5, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 16))),
     Positioned(left: 18, bottom: 60, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 18))),
-    Positioned(right: 22, bottom: 40, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
+    Positioned(right: 22, bottom: 40, child: Text('*', style: AppTextStyles.decorativeStarSm)),
   ];
 
   @override
@@ -77,12 +77,12 @@ class _TeacherRegisterScreenState extends State<TeacherRegisterScreen> {
                     children: [
                       const SparkleIcon().animate(delay: 50.ms).fadeIn(),
                       const SizedBox(height: 12),
-                      Text('Welcome to Jomnes', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
+                      Text('Welcome to Jomnes', style: AppTextStyles.h1)
                           .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 6),
                       Text('Enter your detail below to register\nyour account.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
+                          style: AppTextStyles.authCaptionWhite70)
                           .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
                       DarkTextField(

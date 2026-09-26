@@ -18,7 +18,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -61,7 +61,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         color: Colors.white,
         border: Border(
           bottom: BorderSide(
-            color: Color(0xFFE5E7EB),
+            color: AppColors.border,
             width: 1,
           ),
         ),
@@ -82,17 +82,17 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
-                color: const Color(0xFFF3F4F6),
+                color: AppColors.surfaceMuted,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: const Color(0xFFE5E7EB),
+                  color: AppColors.border,
                   width: 1,
                 ),
               ),
               alignment: Alignment.center,
               child: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Color(0xFF111827),
+                color: AppColors.textPrimary,
                 size: 16,
               ),
             ),
@@ -105,7 +105,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 Text(
                   'Notifications',
                   style: GoogleFonts.inter(
-                    color: const Color(0xFF111827),
+                    color: AppColors.textPrimary,
                     fontSize: 20,
                     fontWeight: FontWeight.w800,
                   ),
@@ -123,14 +123,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         color: const Color(0xFFEFF6FF),
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: const Color(0xFFBFDBFE),
+                          color: AppColors.tagBlue,
                           width: 1,
                         ),
                       ),
                       child: Text(
                         '$count new',
                         style: GoogleFonts.inter(
-                          color: const Color(0xFF2563EB),
+                          color: AppColors.accentBlue,
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                         ),
@@ -152,7 +152,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     'All notifications marked as read',
                     style: GoogleFonts.inter(color: Colors.white),
                   ),
-                  backgroundColor: const Color(0xFF111827),
+                  backgroundColor: AppColors.textPrimary,
                   duration: const Duration(seconds: 2),
                   behavior: SnackBarBehavior.floating,
                 ),
@@ -160,7 +160,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             },
             icon: const Icon(
               Icons.done_all_rounded,
-              color: Color(0xFF6B7280),
+              color: AppColors.textSecondary,
               size: 22,
             ),
           ),
@@ -193,15 +193,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               }
             },
             backgroundColor: Colors.white,
-            selectedColor: const Color(0xFF111827),
+            selectedColor: AppColors.textPrimary,
             side: BorderSide(
               color: isSelected
-                  ? const Color(0xFF111827)
-                  : const Color(0xFFE5E7EB),
+                  ? AppColors.textPrimary
+                  : AppColors.border,
               width: 1,
             ),
             labelStyle: GoogleFonts.inter(
-              color: isSelected ? Colors.white : const Color(0xFF4B5563),
+              color: isSelected ? Colors.white : AppColors.slateTextDark,
               fontSize: 13,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
             ),
@@ -240,7 +240,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     switch (item.type) {
       case 'booking':
-        iconBg = const Color(0xFFDCFCE7);
+        iconBg = AppColors.successBgLight;
         iconColor = const Color(0xFF16A34A);
         icon = Icons.calendar_month_rounded;
         break;
@@ -251,11 +251,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         break;
       case 'course':
         iconBg = const Color(0xFFDBEAFE);
-        iconColor = const Color(0xFF2563EB);
+        iconColor = AppColors.accentBlue;
         icon = Icons.menu_book_rounded;
         break;
       default:
-        iconBg = const Color(0xFFF3E8FF);
+        iconBg = AppColors.purpleBgLight;
         iconColor = const Color(0xFF9333EA);
         icon = Icons.auto_awesome_rounded;
     }
@@ -267,7 +267,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         decoration: BoxDecoration(
-          color: const Color(0xFFEF4444),
+          color: AppColors.liveRed,
           borderRadius: BorderRadius.circular(16),
         ),
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
@@ -290,7 +290,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             border: Border.all(
               color: isUnread
                   ? const Color(0xFF93C5FD)
-                  : const Color(0xFFE5E7EB),
+                  : AppColors.border,
               width: isUnread ? 1.5 : 1.0,
             ),
             boxShadow: [
@@ -328,7 +328,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Text(
                             item.title,
                             style: GoogleFonts.inter(
-                              color: const Color(0xFF111827),
+                              color: AppColors.textPrimary,
                               fontSize: 15,
                               fontWeight: isUnread
                                   ? FontWeight.w700
@@ -343,7 +343,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             height: 8,
                             margin: const EdgeInsets.only(top: 4),
                             decoration: const BoxDecoration(
-                              color: Color(0xFF2563EB),
+                              color: AppColors.accentBlue,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -354,7 +354,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                     Text(
                       item.body,
                       style: GoogleFonts.inter(
-                        color: const Color(0xFF4B5563),
+                        color: AppColors.slateTextDark,
                         fontSize: 13,
                         height: 1.4,
                       ),
@@ -366,7 +366,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         Text(
                           _formatTime(item.timestamp),
                           style: GoogleFonts.inter(
-                            color: const Color(0xFF9CA3AF),
+                            color: AppColors.textMuted,
                             fontSize: 11,
                             fontWeight: FontWeight.w500,
                           ),
@@ -417,7 +417,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFFE5E7EB),
+                  color: AppColors.border,
                   width: 1,
                 ),
                 boxShadow: [
@@ -431,7 +431,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               alignment: Alignment.center,
               child: const Icon(
                 Icons.notifications_off_outlined,
-                color: Color(0xFF9CA3AF),
+                color: AppColors.textMuted,
                 size: 36,
               ),
             ),
@@ -439,7 +439,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             Text(
               'No Notifications',
               style: GoogleFonts.inter(
-                color: const Color(0xFF111827),
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
               ),
@@ -449,7 +449,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               'You are all caught up! When you book classes or receive mentor reminders, they will appear here.',
               textAlign: TextAlign.center,
               style: GoogleFonts.inter(
-                color: const Color(0xFF6B7280),
+                color: AppColors.textSecondary,
                 fontSize: 13,
                 height: 1.4,
               ),

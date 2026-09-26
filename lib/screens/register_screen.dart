@@ -181,7 +181,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 8),
                         Text('Enter your detail below to register\nyour account.',
                             textAlign: TextAlign.center,
-                            style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
+                            style: AppTextStyles.authCaptionWhite70)
                             .animate(delay: 150.ms).fadeIn(),
                         const SizedBox(height: 28),
                         DarkTextField(controller: _fullNameController, hint: 'Full Name', icon: Icons.person_outline_rounded)

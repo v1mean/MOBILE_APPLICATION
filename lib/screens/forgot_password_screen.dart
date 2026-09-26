@@ -6,6 +6,7 @@ import '../widgets/galaxy_background.dart';
 import '../widgets/auth_widgets.dart';
 import '../theme/app_colors.dart';
 import '../services/api_service.dart';
+import '../theme/app_text_styles.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -84,12 +85,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   child: Column(
                     children: [
                       Text('Forgot Password',
-                          style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
+                          style: AppTextStyles.h1)
                           .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 8),
                       Text('Enter your email to receive a password reset link.',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
+                          style: AppTextStyles.authCaptionWhite70)
                           .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
                       DarkTextField(
@@ -109,7 +110,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           ),
                           child: _isLoading 
                               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                              : Text('Send Reset Link', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                              : Text('Send Reset Link', style: AppTextStyles.primaryButton),
                         ),
                       ).animate(delay: 250.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),
