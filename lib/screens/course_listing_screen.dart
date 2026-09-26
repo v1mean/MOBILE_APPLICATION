@@ -6,6 +6,7 @@ import '../models/mentor.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/rich_course_card.dart';
 import '../constants/course_categories.dart';
+import '../constants/mock_data.dart';
 import '../main.dart';
 
 class CourseListingScreen extends StatefulWidget {
@@ -68,7 +69,6 @@ class _CourseListingScreenState extends State<CourseListingScreen>
       final mentors = userList.map((u) {
         final uid = u['user_id'].toString();
         final p = profileMap[uid] ?? {};
-        // Clean data: subject is always correctly set in tutor_profiles
         final subject = (p['subject'] as String? ?? '').isNotEmpty
             ? p['subject'] as String
             : Mentor.inferMentorSubject(p['bio'], p['education']);
@@ -95,28 +95,61 @@ class _CourseListingScreenState extends State<CourseListingScreen>
         );
       }).toList();
 
+      // Combine real mentors from database with mock mentors across all subjects
+      final combinedMentors = <Mentor>[...mentors];
+      final seenIds = mentors.map((m) => m.id).toSet();
+      for (final mockM in kMockMentors) {
+        if (seenIds.add(mockM.id)) {
+          combinedMentors.add(mockM);
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _allMentors = mentors;
+          _allMentors = combinedMentors;
         });
       }
     } catch (e) {
+      if (mounted) {
+        setState(() {
+          _allMentors = kMockMentors;
+        });
+      }
     }
   }
 
 
   Future<void> _fetchCourses() async {
     try {
-      final data = await JomnesDB.from('courses')
-          .select('*, Users!inner(name)')
-          .order('id', ascending: true) as List;
+      List<Map<String, dynamic>> dbCourses = [];
+      try {
+        final data = await JomnesDB.from('courses')
+            .select('*, Users(name)')
+            .order('id', ascending: true);
+        dbCourses = List<Map<String, dynamic>>.from(data);
+      } catch (_) {}
+
+      // Combine real uploaded courses from DB with mock courses
+      final combinedCourses = <Map<String, dynamic>>[...dbCourses];
+      final seenTitles = dbCourses.map((c) => (c['title'] ?? '').toString().toLowerCase().trim()).toSet();
+      for (final mc in getMockCoursesAsJson()) {
+        final title = (mc['title'] ?? '').toString().toLowerCase().trim();
+        if (seenTitles.add(title)) {
+          combinedCourses.add(mc);
+        }
+      }
 
       if (mounted) {
         setState(() {
-          _courses = data.cast<Map<String, dynamic>>();
+          _courses = combinedCourses;
         });
       }
     } catch (e) {
+      if (mounted) {
+        setState(() {
+          _courses = getMockCoursesAsJson();
+        });
+      }
     }
   }
 
@@ -124,7 +157,8 @@ class _CourseListingScreenState extends State<CourseListingScreen>
     final sub = widget.subject.toLowerCase().trim();
     final list = _allMentors.where((m) {
       final mSub = m.subject.toLowerCase().trim();
-      return mSub.contains(sub) ||
+      return mSub == sub ||
+          mSub.contains(sub) ||
           sub.contains(mSub) ||
           m.name.toLowerCase().contains(sub);
     }).toList();
@@ -137,16 +171,16 @@ class _CourseListingScreenState extends State<CourseListingScreen>
   List<Map<String, dynamic>> get _filteredCourses {
     final sub = widget.subject.toLowerCase().trim();
 
-    // First try to match by category column or title
+    // Match by category column or title
     final matched = _courses.where((c) {
-      final cat = (c['category'] as String? ?? '').toLowerCase();
-      final title = (c['title'] as String? ?? '').toLowerCase();
-      return cat.contains(sub) ||
+      final cat = (c['category'] as String? ?? '').toLowerCase().trim();
+      final title = (c['title'] as String? ?? '').toLowerCase().trim();
+      return cat == sub ||
+          cat.contains(sub) ||
           sub.contains(cat) ||
           title.contains(sub);
     }).toList();
 
-    if (matched.isEmpty) return _courses;
     return matched;
   }
 

@@ -24,7 +24,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   String _email = '';
   String _phone = '';
   final String _subject = 'General';
-  String _role = 'Lecturer';
+  String _role = 'Teacher';
   String? _avatarUrl;
 
   @override
@@ -45,8 +45,16 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
           _name = data['name'] ?? 'Teacher';
           _email = data['email'] ?? '';
           _phone = data['phone'] ?? '';
-          if (data['role'] != null) {
-             _role = data['role'] == 'mentor' || data['role'] == 'tutor' ? 'Teacher / Mentor' : data['role'];
+          final rawRole = (data['role'] as String?)?.toLowerCase();
+          if (rawRole == 'mentor') {
+            _role = 'Teacher / Mentor';
+          } else if (rawRole == 'tutor') {
+            _role = 'Tutor';
+          } else if (rawRole == 'lecturer') {
+            _role = 'Lecturer';
+          } else {
+            // When in the Teacher portal, always show Teacher (even if logged in with same gmail registered as student)
+            _role = 'Teacher';
           }
           _avatarUrl = data['profile_image'];
           if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;

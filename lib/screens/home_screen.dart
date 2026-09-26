@@ -10,6 +10,8 @@ import '../widgets/mentor_card.dart';
 import '../widgets/featured_course_card.dart';
 import '../widgets/user_avatar_header.dart';
 import '../theme/app_colors.dart';
+import '../constants/course_categories.dart';
+import '../constants/mock_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -47,45 +49,58 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchPopularMentors() async {
     try {
-      final data = await JomnesDB.from('tutor_search_view')
-          .select()
-          .order('course_id', ascending: false);
-
       final Map<String, Mentor> uniqueMentors = {};
-      for (var row in (data as List)) {
-        final tutorId = row['tutor_id']?.toString() ?? '';
-        if (tutorId.isEmpty || uniqueMentors.containsKey(tutorId)) continue;
 
-        uniqueMentors[tutorId] = Mentor(
-          id: tutorId,
-          name: row['tutor_name'] ?? 'Mentor',
-          subject: (row['subject']?.toString().isNotEmpty == true)
-              ? row['subject'] as String
-              : Mentor.inferMentorSubject(row['bio']?.toString() ?? '', null),
-          experience: '${row['experience_years'] ?? 5} years experience',
-          timeSlot: 'Flexible',
-          avatarUrl: (row['tutor_avatar']?.toString().isNotEmpty == true)
-              ? row['tutor_avatar'] as String
-              : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop',
-          rating: (row['mentor_rating'] as num?)?.toDouble() ?? 4.9,
-          students: 120,
-          classes: 50,
-          followers: 300,
-          bookingPrice: (row['hourly_rate'] as num?)?.toDouble() ?? 35.0,
-          bio: row['bio']?.toString() ?? 'Experienced mentor.',
-          courses: [],
-        );
+      try {
+        final data = await JomnesDB.from('tutor_search_view')
+            .select()
+            .order('course_id', ascending: false);
+
+        for (var row in (data as List)) {
+          final tutorId = row['tutor_id']?.toString() ?? '';
+          if (tutorId.isEmpty || uniqueMentors.containsKey(tutorId)) continue;
+
+          uniqueMentors[tutorId] = Mentor(
+            id: tutorId,
+            name: row['tutor_name'] ?? 'Mentor',
+            subject: (row['subject']?.toString().isNotEmpty == true)
+                ? row['subject'] as String
+                : Mentor.inferMentorSubject(row['bio']?.toString() ?? '', null),
+            experience: '${row['experience_years'] ?? 5} years experience',
+            timeSlot: 'Flexible',
+            avatarUrl: (row['tutor_avatar']?.toString().isNotEmpty == true)
+                ? row['tutor_avatar'] as String
+                : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop',
+            rating: (row['mentor_rating'] as num?)?.toDouble() ?? 4.9,
+            students: 120,
+            classes: 50,
+            followers: 300,
+            bookingPrice: (row['hourly_rate'] as num?)?.toDouble() ?? 35.0,
+            bio: row['bio']?.toString() ?? 'Experienced mentor.',
+            courses: [],
+          );
+        }
+      } catch (err) {
+        debugPrint('Error fetching db mentors: $err');
+      }
+
+      // Merge with comprehensive mock mentors so every subject is represented
+      for (final m in kMockMentors) {
+        if (!uniqueMentors.containsKey(m.id)) {
+          uniqueMentors[m.id] = m;
+        }
       }
 
       if (mounted) {
         setState(() {
-          _popularMentors = uniqueMentors.values.take(15).toList();
+          _popularMentors = uniqueMentors.values.toList();
           _isLoadingMentors = false;
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
+          _popularMentors = kMockMentors;
           _isLoadingMentors = false;
         });
       }
@@ -95,20 +110,78 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchFeaturedCourses() async {
     try {
-      final data = await JomnesDB.from('courses')
-          .select('*, Users!inner(name)')
-          .eq('is_featured', true)
-          .order('id', ascending: false);
-          
+      List<FeaturedCourse> dbCourses = [];
+      try {
+        final data = await JomnesDB.from('courses')
+            .select('*, Users(name)')
+            .eq('is_featured', true)
+            .order('id', ascending: false);
+        dbCourses = data.map((e) => FeaturedCourse.fromJson(e)).toList();
+      } catch (err) {
+        debugPrint('Error fetching db courses: $err');
+      }
+
+      // Map any uploaded course from DB by subject/category
+      final coursesBySubject = <String, FeaturedCourse>{};
+      for (final c in dbCourses) {
+        final key = c.subject.trim().toLowerCase();
+        if (key.isNotEmpty && !coursesBySubject.containsKey(key)) {
+          coursesBySubject[key] = c;
+        }
+      }
+
+      // Display ALL standard featured course categories even if there are no mentors yet
+      final allFeatured = <FeaturedCourse>[];
+      final addedKeys = <String>{};
+
+      for (final cat in kCourseCategories) {
+        final key = cat.trim().toLowerCase();
+        if (coursesBySubject.containsKey(key)) {
+          allFeatured.add(coursesBySubject[key]!);
+        } else {
+          final theme = getCategoryTheme(cat);
+          allFeatured.add(
+            FeaturedCourse(
+              id: -1,
+              mentorName: 'Expert Mentor',
+              subject: cat,
+              cardColor: theme.cardColorKey,
+              imageUrl: '',
+            ),
+          );
+        }
+        addedKeys.add(key);
+      }
+
+      // Also include any other unique categories from the database not in kCourseCategories
+      for (final c in dbCourses) {
+        final key = c.subject.trim().toLowerCase();
+        if (key.isNotEmpty && addedKeys.add(key)) {
+          allFeatured.add(c);
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _featuredCourses = (data as List).map((e) => FeaturedCourse.fromJson(e)).toList();
+          _featuredCourses = allFeatured;
           _isLoadingFeatured = false;
         });
       }
     } catch (e) {
       if (mounted) {
+        final fallback = kCourseCategories.map((cat) {
+          final theme = getCategoryTheme(cat);
+          return FeaturedCourse(
+            id: -1,
+            mentorName: 'Expert Mentor',
+            subject: cat,
+            cardColor: theme.cardColorKey,
+            imageUrl: '',
+          );
+        }).toList();
+
         setState(() {
+          _featuredCourses = fallback;
           _isLoadingFeatured = false;
         });
       }

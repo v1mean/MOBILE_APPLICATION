@@ -88,20 +88,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
-          // Top bar
+          // Top bar matching Home Screen layout
           SafeArea(
             bottom: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-              child: Builder(builder: (context) {
-                final name = _displayName;
-                final avatar = _avatarUrl;
-                return UserAvatarHeader(
-                  name: name,
-                  role: _displayRole,
-                  avatarUrl: avatar,
-                );
-              }),
+              child: Row(
+                children: [
+                  UserAvatarHeader(
+                    name: _displayName,
+                    role: _displayRole,
+                    avatarUrl: _avatarUrl,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           // White card body

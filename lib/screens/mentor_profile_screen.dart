@@ -1,3 +1,4 @@
+import '../constants/mock_data.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -332,10 +333,20 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
           _isLoading = false;
         });
       } else if (mounted) {
-        setState(() => _isLoading = false);
+        final mock = getMockMentorById(widget.mentorId);
+        setState(() {
+          if (mock != null) _mentor = mock;
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        final mock = getMockMentorById(widget.mentorId);
+        setState(() {
+          if (mock != null) _mentor = mock;
+          _isLoading = false;
+        });
+      }
     }
   }
 

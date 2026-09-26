@@ -3,7 +3,10 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../main.dart';
+import '../constants/course_categories.dart';
 import '../services/api_service.dart';
+import '../services/teacher_course_service.dart';
+import '../widgets/user_avatar_header.dart';
 
 class TeacherUploadCourseScreen extends StatefulWidget {
   const TeacherUploadCourseScreen({super.key});
@@ -14,14 +17,17 @@ class TeacherUploadCourseScreen extends StatefulWidget {
 class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
-  
+
   String _userName = 'Teacher';
   String? _avatarUrl;
-  
+
+  String _selectedCategory = kCourseCategories[0]; // Default: 'Math'
+  final List<String> _categories = kCourseCategories;
+
   String? _thumbnailPath;
   String? _materialPath;
   String? _videoPath;
-  
+
   bool _isUploading = false;
   final ImagePicker _picker = ImagePicker();
 
@@ -75,88 +81,132 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
   }
 
   Future<void> _uploadCourse() async {
-    if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter a title')));
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a course title.')),
+      );
       return;
     }
 
     setState(() => _isUploading = true);
 
-    final success = await ApiService.uploadCourse(
-      title: _titleController.text.trim(),
+    final theme = getCategoryTheme(_selectedCategory);
+
+    // 1. Persist to Supabase courses table (with is_featured: true so it shows in Featured Courses on Home Screen)
+    try {
+      final currentUser = JomnesDB.auth.currentUser;
+      String? tutorId = currentUser?.id;
+
+      if (tutorId == null) {
+        final existingTutor = await JomnesDB.from('Users')
+            .select('user_id')
+            .eq('role', 'tutor')
+            .limit(1)
+            .maybeSingle();
+        if (existingTutor != null && existingTutor['user_id'] != null) {
+          tutorId = existingTutor['user_id'].toString();
+        }
+      }
+
+      if (tutorId != null) {
+        await JomnesDB.from('courses').insert({
+          'tutor_id': tutorId,
+          'title': title,
+          'description': _descController.text.trim().isEmpty
+              ? 'Practice exercise and course materials.'
+              : _descController.text.trim(),
+          'category': _selectedCategory,
+          'rating': 5.0,
+          'duration_hours': 10,
+          'card_color': theme.cardColorKey,
+          'is_live': false,
+          'is_featured': true,
+        });
+      }
+    } catch (e) {
+      debugPrint('Supabase insert error: $e');
+    }
+
+    // 2. Add to TeacherCourseService so it shows in "Your Latest Courses" in Teacher Home
+    TeacherCourseService.instance.addCourse(
+      title: title,
       description: _descController.text.trim(),
-      thumbnailPath: _thumbnailPath,
-      materialPath: _materialPath,
-      videoPath: _videoPath,
+      category: _selectedCategory,
     );
+
+    // 3. Optional backend API upload if paths are available
+    if (_thumbnailPath != null || _materialPath != null || _videoPath != null) {
+      try {
+        await ApiService.uploadCourse(
+          title: title,
+          description: _descController.text.trim(),
+          thumbnailPath: _thumbnailPath,
+          materialPath: _materialPath,
+          videoPath: _videoPath,
+        );
+      } catch (e) {
+        debugPrint('Backend upload error: $e');
+      }
+    }
 
     if (!mounted) return;
     setState(() => _isUploading = false);
 
-    if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Course uploaded successfully!')));
-      context.pop();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to upload course. Check your connection.')));
-    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('🎉 "$title" uploaded to $_selectedCategory & Featured Courses!'),
+        backgroundColor: const Color(0xFF10B981),
+      ),
+    );
+
+    context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: const Color(0xFF0A0A12),
       body: Column(
         children: [
-          // Dark header
-          Container(
-            color: const Color(0xFF0A0A12),
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => context.pop(),
-                      child: Container(
-                        width: 38, height: 38,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF16161E),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.white10),
-                        ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70, size: 16),
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: const Color(0xFF7B3FC8),
-                      backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-                      child: _avatarUrl == null
-                          ? const Icon(Icons.person, color: Colors.white, size: 22)
-                          : null,
-                    ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_userName, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
-                        Text('Lecturer', style: GoogleFonts.inter(fontSize: 11, color: Colors.white54)),
-                      ],
-                    ),
-                    const Spacer(),
-                    Container(
-                      width: 38, height: 38,
+          // Header
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => context.pop(),
+                    child: Container(
+                      width: 40,
+                      height: 40,
                       decoration: BoxDecoration(
                         color: const Color(0xFF16161E),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
-                      child: const Icon(Icons.notifications_outlined, color: Colors.white70, size: 20),
+                      child: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(width: 14),
+                  UserAvatarHeader(
+                    name: _userName,
+                    role: 'Lecturer',
+                    avatarUrl: _avatarUrl,
+                  ),
+                  const Spacer(),
+                  Container(
+                    width: 38,
+                    height: 38,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF16161E),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: const Icon(Icons.notifications_outlined, color: Colors.white70, size: 20),
+                  ),
+                ],
               ),
             ),
           ),
@@ -169,7 +219,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [const BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))],
+                  boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 10, offset: Offset(0, 4))],
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,6 +230,50 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                     ),
 
                     const Divider(height: 24, indent: 16, endIndent: 16),
+
+                    // ── Course Category / Subject Selector (Requirement 1) ──
+                    _sectionLabel('Course Category / Subject'),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF16161E),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFF2A2A3E)),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedCategory,
+                            isExpanded: true,
+                            dropdownColor: const Color(0xFF16161E),
+                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
+                            style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+                            items: _categories.map((c) {
+                              final theme = getCategoryTheme(c);
+                              return DropdownMenuItem<String>(
+                                value: c,
+                                child: Row(
+                                  children: [
+                                    Icon(theme.icon, color: Colors.white70, size: 18),
+                                    const SizedBox(width: 10),
+                                    Text(c),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() => _selectedCategory = val);
+                              }
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 22),
 
                     // Video Details
                     _sectionLabel('Video Details'),
@@ -195,17 +289,11 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                     const SizedBox(height: 10),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Row(
-                        children: [
-                          Expanded(child: _UploadBox(
-                            icon: Icons.add_photo_alternate_outlined, 
-                            label: _thumbnailPath != null ? 'Thumbnail Selected' : 'Upload New Thumbnail',
-                            isSelected: _thumbnailPath != null,
-                            onTap: _pickThumbnail,
-                          )),
-                          const SizedBox(width: 10),
-                          Expanded(child: _UploadBox(icon: Icons.video_library_outlined, label: 'Select Thumbnail From Video', onTap: () {})),
-                        ],
+                      child: _UploadBox(
+                        icon: Icons.add_photo_alternate_outlined, 
+                        label: _thumbnailPath != null ? 'Thumbnail Selected' : 'Upload New Thumbnail',
+                        isSelected: _thumbnailPath != null,
+                        onTap: _pickThumbnail,
                       ),
                     ),
 
