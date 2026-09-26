@@ -29,11 +29,10 @@ class _BottomNavBarState extends State<BottomNavBar>
     _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
     _NavItem(icon: Icons.search_rounded, activeIcon: Icons.search_rounded, label: 'Search'),
     _NavItem(icon: Icons.menu_book_outlined, activeIcon: Icons.menu_book_rounded, label: 'Course'),
-    _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile'),
     _NavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Settings'),
   ];
 
-  static const List<double> _activeWidths = [94.0, 102.0, 102.0, 98.0, 108.0];
+  static const List<double> _activeWidths = [94.0, 102.0, 102.0, 108.0];
   static const double _inactiveWidth = 46.0;
 
   @override

@@ -144,8 +144,7 @@ class _SearchScreenState extends State<SearchScreen> {
     switch (i) {
       case 0: context.go('/home'); break;
       case 2: context.go('/courses'); break;
-      case 3: context.go('/profile'); break;
-      case 4: context.go('/settings'); break;
+      case 3: context.go('/settings'); break;
     }
   }
 
@@ -183,7 +182,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => context.go('/profile'),
+                    onTap: () => context.go('/settings'),
                     child: CircleAvatar(
                       radius: 20,
                       backgroundColor: const Color(0xFFFFD5DC),

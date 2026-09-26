@@ -12,7 +12,6 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/mentor_profile_screen.dart';
-import 'screens/user_profile_screen.dart';
 import 'screens/my_courses_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/forgot_password_screen.dart';
@@ -208,7 +207,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/home', pageBuilder: (c, s) => _instant(s, const HomeScreen())),
     GoRoute(path: '/search', pageBuilder: (c, s) => _instant(s, const SearchScreen())),
     GoRoute(path: '/courses', pageBuilder: (c, s) => _instant(s, const MyCoursesScreen())),
-    GoRoute(path: '/profile', pageBuilder: (c, s) => _instant(s, const UserProfileScreen())),
+    GoRoute(path: '/profile', redirect: (c, s) => '/settings'),
     GoRoute(path: '/settings', pageBuilder: (c, s) => _instant(s, const SettingsScreen())),
     GoRoute(path: '/edit-profile', pageBuilder: (c, s) => _instant(s, const EditProfileScreen())),
     GoRoute(path: '/change-password', pageBuilder: (c, s) => _instant(s, const ChangePasswordScreen())),

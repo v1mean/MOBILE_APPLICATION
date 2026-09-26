@@ -17,7 +17,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final int _navIndex = 4;
+  final int _navIndex = 3;
   bool _notificationsEnabled = true;
   bool _emailUpdates = false;
   bool _darkMode = false;
@@ -78,7 +78,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 0: context.go('/home'); break;
       case 1: context.go('/search'); break;
       case 2: context.go('/courses'); break;
-      case 3: context.go('/profile'); break;
     }
   }
 
