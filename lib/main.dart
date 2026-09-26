@@ -10,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
 // Handy shortcut you'll use everywhere in the app
+// ignore: non_constant_identifier_names
 final JomnesDB = Supabase.instance.client;
 
 Future<void> main() async {

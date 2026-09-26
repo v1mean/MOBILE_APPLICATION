@@ -299,8 +299,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       final now = DateTime.now();
       final diff = now.difference(_userProfile!.createdAt);
       final days = diff.inDays;
-      if (days < 30)
+      if (days < 30) {
         return 'Joined Jomnes $days day${days == 1 ? '' : 's'} ago.';
+      }
       if (days < 365) {
         final months = (days / 30).round();
         return 'Joined Jomnes $months month${months == 1 ? '' : 's'} ago.';
