@@ -9,6 +9,7 @@ import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/featured_course_card.dart';
 import '../widgets/user_avatar_header.dart';
+import '../widgets/notification_bell.dart';
 import '../theme/app_colors.dart';
 import '../constants/course_categories.dart';
 import '../constants/mock_data.dart';
@@ -282,14 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const Spacer(),
                   // Clean outline bell icon matching Figma
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
+                  const NotificationBell(),
                 ],
               ),
             ),

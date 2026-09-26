@@ -1,3 +1,4 @@
+import 'services/student_notification_service.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:mobile_application/services/auth_service.dart';
@@ -15,6 +16,7 @@ final JomnesDB = Supabase.instance.client;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.initialize();
+  await StudentNotificationService.init();
 
   Stripe.publishableKey = 'pk_test_51UJ6f2B0wqWK1qEi3bVUPVjkVgMHvDSNYX5uPE5upF8jspWGXdpWMrxK5HTuoUkgrlqT1p2YlBzm1U2qUxD6dCnV003xsA7fWa';
 

@@ -8,6 +8,7 @@ import '../widgets/course_card.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
+import '../services/student_notification_service.dart';
 import '../services/payment_service.dart';
 
 class MentorProfileScreen extends StatefulWidget {
@@ -242,6 +243,12 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
           await NotificationService.showInstantNotification(
             title: 'Booking Confirmed! 🎉',
             body: 'Request sent to ${_mentor!.name}!',
+          );
+          await StudentNotificationService.addNotification(
+            title: 'Booking Confirmed! 🎉',
+            body: 'Your class with ${_mentor!.name} on ${date.toIso8601String().split('T')[0]} at $time has been scheduled.',
+            type: 'booking',
+            route: '/courses',
           );
 
           final event = Event(

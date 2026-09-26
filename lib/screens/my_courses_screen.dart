@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/user_avatar_header.dart';
+import '../widgets/notification_bell.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../models/user_profile.dart';
@@ -293,14 +294,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                     onTap: () => context.go('/settings'),
                   ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
+                  const NotificationBell(),
                 ],
               ),
             ),

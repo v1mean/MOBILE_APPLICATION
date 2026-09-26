@@ -1,3 +1,4 @@
+import 'screens/notifications_screen.dart';
 import 'dart:async';
 import 'dart:developer';
 import 'package:go_router/go_router.dart';
@@ -207,6 +208,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/home', pageBuilder: (c, s) => _instant(s, const HomeScreen())),
     GoRoute(path: '/search', pageBuilder: (c, s) => _instant(s, const SearchScreen())),
     GoRoute(path: '/courses', pageBuilder: (c, s) => _instant(s, const MyCoursesScreen())),
+    GoRoute(path: '/notifications', pageBuilder: (c, s) => _instant(s, const NotificationsScreen())),
     GoRoute(path: '/profile', redirect: (c, s) => '/settings'),
     GoRoute(path: '/settings', pageBuilder: (c, s) => _instant(s, const SettingsScreen())),
     GoRoute(path: '/edit-profile', pageBuilder: (c, s) => _instant(s, const EditProfileScreen())),

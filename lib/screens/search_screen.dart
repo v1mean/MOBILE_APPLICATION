@@ -1,3 +1,4 @@
+import '../widgets/notification_bell.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -181,6 +182,8 @@ class _SearchScreenState extends State<SearchScreen> {
                       ],
                     ),
                   ),
+                  const NotificationBell(size: 24),
+                  const SizedBox(width: 8),
                   GestureDetector(
                     onTap: () => context.go('/settings'),
                     child: CircleAvatar(
