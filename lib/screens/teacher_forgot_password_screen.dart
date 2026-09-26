@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
 import '../widgets/auth_widgets.dart';
+import '../theme/app_text_styles.dart';
 
 class _DomeClipper extends CustomClipper<Path> {
   const _DomeClipper();
@@ -36,10 +37,10 @@ class _TeacherForgotPasswordScreenState extends State<TeacherForgotPasswordScree
   }
 
   List<Widget> _asterisks(double h) => [
-    Positioned(left: 20, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 18))),
+    Positioned(left: 20, top: h * 0.42, child: Text('*', style: AppTextStyles.decorativeStarLg)),
     Positioned(right: 28, top: h * 0.46, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 16))),
     Positioned(left: 18, bottom: 80, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 18))),
-    Positioned(right: 22, bottom: 40, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
+    Positioned(right: 22, bottom: 40, child: Text('*', style: AppTextStyles.decorativeStarSm)),
   ];
 
   @override
@@ -68,12 +69,12 @@ class _TeacherForgotPasswordScreenState extends State<TeacherForgotPasswordScree
                     children: [
                       const SparkleIcon().animate(delay: 50.ms).fadeIn(),
                       const SizedBox(height: 12),
-                      Text('Forgot Password', style: GoogleFonts.inter(fontSize: 26, fontWeight: FontWeight.w800, color: AppColors.white))
+                      Text('Forgot Password', style: AppTextStyles.h1)
                           .animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 6),
                       Text('Enter your email to receive password\nreset link',
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textWhite70))
+                          style: AppTextStyles.authCaptionWhite70)
                           .animate(delay: 150.ms).fadeIn(),
                       const SizedBox(height: 28),
                       DarkTextField(
@@ -98,7 +99,7 @@ class _TeacherForgotPasswordScreenState extends State<TeacherForgotPasswordScree
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             elevation: 0,
                           ),
-                          child: Text('Send Reset Link', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800)),
+                          child: Text('Send Reset Link', style: AppTextStyles.primaryButton),
                         ),
                       ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
                       const SizedBox(height: 16),

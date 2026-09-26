@@ -155,7 +155,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                     style: GoogleFonts.inter(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF111827),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -303,7 +303,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
           Expanded(
             child: Container(
               decoration: const BoxDecoration(
-                color: Color(0xFFF6F7F9),
+                color: AppColors.pageBg,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -336,7 +336,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 24,
                               fontWeight: FontWeight.w900,
-                              color: const Color(0xFF111827),
+                              color: AppColors.textPrimary,
                               letterSpacing: -0.5,
                             ),
                           ),

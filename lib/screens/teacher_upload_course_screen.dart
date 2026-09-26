@@ -7,6 +7,8 @@ import '../constants/course_categories.dart';
 import '../services/api_service.dart';
 import '../services/teacher_course_service.dart';
 import '../widgets/user_avatar_header.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class TeacherUploadCourseScreen extends StatefulWidget {
   const TeacherUploadCourseScreen({super.key});
@@ -156,7 +158,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('🎉 "$title" uploaded to $_selectedCategory & Featured Courses!'),
-        backgroundColor: const Color(0xFF10B981),
+        backgroundColor: AppColors.successGreen,
       ),
     );
 
@@ -166,7 +168,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A12),
+      backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
           // Header
@@ -182,7 +184,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF16161E),
+                        color: AppColors.darkCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
@@ -200,7 +202,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF16161E),
+                      color: AppColors.darkCard,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(color: Colors.white10),
                     ),
@@ -226,7 +228,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 18, 16, 0),
-                      child: Text('Upload Course', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                      child: Text('Upload Course', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navyText)),
                     ),
 
                     const Divider(height: 24, indent: 16, endIndent: 16),
@@ -239,7 +241,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF16161E),
+                          color: AppColors.darkCard,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: const Color(0xFF2A2A3E)),
                         ),
@@ -247,7 +249,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                           child: DropdownButton<String>(
                             value: _selectedCategory,
                             isExpanded: true,
-                            dropdownColor: const Color(0xFF16161E),
+                            dropdownColor: AppColors.darkCard,
                             icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
                             style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
                             items: _categories.map((c) {
@@ -361,14 +363,14 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
 
   Widget _sectionLabel(String text) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Text(text, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+        child: Text(text, style: AppTextStyles.cardLabelBold),
       );
 
   Widget _inputField(TextEditingController ctrl, String hint, {int maxLines = 1}) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF16161E), // Dark background for input
+            color: AppColors.darkCard, // Dark background for input
             border: Border.all(color: const Color(0xFF2A2A3E)),
             borderRadius: BorderRadius.circular(10),
           ),
@@ -378,7 +380,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
             style: GoogleFonts.inter(fontSize: 14, color: Colors.white), // White text when typing
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280)), // Gray hint
+              hintStyle: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary), // Gray hint
               contentPadding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
               border: InputBorder.none,
             ),
@@ -403,7 +405,7 @@ class _UploadBox extends StatelessWidget {
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFFEEF2FF) : Colors.white,
-          border: Border.all(color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFFE5E7EB)),
+          border: Border.all(color: isSelected ? AppColors.indigoDeep : AppColors.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -411,7 +413,7 @@ class _UploadBox extends StatelessWidget {
           children: [
             Icon(
               isSelected ? Icons.check_circle_rounded : icon, 
-              color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF9CA3AF), 
+              color: isSelected ? AppColors.indigoDeep : AppColors.textMuted, 
               size: 28
             ),
             const SizedBox(height: 8),
@@ -421,7 +423,7 @@ class _UploadBox extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 12, 
                 fontWeight: FontWeight.w500, 
-                color: isSelected ? const Color(0xFF4F46E5) : const Color(0xFF6B7280)
+                color: isSelected ? AppColors.indigoDeep : AppColors.textSecondary
               ),
             ),
           ],

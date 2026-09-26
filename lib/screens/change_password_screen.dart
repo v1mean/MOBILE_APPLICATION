@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class ChangePasswordScreen extends StatefulWidget {
   const ChangePasswordScreen({super.key});
@@ -94,7 +95,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: AppColors.successGreen,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -167,7 +168,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
+                color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -199,7 +200,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                             height: 60,
                             decoration: BoxDecoration(
                               gradient: const LinearGradient(
-                                colors: [Color(0xFF8B5CF6), AppColors.accentBlue],
+                                colors: [AppColors.violetAccent, AppColors.accentBlue],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
@@ -223,11 +224,11 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                     style: GoogleFonts.inter(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF0F172A))),
+                                        color: AppColors.slateDark)),
                                 const SizedBox(height: 3),
                                 Text(
                                   'Choose a strong password that you do not use on any other service.',
-                                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF64748B)),
+                                  style: AppTextStyles.helperTextSm,
                                 ),
                               ],
                             ),
@@ -260,7 +261,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                               style: GoogleFonts.inter(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF0F172A))),
+                                  color: AppColors.slateDark)),
                           const SizedBox(height: 18),
                           _buildPasswordField(
                             label: 'Current Password (Optional)',
@@ -296,9 +297,9 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF8FAFC),
+                              color: AppColors.surfaceLight,
                               borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                              border: Border.all(color: AppColors.slateBorderLight),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +308,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                     style: GoogleFonts.inter(
                                         fontSize: 12,
                                         fontWeight: FontWeight.w700,
-                                        color: const Color(0xFF475569))),
+                                        color: AppColors.slateGray)),
                                 const SizedBox(height: 8),
                                 _buildRequirementRow('At least 6 characters long', _hasMinLength),
                                 const SizedBox(height: 6),
@@ -349,8 +350,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                                   const Icon(Icons.security_rounded, size: 20),
                                   const SizedBox(width: 8),
                                   Text('Update Password',
-                                      style: GoogleFonts.inter(
-                                          fontSize: 16, fontWeight: FontWeight.w700)),
+                                      style: AppTextStyles.boldLabelMd),
                                 ],
                               ),
                       ),
@@ -367,13 +367,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
 
   Widget _buildStrengthBar() {
     final score = _strengthScore;
-    Color color = const Color(0xFFEF4444);
+    Color color = AppColors.liveRed;
     String label = 'Weak';
     if (score == 2) {
-      color = const Color(0xFFF59E0B);
+      color = AppColors.warningAmber;
       label = 'Medium';
     } else if (score >= 3) {
-      color = const Color(0xFF10B981);
+      color = AppColors.successGreen;
       label = 'Strong';
     }
 
@@ -384,7 +384,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: score / 3.0,
-              backgroundColor: const Color(0xFFE2E8F0),
+              backgroundColor: AppColors.slateBorderLight,
               valueColor: AlwaysStoppedAnimation<Color>(color),
               minHeight: 5,
             ),
@@ -404,7 +404,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
         Icon(
           met ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
           size: 16,
-          color: met ? const Color(0xFF10B981) : const Color(0xFF94A3B8),
+          color: met ? AppColors.successGreen : AppColors.slateIconMuted,
         ),
         const SizedBox(width: 8),
         Text(
@@ -412,7 +412,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: met ? FontWeight.w600 : FontWeight.w500,
-            color: met ? const Color(0xFF0F172A) : const Color(0xFF64748B),
+            color: met ? AppColors.slateDark : AppColors.slateText,
           ),
         ),
       ],
@@ -434,13 +434,13 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF475569))),
+                color: AppColors.slateGray)),
         const SizedBox(height: 7),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.slateBorderLight),
           ),
           child: TextField(
             controller: controller,
@@ -449,10 +449,10 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             style: GoogleFonts.inter(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172A)),
+                color: AppColors.slateDark),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13.5),
+              hintStyle: GoogleFonts.inter(color: AppColors.slateIconMuted, fontSize: 13.5),
               filled: true,
               fillColor: Colors.transparent,
               prefixIcon: Container(
@@ -468,7 +468,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
               suffixIcon: IconButton(
                 icon: Icon(
                   obscure ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-                  color: const Color(0xFF94A3B8),
+                  color: AppColors.slateIconMuted,
                   size: 20,
                 ),
                 onPressed: onToggle,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
 import '../constants/course_categories.dart';
+import '../theme/app_colors.dart';
 
 class FeaturedCourseCard extends StatelessWidget {
   final FeaturedCourse course;
@@ -29,7 +30,7 @@ class FeaturedCourseCard extends StatelessWidget {
         height: 125,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: AppColors.slateNavy,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -130,4 +131,4 @@ class FeaturedCourseCard extends StatelessWidget {
   ),
     );
   }
-}
+}

@@ -162,19 +162,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.lock_outline_rounded,
-                            iconColor: const Color(0xFF8B5CF6),
+                            iconColor: AppColors.violetAccent,
                             title: 'Change Password',
                             onTap: () => context.push('/change-password'),
                           ),
                           _SettingsTile(
                             icon: Icons.shield_outlined,
-                            iconColor: const Color(0xFF10B981),
+                            iconColor: AppColors.successGreen,
                             title: 'Privacy & Security',
                             onTap: () => context.push('/privacy-security'),
                           ),
                           _SettingsTile(
                             icon: Icons.payment_rounded,
-                            iconColor: const Color(0xFFF59E0B),
+                            iconColor: AppColors.warningAmber,
                             title: 'Payment Methods',
                             onTap: () => context.push('/payment-methods'),
                             isLast: true,
@@ -190,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         items: [
                           _SettingsTile(
                             icon: Icons.notifications_outlined,
-                            iconColor: const Color(0xFFEF4444),
+                            iconColor: AppColors.liveRed,
                             title: 'Push Notifications',
                             trailing: Switch.adaptive(
                               value: _notificationsEnabled,
@@ -200,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.mail_outline_rounded,
-                            iconColor: const Color(0xFF3B82F6),
+                            iconColor: AppColors.skyBlueAccent,
                             title: 'Email Updates',
                             trailing: Switch.adaptive(
                               value: _emailUpdates,
@@ -210,7 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.dark_mode_outlined,
-                            iconColor: const Color(0xFF6366F1),
+                            iconColor: AppColors.indigoAccent,
                             title: 'Dark Mode',
                             trailing: Switch.adaptive(
                               value: _darkMode,
@@ -220,7 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.language_rounded,
-                            iconColor: const Color(0xFF14B8A6),
+                            iconColor: AppColors.tealAccent,
                             title: 'Language',
                             subtitle: _selectedLanguage,
                             onTap: () => _showLanguagePicker(),
@@ -237,13 +237,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         items: [
                           _SettingsTile(
                             icon: Icons.help_outline_rounded,
-                            iconColor: const Color(0xFF0EA5E9),
+                            iconColor: AppColors.cyanAccent,
                             title: 'Help & Support',
                             onTap: () {},
                           ),
                           _SettingsTile(
                             icon: Icons.star_outline_rounded,
-                            iconColor: const Color(0xFFF59E0B),
+                            iconColor: AppColors.warningAmber,
                             title: 'Rate Jomnes',
                             onTap: () {},
                           ),
@@ -312,7 +312,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.accentBlue, Color(0xFF6366F1)],
+            colors: [AppColors.accentBlue, AppColors.indigoAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -347,13 +347,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               avatar,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) => CircleAvatar(
-                                backgroundColor: const Color(0xFFFFD5DC),
+                                backgroundColor: AppColors.pastelPink,
                                 child: Text(initial,
                                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
                               ),
                             )
                           : CircleAvatar(
-                              backgroundColor: const Color(0xFFFFD5DC),
+                              backgroundColor: AppColors.pastelPink,
                               child: Text(initial,
                                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
                             ),

@@ -1,5 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 void showUploadCourseModal(BuildContext context) {
   showModalBottomSheet(
@@ -39,7 +41,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
       builder: (_, scrollCtrl) {
         return Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFF5F6FA),
+            color: AppColors.surfaceSoft,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
           ),
           padding: EdgeInsets.only(bottom: viewInsets.bottom),
@@ -57,13 +59,13 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
 
               // Teacher header inside modal
               Container(
-                color: const Color(0xFF0A0A12),
+                color: AppColors.darkBg,
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 16),
                 child: Row(
                   children: [
                     CircleAvatar(
                       radius: 22,
-                      backgroundColor: const Color(0xFF7B3FC8),
+                      backgroundColor: AppColors.galaxyPurple,
                       child: ClipOval(
                         child: Image.asset(
                           'assets/images/jessica_avatar.png',
@@ -84,7 +86,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                     Container(
                       width: 38, height: 38,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF16161E),
+                        color: AppColors.darkCard,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(color: Colors.white10),
                       ),
@@ -115,7 +117,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                             child: Row(
                               children: [
-                                Text('Upload Course', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                                Text('Upload Course', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.navyText)),
                                 const Spacer(),
                                 GestureDetector(
                                   onTap: () => Navigator.of(context).pop(),
@@ -125,7 +127,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                                       color: const Color(0xFFF0F0F5),
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: const Icon(Icons.close_rounded, size: 16, color: Color(0xFF6B7280)),
+                                    child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textSecondary),
                                   ),
                                 ),
                               ],
@@ -137,22 +139,22 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                           // Video Details
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Video Details', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                            child: Text('Video Details', style: AppTextStyles.cardLabelBold),
                           ),
                           const SizedBox(height: 10),
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Container(
                               decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                                border: Border.all(color: AppColors.border),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: TextField(
                                 controller: _titleController,
-                                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1A1A2E)),
+                                style: GoogleFonts.inter(fontSize: 14, color: AppColors.navyText),
                                 decoration: InputDecoration(
                                   hintText: 'Title (required)',
-                                  hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
+                                  hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textMuted),
                                   contentPadding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                                   border: InputBorder.none,
                                 ),
@@ -164,16 +166,16 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Container(
                               decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFFE5E7EB)),
+                                border: Border.all(color: AppColors.border),
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: TextField(
                                 controller: _descController,
                                 maxLines: 4,
-                                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF1A1A2E)),
+                                style: GoogleFonts.inter(fontSize: 14, color: AppColors.navyText),
                                 decoration: InputDecoration(
                                   hintText: 'Description (optional)\nDescribe your content here...',
-                                  hintStyle: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF9CA3AF)),
+                                  hintStyle: GoogleFonts.inter(fontSize: 14, color: AppColors.textMuted),
                                   contentPadding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
                                   border: InputBorder.none,
                                 ),
@@ -186,7 +188,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                           // Thumbnail
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Thumbnail', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                            child: Text('Thumbnail', style: AppTextStyles.cardLabelBold),
                           ),
                           const SizedBox(height: 10),
                           Padding(
@@ -205,7 +207,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                           // Upload Material
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Upload Your Material', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                            child: Text('Upload Your Material', style: AppTextStyles.cardLabelBold),
                           ),
                           const SizedBox(height: 10),
                           Padding(
@@ -218,7 +220,7 @@ class _UploadCourseModalState extends State<_UploadCourseModal> {
                           // Upload Video
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: Text('Upload Your Video', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+                            child: Text('Upload Your Video', style: AppTextStyles.cardLabelBold),
                           ),
                           const SizedBox(height: 10),
                           Padding(
@@ -287,12 +289,12 @@ class _UploadBox extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 28, color: const Color(0xFF6B7280)),
+            Icon(icon, size: 28, color: AppColors.textSecondary),
             const SizedBox(height: 8),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280), height: 1.4),
+              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary, height: 1.4),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class PaymentMethodsScreen extends StatefulWidget {
   const PaymentMethodsScreen({super.key});
@@ -19,16 +20,16 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       'type': 'VISA',
       'last4': '4242',
       'expiry': '08/27',
-      'color1': const Color(0xFF2563EB),
-      'color2': const Color(0xFF4F46E5),
+      'color1': AppColors.accentBlue,
+      'color2': AppColors.indigoDeep,
       'holder': 'VI MEAN',
     },
     {
       'type': 'Mastercard',
       'last4': '8891',
       'expiry': '12/26',
-      'color1': const Color(0xFF0F172A),
-      'color2': const Color(0xFF1E293B),
+      'color1': AppColors.slateDark,
+      'color2': AppColors.slateNavy,
       'holder': 'VI MEAN',
     },
   ];
@@ -62,9 +63,9 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                       style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0F172A))),
+                          color: AppColors.slateDark)),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.slateText),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -158,7 +159,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
                           ],
                         ),
-                        backgroundColor: const Color(0xFF10B981),
+                        backgroundColor: AppColors.successGreen,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -172,7 +173,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                   ),
                   child: Text('Add Card',
-                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700)),
+                      style: AppTextStyles.boldLabelMd),
                 ),
               ),
               const SizedBox(height: 8),
@@ -200,15 +201,15 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Remove Card?',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: const Color(0xFF0F172A))),
+            style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: AppColors.slateDark)),
         content: Text(
           'Remove ${card['type']} card ending in •••• ${card['last4']} from your wallet?',
-          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF475569)),
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.slateGray),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF64748B))),
+            child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.slateText)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -314,7 +315,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
+                color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -332,13 +333,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             style: GoogleFonts.inter(
                                 fontSize: 13,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF64748B),
+                                color: AppColors.slateText,
                                 letterSpacing: 0.4)),
                         Text('Tap to set default',
                             style: GoogleFonts.inter(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF94A3B8))),
+                                color: AppColors.slateIconMuted)),
                       ],
                     ),
                     const SizedBox(height: 14),
@@ -413,7 +414,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                         style: GoogleFonts.inter(
                             fontSize: 13,
                             fontWeight: FontWeight.w800,
-                            color: const Color(0xFF64748B),
+                            color: AppColors.slateText,
                             letterSpacing: 0.4)),
                     const SizedBox(height: 12),
                     Container(
@@ -441,18 +442,18 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                             ],
                           ),
                           const SizedBox(height: 16),
-                          const Divider(height: 1, color: Color(0xFFF1F5F9)),
+                          const Divider(height: 1, color: AppColors.slateBgSoft),
                           const SizedBox(height: 14),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.verified_user_rounded, size: 16, color: Color(0xFF10B981)),
+                              const Icon(Icons.verified_user_rounded, size: 16, color: AppColors.successGreen),
                               const SizedBox(width: 8),
                               Text('256-Bit SSL Encrypted & PCI-DSS Certified',
                                   style: GoogleFonts.inter(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: const Color(0xFF475569))),
+                                      color: AppColors.slateGray)),
                             ],
                           ),
                         ],
@@ -626,8 +627,8 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        color: AppColors.surfaceLight,
+        border: Border.all(color: AppColors.slateBorderLight),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(label,
@@ -654,13 +655,13 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF475569))),
+                color: AppColors.slateGray)),
         const SizedBox(height: 6),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.slateBorderLight),
           ),
           child: TextField(
             controller: controller,
@@ -669,10 +670,10 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
             style: GoogleFonts.inter(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172A)),
+                color: AppColors.slateDark),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13.5),
+              hintStyle: GoogleFonts.inter(color: AppColors.slateIconMuted, fontSize: 13.5),
               filled: true,
               fillColor: Colors.transparent,
               prefixIcon: Container(

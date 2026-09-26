@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import '../theme/app_colors.dart';
 
 class TeacherCourse {
   final String id;
@@ -45,7 +46,7 @@ class TeacherCourseService extends ChangeNotifier {
       category: 'Math',
       rating: 4.8,
       timeAgo: '1 day ago',
-      color: const Color(0xFFF3D0FF),
+      color: AppColors.pastelPurple,
     ),
     TeacherCourse(
       id: '2',
@@ -72,11 +73,11 @@ class TeacherCourseService extends ChangeNotifier {
     String? videoDuration,
   }) {
     final colors = [
-      const Color(0xFFF3D0FF), // Pink
+      AppColors.pastelPurple, // Pink
       const Color(0xFFBFEFFF), // Light Blue
-      const Color(0xFFDCFCE7), // Light Green
-      const Color(0xFFFEF08A), // Light Yellow
-      const Color(0xFFE0E7FF), // Indigo tint
+      AppColors.successBgLight, // Light Green
+      AppColors.tagYellow, // Light Yellow
+      AppColors.indigoBgLight, // Indigo tint
     ];
     final color = colors[_courses.length % colors.length];
 

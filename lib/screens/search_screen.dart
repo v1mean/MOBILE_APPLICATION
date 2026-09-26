@@ -352,7 +352,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(
-                  color: Color(0xFFF6F7F9),
+                  color: AppColors.pageBg,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(28),
                     topRight: Radius.circular(28),
@@ -371,7 +371,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
                               border: Border.all(
-                                color: const Color(0xFFE5E7EB),
+                                color: AppColors.border,
                                 width: 1,
                               ),
                               boxShadow: [
@@ -388,7 +388,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               style: GoogleFonts.inter(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: const Color(0xFF111827), // Clearly visible dark text
+                                color: AppColors.textPrimary, // Clearly visible dark text
                               ),
                               cursorColor: AppColors.accentBlue,
                               decoration: InputDecoration(
@@ -396,13 +396,13 @@ class _SearchScreenState extends State<SearchScreen> {
                                 fillColor: Colors.white,
                                 hintText: 'Search mentors by name (e.g. Ms.Gooooo)...',
                                 hintStyle: GoogleFonts.inter(
-                                  color: const Color(0xFF9CA3AF),
+                                  color: AppColors.textMuted,
                                   fontSize: 14,
                                   fontWeight: FontWeight.w400,
                                 ),
                                 prefixIcon: const Icon(
                                   Icons.search_rounded,
-                                  color: Color(0xFF6B7280),
+                                  color: AppColors.textSecondary,
                                   size: 20,
                                 ),
                                 suffixIcon: _query.isNotEmpty
@@ -410,7 +410,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         icon: const Icon(
                                           Icons.close_rounded,
                                           size: 18,
-                                          color: Color(0xFF6B7280),
+                                          color: AppColors.textSecondary,
                                         ),
                                         onPressed: () {
                                           _controller.clear();
@@ -446,7 +446,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF6B7280),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -483,7 +483,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
-                              color: const Color(0xFF6B7280),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -516,7 +516,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                       border: Border.all(
                                         color: isSelected
                                             ? AppColors.accentBlue
-                                            : const Color(0xFFE5E7EB),
+                                            : AppColors.border,
                                       ),
                                     ),
                                     child: Text(
@@ -526,7 +526,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                         fontWeight: FontWeight.w600,
                                         color: isSelected
                                             ? Colors.white
-                                            : const Color(0xFF374151),
+                                            : AppColors.borderDark,
                                       ),
                                     ),
                                   ),
@@ -545,7 +545,7 @@ class _SearchScreenState extends State<SearchScreen> {
                                 style: GoogleFonts.inter(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w700,
-                                  color: const Color(0xFF6B7280),
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                               Text(
@@ -561,7 +561,7 @@ class _SearchScreenState extends State<SearchScreen> {
                           SliderTheme(
                             data: SliderTheme.of(context).copyWith(
                               activeTrackColor: AppColors.accentBlue,
-                              inactiveTrackColor: const Color(0xFFE5E7EB),
+                              inactiveTrackColor: AppColors.border,
                               thumbColor: AppColors.accentBlue,
                               overlayColor:
                                   AppColors.accentBlue.withAlpha(30),
@@ -648,7 +648,7 @@ class _SearchScreenState extends State<SearchScreen> {
                             style: GoogleFonts.inter(
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
-                              color: const Color(0xFF6B7280),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                         ],
@@ -736,7 +736,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final initial =
         _displayName.isNotEmpty ? _displayName[0].toUpperCase() : 'U';
     return Container(
-      color: const Color(0xFFFFD5DC),
+      color: AppColors.pastelPink,
       alignment: Alignment.center,
       child: Text(
         initial,
@@ -771,7 +771,7 @@ class _SearchScreenState extends State<SearchScreen> {
           border: Border.all(
             color: isSelected
                 ? AppColors.accentBlue
-                : const Color(0xFFE5E7EB),
+                : AppColors.border,
           ),
         ),
         child: Text(
@@ -779,7 +779,7 @@ class _SearchScreenState extends State<SearchScreen> {
           style: GoogleFonts.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF374151),
+            color: isSelected ? Colors.white : AppColors.borderDark,
           ),
         ),
       ),

@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -53,9 +54,9 @@ class SplashScreen extends StatelessWidget {
             ),
           ),
           // Twinkle Asterisks
-          Positioned(left: 30, top: size.height * 0.65, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 18))),
+          Positioned(left: 30, top: size.height * 0.65, child: Text('*', style: AppTextStyles.decorativeStarLg)),
           Positioned(right: 40, top: size.height * 0.68, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 16))),
-          Positioned(left: 100, bottom: 120, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
+          Positioned(left: 100, bottom: 120, child: Text('*', style: AppTextStyles.decorativeStarSm)),
           Positioned(right: 60, bottom: 40, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 18))),
           // Bottom Content & CTA
           SafeArea(
@@ -92,10 +93,7 @@ class SplashScreen extends StatelessWidget {
                         ),
                         child: Text(
                           'Get Started',
-                          style: GoogleFonts.inter(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
+                          style: AppTextStyles.primaryButton,
                         ),
                       ),
                     ).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),

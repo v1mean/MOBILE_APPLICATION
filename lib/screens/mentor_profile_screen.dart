@@ -10,6 +10,7 @@ import '../services/api_service.dart';
 import '../services/notification_service.dart';
 import '../services/student_notification_service.dart';
 import '../services/payment_service.dart';
+import '../theme/app_colors.dart';
 
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;
@@ -150,7 +151,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
+                        backgroundColor: AppColors.accentBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                       child: Text(
@@ -374,19 +375,19 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF6F7F9),
+        backgroundColor: AppColors.pageBg,
         body: Center(child: CircularProgressIndicator()),
       );
     }
     final m = _mentor;
     if (m == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF6F7F9),
+        backgroundColor: AppColors.pageBg,
         body: Center(child: Text('Mentor not found.')),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -402,7 +403,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                     child: Icon(
                       Icons.close_rounded,
                       size: 24,
-                      color: Color(0xFF111827),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -448,7 +449,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           style: GoogleFonts.inter(
                             fontSize: 27,
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         Row(
@@ -464,7 +465,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                               style: GoogleFonts.inter(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF111827),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -478,7 +479,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
-                        color: const Color(0xFF4B5563),
+                        color: AppColors.slateTextDark,
                         height: 1.45,
                       ),
                     ),
@@ -491,7 +492,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           child: ElevatedButton(
                             onPressed: _isBooking ? null : _handleInitialPayment,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
+                              backgroundColor: AppColors.accentBlue,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -524,8 +525,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                             onPressed: () =>
                                 setState(() => _following = !_following),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE5E7EB),
-                              foregroundColor: const Color(0xFF111827),
+                              backgroundColor: AppColors.border,
+                              foregroundColor: AppColors.textPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -582,8 +583,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
-                        labelColor: const Color(0xFF111827),
-                        unselectedLabelColor: const Color(0xFF6B7280),
+                        labelColor: AppColors.textPrimary,
+                        unselectedLabelColor: AppColors.textSecondary,
                         indicatorSize: TabBarIndicatorSize.tab,
                         indicator: BoxDecoration(
                           color: Colors.white,
@@ -693,7 +694,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                               style: GoogleFonts.inter(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF111827),
+                                                color: AppColors.textPrimary,
                                               ),
                                             ),
                                           ),
@@ -726,7 +727,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                           r['comment'],
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
-                                            color: const Color(0xFF4B5563),
+                                            color: AppColors.slateTextDark,
                                             height: 1.4,
                                           ),
                                         ),
@@ -777,7 +778,7 @@ class _StatItem extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF6B7280),
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 5),
@@ -786,7 +787,7 @@ class _StatItem extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14.5,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF111827),
+              color: AppColors.textPrimary,
             ),
           ),
         ],
