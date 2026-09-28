@@ -13,7 +13,10 @@ class PaymentService {
 
       // 1. Get client secret from backend (amount is derived server-side
       // from the tutor's stored rate, not sent from the client)
-      final clientSecret = await _createPaymentIntent(tutorId, session.accessToken);
+      final clientSecret = await _createPaymentIntent(
+        tutorId,
+        session.accessToken,
+      );
 
       // 2. Initialize the payment sheet
       await Stripe.instance.initPaymentSheet(
@@ -26,7 +29,7 @@ class PaymentService {
 
       // 3. Present the payment sheet
       await Stripe.instance.presentPaymentSheet();
-      
+
       // If we get here, payment was successful
       return true;
     } catch (e) {
@@ -39,16 +42,19 @@ class PaymentService {
     }
   }
 
-  static Future<String> _createPaymentIntent(String tutorId, String accessToken) async {
+  static Future<String> _createPaymentIntent(
+    String tutorId,
+    String accessToken,
+  ) async {
     final uri = Uri.parse('${ApiService.baseUrl}/payments/create-intent');
 
     // For emulator testing handling localhost
     Uri finalUri = uri;
     if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-       final fallbackBase = ApiService.baseUrl.contains('10.0.2.2')
-           ? 'http://localhost:5005/api'
-           : 'http://10.0.2.2:5005/api';
-       finalUri = Uri.parse('$fallbackBase/payments/create-intent');
+      final fallbackBase = ApiService.baseUrl.contains('10.0.2.2')
+          ? 'http://localhost:5005/api'
+          : 'http://10.0.2.2:5005/api';
+      finalUri = Uri.parse('$fallbackBase/payments/create-intent');
     }
 
     final response = await http.post(
@@ -57,21 +63,23 @@ class PaymentService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       },
-      body: jsonEncode({
-        'tutor_id': tutorId,
-        'currency': 'usd',
-      }),
+      body: jsonEncode({'tutor_id': tutorId, 'currency': 'usd'}),
     );
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
+
       if (jsonResponse['success'] == true) {
         return jsonResponse['clientSecret'];
       } else {
-        throw Exception(jsonResponse['message'] ?? 'Failed to create payment intent');
+        throw Exception(
+          jsonResponse['message'] ?? 'Failed to create payment intent',
+        );
       }
     } else {
-      throw Exception('Server error: ${response.statusCode}');
+      throw Exception(
+        'Server error: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 }
