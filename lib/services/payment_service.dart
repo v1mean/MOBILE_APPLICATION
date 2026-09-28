@@ -48,14 +48,7 @@ class PaymentService {
   ) async {
     final uri = Uri.parse('${ApiService.baseUrl}/payments/create-intent');
 
-    // For emulator testing handling localhost
     Uri finalUri = uri;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      final fallbackBase = ApiService.baseUrl.contains('10.0.2.2')
-          ? 'http://localhost:5005/api'
-          : 'http://10.0.2.2:5005/api';
-      finalUri = Uri.parse('$fallbackBase/payments/create-intent');
-    }
 
     final response = await http.post(
       finalUri,
