@@ -269,7 +269,7 @@ class _TeacherSchedulesScreenState extends State<TeacherSchedulesScreen> {
                                                   ),
                                                   const SizedBox(width: 8),
                                                   Expanded(
-                                                    child: Text('${booking['student_name']} - Booked', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)), overflow: TextOverflow.ellipsis),
+                                                    child: Text('${booking['student_name']} (${booking['booking_date'] ?? ''}) - Booked', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: const Color(0xFF166534)), overflow: TextOverflow.ellipsis),
                                                   ),
                                                 ],
                                               ),
