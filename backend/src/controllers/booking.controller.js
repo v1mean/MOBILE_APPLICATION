@@ -135,34 +135,37 @@ export async function getTeacherBookings(req, res) {
     ];
 
     let students = [];
+    let profilesData = [];
 
     if (studentIds.length > 0) {
-      const { data: studentProfiles, error: studentsError } =
-        await supabaseAdmin
-          .from('Users')
-          .select('user_id, name, profile_image, phone, location')
-          .in('user_id', studentIds);
+      // Fetch from Users table for phone/location
+      const { data: usersData, error: usersError } = await supabaseAdmin
+        .from('Users')
+        .select('user_id, name, profile_image, phone, location')
+        .in('user_id', studentIds);
 
-      if (studentsError) {
-        console.error(
-          '[getTeacherBookings] students error:',
-          studentsError.message
-        );
-      } else {
-        students = studentProfiles || [];
-      }
+      if (usersError) console.error('[getTeacherBookings] Users error:', usersError.message);
+      else students = usersData || [];
+
+      // Fetch from profiles table for avatar_url (especially Google OAuth users)
+      const { data: pData, error: pError } = await supabaseAdmin
+        .from('profiles')
+        .select('id, full_name, avatar_url')
+        .in('id', studentIds);
+        
+      if (pError) console.error('[getTeacherBookings] profiles error:', pError.message);
+      else profilesData = pData || [];
     }
 
     const result = (bookings || []).map((booking) => {
-      const student = students.find(
-        (item) => item.user_id === booking.student_id
-      );
+      const student = students.find(item => item.user_id === booking.student_id);
+      const profile = profilesData.find(item => item.id === booking.student_id);
 
       return {
         id: booking.id,
         student_id: booking.student_id,
-        student_name: student?.name || 'Unknown Student',
-        student_avatar: student?.profile_image || '',
+        student_name: student?.name || profile?.full_name || 'Unknown Student',
+        student_avatar: profile?.avatar_url || student?.profile_image || '',
         student_phone: student?.phone || '',
         student_city: student?.location || '',
         tutor_id: booking.tutor_id,
