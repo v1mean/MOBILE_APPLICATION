@@ -139,9 +139,9 @@ export async function getTeacherBookings(req, res) {
     if (studentIds.length > 0) {
       const { data: studentProfiles, error: studentsError } =
         await supabaseAdmin
-          .from('profiles')
-          .select('id, full_name, avatar_url, phone, city')
-          .in('id', studentIds);
+          .from('Users')
+          .select('user_id, name, profile_image, phone, location')
+          .in('user_id', studentIds);
 
       if (studentsError) {
         console.error(
@@ -155,16 +155,16 @@ export async function getTeacherBookings(req, res) {
 
     const result = (bookings || []).map((booking) => {
       const student = students.find(
-        (item) => item.id === booking.student_id
+        (item) => item.user_id === booking.student_id
       );
 
       return {
         id: booking.id,
         student_id: booking.student_id,
-        student_name: student?.full_name || 'Unknown Student',
-        student_avatar: student?.avatar_url || '',
+        student_name: student?.name || 'Unknown Student',
+        student_avatar: student?.profile_image || '',
         student_phone: student?.phone || '',
-        student_city: student?.city || '',
+        student_city: student?.location || '',
         tutor_id: booking.tutor_id,
         course_id: booking.course_id,
         start_time: booking.start_time,
