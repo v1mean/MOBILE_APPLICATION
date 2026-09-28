@@ -263,6 +263,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             id: c['id']?.toString() ?? '',
             title: c['title'] ?? 'Course Title',
             description: c['description'] ?? 'No description',
+            category: c['category']?.toString() ?? 'General',
             rating: (c['rating'] as num?)?.toDouble() ?? 5.0,
             timeAgo: _formatTimeAgo(c['created_at']),
             color: _parseColor(c['card_color']),
