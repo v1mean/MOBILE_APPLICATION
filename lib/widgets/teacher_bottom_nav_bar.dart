@@ -27,8 +27,6 @@ class TeacherBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -36,48 +34,56 @@ class TeacherBottomNavBar extends StatelessWidget {
             color: Color(0x10000000),
             blurRadius: 16,
             offset: Offset(0, -4),
-          )
+          ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(
-            icon: Icons.ondemand_video_outlined,
-            label: 'Courses',
-            tab: TeacherNavTab.course,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.course),
+      // Keeps the buttons above the phone's gesture/navigation area.
+      child: SafeArea(
+        top: false,
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: Icons.ondemand_video_outlined,
+                label: 'Courses',
+                tab: TeacherNavTab.course,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.course),
+              ),
+              _NavItem(
+                icon: Icons.group_outlined,
+                label: 'Students',
+                tab: TeacherNavTab.students,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.students),
+              ),
+              _NavItem(
+                icon: Icons.star_border_rounded,
+                label: 'PC Request',
+                tab: TeacherNavTab.pcRequest,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.pcRequest),
+              ),
+              _NavItem(
+                icon: Icons.calendar_month_outlined,
+                label: 'Schedules',
+                tab: TeacherNavTab.schedules,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.schedules),
+              ),
+              _NavItem(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                tab: TeacherNavTab.settings,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.settings),
+              ),
+            ],
           ),
-          _NavItem(
-            icon: Icons.group_outlined,
-            label: 'Students',
-            tab: TeacherNavTab.students,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.students),
-          ),
-          _NavItem(
-            icon: Icons.star_border_rounded,
-            label: 'PC Request',
-            tab: TeacherNavTab.pcRequest,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.pcRequest),
-          ),
-          _NavItem(
-            icon: Icons.calendar_month_outlined,
-            label: 'Schedules',
-            tab: TeacherNavTab.schedules,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.schedules),
-          ),
-          _NavItem(
-            icon: Icons.settings_outlined,
-            label: 'Settings',
-            tab: TeacherNavTab.settings,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.settings),
-          ),
-        ],
+        ),
       ),
     );
   }

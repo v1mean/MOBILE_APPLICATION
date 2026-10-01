@@ -326,9 +326,22 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
       var user = await JomnesDB.from(
         'Users',
       ).select().eq('user_id', widget.mentorId).maybeSingle();
-      user ??= await JomnesDB.from(
+      // The avatar may live in either table (social logins only fill
+      // `profiles`), so read both rather than only falling back when the
+      // `Users` row is missing.
+      final profileRow = await JomnesDB.from(
         'profiles',
       ).select().eq('id', widget.mentorId).maybeSingle();
+      user ??= profileRow;
+
+      final avatarCandidates = [
+        user?['profile_image'],
+        profileRow?['avatar_url'],
+        user?['avatar_url'],
+      ].map((value) => value?.toString() ?? '').where((url) => url.isNotEmpty);
+      final avatarUrl = avatarCandidates.isNotEmpty
+          ? avatarCandidates.first
+          : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}';
 
       var profile = await JomnesDB.from(
         'tutor_profiles',
@@ -360,14 +373,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
             subject: subject,
             experience: '${p['experience_years'] ?? 5} years experience',
             timeSlot: 'Flexible',
-            avatarUrl:
-                (user?['profile_image'] != null &&
-                    user!['profile_image'].toString().isNotEmpty)
-                ? user['profile_image']
-                : (user?['avatar_url'] != null &&
-                      user!['avatar_url'].toString().isNotEmpty)
-                ? user['avatar_url']
-                : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
+            avatarUrl: avatarUrl,
             rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
             students: (p['total_students'] as num?)?.toInt() ?? 120,
             classes: 50,

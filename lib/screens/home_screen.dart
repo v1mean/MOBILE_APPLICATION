@@ -5,6 +5,7 @@ import '../router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../models/mentor.dart';
+import '../services/mentor_directory_service.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/featured_course_card.dart';
@@ -12,7 +13,6 @@ import '../widgets/user_avatar_header.dart';
 import '../widgets/notification_bell.dart';
 import '../theme/app_colors.dart';
 import '../constants/course_categories.dart';
-import '../constants/mock_data.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -49,62 +49,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchPopularMentors() async {
-    try {
-      final Map<String, Mentor> uniqueMentors = {};
-
-      try {
-        final data = await JomnesDB.from('tutor_search_view')
-            .select()
-            .order('course_id', ascending: false);
-
-        for (var row in (data as List)) {
-          final tutorId = row['tutor_id']?.toString() ?? '';
-          if (tutorId.isEmpty || uniqueMentors.containsKey(tutorId)) continue;
-
-          uniqueMentors[tutorId] = Mentor(
-            id: tutorId,
-            name: row['tutor_name'] ?? 'Mentor',
-            subject: (row['subject']?.toString().isNotEmpty == true)
-                ? row['subject'] as String
-                : Mentor.inferMentorSubject(row['bio']?.toString() ?? '', null),
-            experience: '${row['experience_years'] ?? 5} years experience',
-            timeSlot: 'Flexible',
-            avatarUrl: (row['tutor_avatar']?.toString().isNotEmpty == true)
-                ? row['tutor_avatar'] as String
-                : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop',
-            rating: (row['mentor_rating'] as num?)?.toDouble() ?? 4.9,
-            students: 120,
-            classes: 50,
-            followers: 300,
-            bookingPrice: (row['hourly_rate'] as num?)?.toDouble() ?? 35.0,
-            bio: row['bio']?.toString() ?? 'Experienced mentor.',
-            courses: [],
-          );
-        }
-      } catch (err) {
-        debugPrint('Error fetching db mentors: $err');
-      }
-
-      // Merge with comprehensive mock mentors so every subject is represented
-      for (final m in kMockMentors) {
-        if (!uniqueMentors.containsKey(m.id)) {
-          uniqueMentors[m.id] = m;
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _popularMentors = uniqueMentors.values.toList();
-          _isLoadingMentors = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _popularMentors = kMockMentors;
-          _isLoadingMentors = false;
-        });
-      }
+    final mentors = await MentorDirectoryService.fetchMentors();
+    if (mounted) {
+      setState(() {
+        _popularMentors = mentors;
+        _isLoadingMentors = false;
+      });
     }
   }
 

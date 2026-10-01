@@ -12,15 +12,6 @@ class FeaturedCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? assetImage;
-    if (course.cardColor == 'orange' || course.subject.toLowerCase() == 'math') {
-      assetImage = 'assets/images/featured_math.png';
-    } else if (course.cardColor == 'teal') {
-      assetImage = 'assets/images/featured_geography.png';
-    } else if (course.cardColor == 'teal2') {
-      assetImage = 'assets/images/featured_chemistry.png';
-    }
-
     final theme = getCategoryTheme(course.subject.isNotEmpty ? course.subject : course.cardColor);
 
     return MouseRegion(
@@ -51,13 +42,6 @@ class FeaturedCourseCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Background Image or Themed Gradient
-                    if (assetImage != null)
-                      Image.asset(
-                        assetImage,
-                        fit: BoxFit.cover,
-                      )
-                else
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -68,8 +52,6 @@ class FeaturedCourseCard extends StatelessWidget {
                     ),
                   ),
 
-                // Bottom-Right 3D Styled Graphic for non-asset cards
-                if (assetImage == null)
                   Positioned(
                     right: -8,
                     bottom: -8,
