@@ -67,10 +67,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     _emailController.text = currentUser?.email ?? '';
 
+    final appRole = (currentUser?.appMetadata['role'] ?? currentUser?.userMetadata?['role'] ?? '')
+        .toString()
+        .toLowerCase();
+    final isTeacher = appRole == 'mentor' || appRole == 'teacher';
+
     final metaName = currentUser?.userMetadata?['full_name'] ??
         currentUser?.userMetadata?['name'] ??
         currentUser?.email?.split('@').first ??
-        'Student';
+        (isTeacher ? 'Teacher' : 'Student');
     final metaAvatar = currentUser?.userMetadata?['avatar_url'] ??
         currentUser?.userMetadata?['picture'];
 
@@ -85,19 +90,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         _nameController.text = _profile!.name.isNotEmpty ? _profile!.name : metaName;
         _phoneController.text = _profile!.phone;
         _locationController.text = _profile!.location;
-        _roleController.text = _profile!.role.isNotEmpty ? _profile!.role : 'Student';
+        final rawRole = _profile!.role.isNotEmpty ? _profile!.role : (isTeacher ? 'Teacher' : 'Student');
+        _roleController.text = rawRole;
         _avatarUrl = _profile!.profileImage.isNotEmpty
             ? _profile!.profileImage
             : (metaAvatar is String ? metaAvatar : null);
       } else if (mounted) {
         _nameController.text = metaName;
-        _roleController.text = 'Student';
+        _roleController.text = isTeacher ? 'Teacher' : 'Student';
         if (metaAvatar is String) _avatarUrl = metaAvatar;
       }
     } catch (_) {
       if (mounted) {
         _nameController.text = metaName;
-        _roleController.text = 'Student';
+        _roleController.text = isTeacher ? 'Teacher' : 'Student';
         if (metaAvatar is String) _avatarUrl = metaAvatar;
       }
     }
@@ -130,7 +136,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         location: _locationController.text.trim(),
         role: _roleController.text.trim().isNotEmpty
             ? _roleController.text.trim()
-            : 'Student',
+            : (_profile?.role.isNotEmpty == true ? _profile!.role : 'Student'),
         profileImage: _avatarUrl,
       );
 
@@ -152,7 +158,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
-        context.pop(true);
+        if (context.canPop()) {
+          context.pop(true);
+        } else {
+          final r = _roleController.text.toLowerCase();
+          if (r.contains('teacher') || r.contains('mentor')) {
+            context.go('/teacher-settings');
+          } else {
+            context.go('/settings');
+          }
+        }
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -418,7 +433,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => context.pop(),
+                      onTap: () {
+                        if (context.canPop()) {
+                          context.pop();
+                        } else {
+                          final r = _roleController.text.toLowerCase();
+                          if (r.contains('teacher') || r.contains('mentor')) {
+                            context.go('/teacher-settings');
+                          } else {
+                            context.go('/settings');
+                          }
+                        }
+                      },
                       child: Container(
                         width: 40,
                         height: 40,
@@ -580,7 +606,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 Text(
                                   _emailController.text.isNotEmpty
                                       ? _emailController.text
-                                      : 'student@jomnes.com',
+                                      : 'No email attached',
                                   style: GoogleFonts.inter(
                                       fontSize: 13, color: AppColors.slateText),
                                 ),
@@ -641,7 +667,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 _buildFormField(
                                   label: 'Headline / Role',
                                   controller: _roleController,
-                                  hint: 'e.g. Computer Science Student',
+                                  hint: 'e.g. Mathematics Teacher or CS Student',
                                   icon: Icons.school_rounded,
                                   iconColor: AppColors.violetAccent,
                                 ),

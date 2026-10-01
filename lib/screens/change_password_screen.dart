@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import '../main.dart';
 import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -100,7 +101,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
-        context.pop();
+        _navigateBack();
       }
     } catch (e) {
       if (mounted) {
@@ -114,6 +115,24 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _navigateBack() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      final session = JomnesDB.auth.currentSession;
+      final role = (session?.user.appMetadata['role'] ??
+              session?.user.userMetadata?['role'] ??
+              '')
+          .toString()
+          .toLowerCase();
+      if (role == 'mentor' || role == 'teacher') {
+        context.go('/teacher-settings');
+      } else {
+        context.go('/settings');
+      }
     }
   }
 
@@ -134,7 +153,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => context.pop(),
+                      onTap: _navigateBack,
                       child: Container(
                         width: 40,
                         height: 40,

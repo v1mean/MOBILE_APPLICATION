@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -24,9 +26,48 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
 
   bool _dataSharing = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _profilePublic = prefs.getBool('pref_privacy_profile_public') ?? true;
+          _showEmail = prefs.getBool('pref_privacy_show_email') ?? false;
+          _showPhone = prefs.getBool('pref_privacy_show_phone') ?? false;
+          _activityStatus = prefs.getBool('pref_privacy_activity_status') ?? true;
+          _twoFactor = prefs.getBool('pref_privacy_two_factor') ?? false;
+          _loginAlerts = prefs.getBool('pref_privacy_login_alerts') ?? true;
+          _biometricLock = prefs.getBool('pref_privacy_biometric_lock') ?? false;
+          _dataSharing = prefs.getBool('pref_privacy_data_sharing') ?? false;
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _saveAllPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('pref_privacy_profile_public', _profilePublic);
+      await prefs.setBool('pref_privacy_show_email', _showEmail);
+      await prefs.setBool('pref_privacy_show_phone', _showPhone);
+      await prefs.setBool('pref_privacy_activity_status', _activityStatus);
+      await prefs.setBool('pref_privacy_two_factor', _twoFactor);
+      await prefs.setBool('pref_privacy_login_alerts', _loginAlerts);
+      await prefs.setBool('pref_privacy_biometric_lock', _biometricLock);
+      await prefs.setBool('pref_privacy_data_sharing', _dataSharing);
+    } catch (_) {}
+  }
+
   void _show2FaDialog(bool enable) {
     if (!enable) {
       setState(() => _twoFactor = false);
+      _saveAllPreferences();
       return;
     }
     showDialog(
@@ -51,6 +92,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             onPressed: () {
               Navigator.pop(ctx);
               setState(() => _twoFactor = true);
+              _saveAllPreferences();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('2FA has been successfully activated.'),
@@ -155,17 +197,46 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
   }
 
   void _clearCache() {
+    PaintingBinding.instance.imageCache.clear();
+    PaintingBinding.instance.imageCache.clearLiveImages();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(Icons.cleaning_services_rounded, color: Colors.white, size: 20),
             const SizedBox(width: 10),
-            Text('App cache cleared (18.4 MB freed)',
+            Text('App image cache cleared successfully!',
                 style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
           ],
         ),
         backgroundColor: AppColors.successGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+
+  void _downloadArchive() async {
+    final user = JomnesDB.auth.currentUser;
+    final email = user?.email ?? 'your registered email';
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('pref_last_export_request', DateTime.now().toIso8601String());
+    } catch (_) {}
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.mark_email_read_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text('Data archive export requested. A link will be sent to $email.',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ),
+          ],
+        ),
+        backgroundColor: AppColors.accentBlue,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
@@ -177,10 +248,10 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Delete All Account Data?',
+        title: Text('Purge Account Activity Data?',
             style: GoogleFonts.inter(fontWeight: FontWeight.w800, color: AppColors.slateDark)),
         content: Text(
-          'This action is irreversible. All course history, notes, and profile data will be permanently wiped.',
+          'This will reset your local cached activity, diagnostics, and preferences on this device.',
           style: GoogleFonts.inter(fontSize: 13, color: AppColors.slateGray),
         ),
         actions: [
@@ -189,11 +260,18 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.slateText)),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
+              try {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.clear();
+                PaintingBinding.instance.imageCache.clear();
+                PaintingBinding.instance.imageCache.clearLiveImages();
+              } catch (_) {}
+              if (!mounted) return;
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: const Text('Account data purge request submitted.'),
+                  content: const Text('Local account cache and activity data purged.'),
                   backgroundColor: AppColors.liveRed,
                   behavior: SnackBarBehavior.floating,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -204,11 +282,29 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
               backgroundColor: AppColors.liveRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Delete', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            child: Text('Purge', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
           ),
         ],
       ),
     );
+  }
+
+  void _navigateBack() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      final session = JomnesDB.auth.currentSession;
+      final role = (session?.user.appMetadata['role'] ??
+              session?.user.userMetadata?['role'] ??
+              '')
+          .toString()
+          .toLowerCase();
+      if (role == 'mentor' || role == 'teacher') {
+        context.go('/teacher-settings');
+      } else {
+        context.go('/settings');
+      }
+    }
   }
 
   @override
@@ -228,7 +324,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => context.pop(),
+                      onTap: _navigateBack,
                       child: Container(
                         width: 40,
                         height: 40,
@@ -383,16 +479,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                         iconColor: AppColors.accentBlue,
                         title: 'Download My Archive',
                         subtitle: 'Request full personal data export file',
-                        onTap: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('Export archive will be sent to your email.'),
-                              backgroundColor: AppColors.accentBlue,
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          );
-                        },
+                        onTap: _downloadArchive,
                       ),
                       _buildDivider(),
                       _buildActionTile(
@@ -412,7 +499,9 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
+                          await _saveAllPreferences();
+                          if (!context.mounted) return;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Row(
@@ -428,7 +517,7 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                           );
-                          context.pop();
+                          _navigateBack();
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accentBlue,

@@ -1,7 +1,10 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../main.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 
@@ -14,29 +17,119 @@ class PaymentMethodsScreen extends StatefulWidget {
 
 class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
   int _selectedCard = 0;
+  List<Map<String, dynamic>> _cards = [];
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _cards = [
-    {
-      'type': 'VISA',
-      'last4': '4242',
-      'expiry': '08/27',
-      'color1': AppColors.accentBlue,
-      'color2': AppColors.indigoDeep,
-      'holder': 'VI MEAN',
-    },
-    {
-      'type': 'Mastercard',
-      'last4': '8891',
-      'expiry': '12/26',
-      'color1': AppColors.slateDark,
-      'color2': AppColors.slateNavy,
-      'holder': 'VI MEAN',
-    },
-  ];
+  String get _currentUserName {
+    final user = JomnesDB.auth.currentUser;
+    final name = (user?.userMetadata?['full_name'] ??
+            user?.userMetadata?['name'] ??
+            user?.email?.split('@').first ??
+            'CARD HOLDER')
+        .toString()
+        .toUpperCase();
+    return name;
+  }
+
+  String get _storageKey {
+    final user = JomnesDB.auth.currentUser;
+    return 'pref_cards_${user?.id ?? 'default'}';
+  }
+
+  String get _defaultCardKey {
+    final user = JomnesDB.auth.currentUser;
+    return 'pref_default_card_${user?.id ?? 'default'}';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCards();
+  }
+
+  Future<void> _loadCards() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final savedIndex = prefs.getInt(_defaultCardKey) ?? 0;
+      final savedJson = prefs.getString(_storageKey);
+
+      if (savedJson != null && savedJson.isNotEmpty) {
+        final decoded = jsonDecode(savedJson) as List;
+        _cards = decoded.map((c) {
+          final m = Map<String, dynamic>.from(c as Map);
+          final isVisa = m['type'] == 'VISA';
+          return {
+            'type': m['type'] ?? 'VISA',
+            'last4': m['last4'] ?? '4242',
+            'expiry': m['expiry'] ?? '12/28',
+            'holder': m['holder'] ?? _currentUserName,
+            'color1': isVisa ? AppColors.accentBlue : AppColors.slateDark,
+            'color2': isVisa ? AppColors.indigoDeep : AppColors.slateNavy,
+          };
+        }).toList();
+      } else {
+        _cards = [
+          {
+            'type': 'VISA',
+            'last4': '4242',
+            'expiry': '08/27',
+            'color1': AppColors.accentBlue,
+            'color2': AppColors.indigoDeep,
+            'holder': _currentUserName,
+          },
+          {
+            'type': 'Mastercard',
+            'last4': '8891',
+            'expiry': '12/26',
+            'color1': AppColors.slateDark,
+            'color2': AppColors.slateNavy,
+            'holder': _currentUserName,
+          },
+        ];
+      }
+      _selectedCard = (savedIndex < _cards.length) ? savedIndex : 0;
+    } catch (_) {
+      _cards = [];
+      _selectedCard = 0;
+    }
+    if (mounted) setState(() => _isLoading = false);
+  }
+
+  Future<void> _persistCards() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storable = _cards.map((c) => {
+        'type': c['type'],
+        'last4': c['last4'],
+        'expiry': c['expiry'],
+        'holder': c['holder'],
+      }).toList();
+      await prefs.setString(_storageKey, jsonEncode(storable));
+      await prefs.setInt(_defaultCardKey, _selectedCard);
+    } catch (_) {}
+  }
+
+  void _navigateBack() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      final session = JomnesDB.auth.currentSession;
+      final role = (session?.user.appMetadata['role'] ??
+              session?.user.userMetadata?['role'] ??
+              '')
+          .toString()
+          .toLowerCase();
+      if (role == 'mentor' || role == 'teacher') {
+        context.go('/teacher-settings');
+      } else {
+        context.go('/settings');
+      }
+    }
+  }
 
   void _showAddCardDialog() {
     final numberController = TextEditingController();
-    final nameController = TextEditingController(text: 'VI MEAN');
+    final nameController = TextEditingController(text: _currentUserName);
     final expiryController = TextEditingController();
     final cvvController = TextEditingController();
 
@@ -135,19 +228,20 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     final color1 = isVisa ? const Color(0xFF0284C7) : const Color(0xFFDC2626);
                     final color2 = isVisa ? const Color(0xFF0369A1) : const Color(0xFF991B1B);
 
-                    setState(() {
-                      _cards.add({
-                        'type': brand,
-                        'last4': num.substring(num.length - 4),
-                        'expiry': expiryController.text.isNotEmpty ? expiryController.text : '12/28',
-                        'color1': color1,
-                        'color2': color2,
-                        'holder': nameController.text.toUpperCase().isNotEmpty
-                            ? nameController.text.toUpperCase()
-                            : 'VI MEAN',
+                      setState(() {
+                        _cards.add({
+                          'type': brand,
+                          'last4': num.substring(num.length - 4),
+                          'expiry': expiryController.text.isNotEmpty ? expiryController.text : '12/28',
+                          'color1': color1,
+                          'color2': color2,
+                          'holder': nameController.text.toUpperCase().isNotEmpty
+                              ? nameController.text.toUpperCase()
+                              : _currentUserName,
+                        });
+                        _selectedCard = _cards.length - 1;
                       });
-                      _selectedCard = _cards.length - 1;
-                    });
+                      _persistCards();
 
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -220,6 +314,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                   _selectedCard = 0;
                 }
               });
+              _persistCards();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: const Text('Payment card removed.'),
@@ -256,7 +351,7 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     color: Colors.transparent,
                     child: InkWell(
                       borderRadius: BorderRadius.circular(12),
-                      onTap: () => context.pop(),
+                      onTap: _navigateBack,
                       child: Container(
                         width: 40,
                         height: 40,
@@ -345,24 +440,38 @@ class _PaymentMethodsScreenState extends State<PaymentMethodsScreen> {
                     const SizedBox(height: 14),
 
                     // Cards List
-                    ..._cards.asMap().entries.map((entry) {
-                      final i = entry.key;
-                      final card = entry.value;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedCard = i);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('${card['type']} ending in ${card['last4']} set as default'),
-                              duration: const Duration(milliseconds: 1400),
-                              behavior: SnackBarBehavior.floating,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                          );
-                        },
-                        child: _buildCreditCard(card, _selectedCard == i, i),
-                      ).animate(delay: Duration(milliseconds: 60 * i)).fadeIn().slideY(begin: 0.15);
-                    }),
+                    if (_isLoading)
+                      const Center(child: Padding(
+                        padding: EdgeInsets.all(32),
+                        child: CircularProgressIndicator(),
+                      ))
+                    else if (_cards.isEmpty)
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Text('No payment cards saved.', style: GoogleFonts.inter(color: AppColors.slateText)),
+                        ),
+                      )
+                    else
+                      ..._cards.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final card = entry.value;
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() => _selectedCard = i);
+                            _persistCards();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('${card['type']} ending in ${card['last4']} set as default'),
+                                duration: const Duration(milliseconds: 1400),
+                                behavior: SnackBarBehavior.floating,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          },
+                          child: _buildCreditCard(card, _selectedCard == i, i),
+                        ).animate(delay: Duration(milliseconds: 60 * i)).fadeIn().slideY(begin: 0.15);
+                      }),
                     const SizedBox(height: 16),
 
                     // Add Card Button

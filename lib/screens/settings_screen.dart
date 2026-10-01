@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../widgets/bottom_nav_bar.dart';
+import '../widgets/notification_bell.dart';
+import '../widgets/settings_dialogs.dart';
 import '../theme/app_colors.dart';
 import '../widgets/user_avatar_header.dart';
 import '../services/auth_service.dart';
@@ -28,6 +31,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void initState() {
     super.initState();
     _fetchUserProfile();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _notificationsEnabled = prefs.getBool('pref_notifications') ?? true;
+          _emailUpdates = prefs.getBool('pref_email_updates') ?? false;
+          _darkMode = prefs.getBool('pref_dark_mode') ?? false;
+          _selectedLanguage = prefs.getString('pref_app_language') ?? 'English';
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _updatePref(String key, dynamic value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (value is bool) {
+        await prefs.setBool(key, value);
+      } else if (value is String) {
+        await prefs.setString(key, value);
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchUserProfile() async {
@@ -100,14 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     avatarUrl: _avatarUrl,
                   ),
                   const Spacer(),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.notifications_none_rounded,
-                      color: Colors.white,
-                      size: 26,
-                    ),
-                  ),
+                  const NotificationBell(),
                 ],
               ),
             ),
@@ -194,7 +216,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'Push Notifications',
                             trailing: Switch.adaptive(
                               value: _notificationsEnabled,
-                              onChanged: (v) => setState(() => _notificationsEnabled = v),
+                              onChanged: (v) {
+                                setState(() => _notificationsEnabled = v);
+                                _updatePref('pref_notifications', v);
+                              },
                               activeTrackColor: AppColors.accentBlue,
                             ),
                           ),
@@ -204,7 +229,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'Email Updates',
                             trailing: Switch.adaptive(
                               value: _emailUpdates,
-                              onChanged: (v) => setState(() => _emailUpdates = v),
+                              onChanged: (v) {
+                                setState(() => _emailUpdates = v);
+                                _updatePref('pref_email_updates', v);
+                              },
                               activeTrackColor: AppColors.accentBlue,
                             ),
                           ),
@@ -214,7 +242,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'Dark Mode',
                             trailing: Switch.adaptive(
                               value: _darkMode,
-                              onChanged: (v) => setState(() => _darkMode = v),
+                              onChanged: (v) {
+                                setState(() => _darkMode = v);
+                                _updatePref('pref_dark_mode', v);
+                              },
                               activeTrackColor: AppColors.accentBlue,
                             ),
                           ),
@@ -239,20 +270,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             icon: Icons.help_outline_rounded,
                             iconColor: AppColors.cyanAccent,
                             title: 'Help & Support',
-                            onTap: () {},
+                            onTap: () => SettingsDialogs.showHelpSupport(context),
                           ),
                           _SettingsTile(
                             icon: Icons.star_outline_rounded,
                             iconColor: AppColors.warningAmber,
                             title: 'Rate Jomnes',
-                            onTap: () {},
+                            onTap: () => SettingsDialogs.showRateJomnes(context),
                           ),
                           _SettingsTile(
                             icon: Icons.info_outline_rounded,
                             iconColor: AppColors.textSecondary,
                             title: 'About',
                             subtitle: 'Version 1.0.0',
-                            onTap: () {},
+                            onTap: () => SettingsDialogs.showAboutJomnes(context),
                             isLast: true,
                           ),
                         ],
@@ -299,7 +330,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
+      bottomNavigationBar: SafeArea(
+        child: BottomNavBar(currentIndex: _navIndex, onTap: _onNavTap),
+      ),
     );
   }
 
@@ -463,6 +496,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     : null,
                 onTap: () {
                   setState(() => _selectedLanguage = lang);
+                  _updatePref('pref_app_language', lang);
                   Navigator.pop(context);
                 },
               ),
@@ -510,25 +544,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
   void _showDeleteDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Delete Account', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
         content: Text(
-          'This action is permanent and cannot be undone. All your data will be lost.',
+          'This action is permanent and cannot be undone. All your profile data, enrolled courses, and notes will be permanently deleted.',
           style: GoogleFonts.inter(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dCtx),
             child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(dCtx);
+              try {
+                final session = JomnesDB.auth.currentSession;
+                if (session != null) {
+                  try {
+                    await JomnesDB.from('Users').delete().eq('user_id', session.user.id);
+                  } catch (_) {}
+                  try {
+                    await JomnesDB.from('profiles').delete().eq('id', session.user.id);
+                  } catch (_) {}
+                }
+                await AuthService().signOut();
+              } catch (_) {}
+              if (context.mounted) {
+                context.go('/');
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.liveRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            child: Text('Delete', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+            child: Text('Delete', style: GoogleFonts.inter(fontWeight: FontWeight.w700, color: Colors.white)),
           ),
         ],
       ),

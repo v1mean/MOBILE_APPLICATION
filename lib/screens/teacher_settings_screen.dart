@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../services/auth_service.dart';
+import '../services/teacher_notification_service.dart';
 import '../theme/app_colors.dart';
+import '../widgets/notification_bell.dart';
+import '../widgets/settings_dialogs.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../widgets/user_avatar_header.dart';
 import '../main.dart';
@@ -23,7 +28,8 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   String _name = 'Teacher';
   String _email = '';
   String _phone = '';
-  final String _subject = 'General';
+  String _subject = 'General';
+  double? _hourlyRate;
   String _role = 'Teacher';
   String? _avatarUrl;
 
@@ -31,6 +37,33 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   void initState() {
     super.initState();
     _fetchProfile();
+    _loadPreferences();
+  }
+
+  Future<void> _loadPreferences() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _notificationsEnabled = prefs.getBool('pref_teacher_notifications') ?? true;
+          _emailUpdates = prefs.getBool('pref_teacher_email_updates') ?? true;
+          _studentRequestAlert = prefs.getBool('pref_teacher_student_requests') ?? true;
+          _darkMode = prefs.getBool('pref_teacher_dark_mode') ?? false;
+          _selectedLanguage = prefs.getString('pref_teacher_language') ?? 'English';
+        });
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _updatePref(String key, dynamic value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (value is bool) {
+        await prefs.setBool(key, value);
+      } else if (value is String) {
+        await prefs.setString(key, value);
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchProfile() async {
@@ -60,6 +93,22 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
           if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
         });
       }
+
+      // Fetch tutor profile data (hourly_rate, subject)
+      final tutorData = await JomnesDB.from('tutor_profiles')
+          .select('hourly_rate, subject')
+          .eq('tutor_id', session.user.id)
+          .maybeSingle();
+      if (tutorData != null && mounted) {
+        setState(() {
+          if (tutorData['hourly_rate'] != null) {
+            _hourlyRate = (tutorData['hourly_rate'] as num).toDouble();
+          }
+          if (tutorData['subject'] != null && tutorData['subject'].toString().isNotEmpty) {
+            _subject = tutorData['subject'].toString();
+          }
+        });
+      }
     } catch (_) {}
   }
 
@@ -85,6 +134,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                     : null,
                 onTap: () {
                   setState(() => _selectedLanguage = lang);
+                  _updatePref('pref_teacher_language', lang);
                   Navigator.pop(context);
                 },
               ),
@@ -97,8 +147,8 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
 
   void _handleLogout() async {
     try {
-      await JomnesDB.auth.signOut();
-      if (mounted) context.go('/login');
+      await AuthService().signOut();
+      if (mounted) context.go('/teacher-login');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error logging out: $e')));
     }
@@ -136,20 +186,40 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   void _showDeleteDialog() {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dCtx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text('Delete Account', style: GoogleFonts.inter(fontWeight: FontWeight.w800)),
         content: Text(
-          'This action is permanent and cannot be undone. All your data will be lost.',
+          'This action is permanent and cannot be undone. All your teaching profile data, courses, and student records will be permanently lost.',
           style: GoogleFonts.inter(color: AppColors.textSecondary),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dCtx),
             child: Text('Cancel', style: GoogleFonts.inter(color: AppColors.textSecondary)),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(dCtx);
+              try {
+                final session = JomnesDB.auth.currentSession;
+                if (session != null) {
+                  try {
+                    await JomnesDB.from('Users').delete().eq('user_id', session.user.id);
+                  } catch (_) {}
+                  try {
+                    await JomnesDB.from('tutor_profiles').delete().eq('tutor_id', session.user.id);
+                  } catch (_) {}
+                  try {
+                    await JomnesDB.from('profiles').delete().eq('id', session.user.id);
+                  } catch (_) {}
+                }
+                await AuthService().signOut();
+              } catch (_) {}
+              if (mounted) {
+                context.go('/role-select');
+              }
+            },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.liveRed,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -179,6 +249,12 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                     name: _name,
                     role: _role,
                     avatarUrl: _avatarUrl,
+                  ),
+                  const Spacer(),
+                  NotificationBell(
+                    unreadCountListenable:
+                        TeacherNotificationService.unreadCountNotifier,
+                    onTap: () => context.push('/teacher-notifications'),
                   ),
                 ],
               ),
@@ -235,26 +311,30 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           icon: Icons.phone_outlined,
                           iconColor: AppColors.successGreen,
                           title: 'Phone Number',
-                          subtitle: _phone,
-                          onTap: () {},
+                          subtitle: _phone.isNotEmpty ? _phone : 'Tap to add phone number',
+                          onTap: () => SettingsDialogs.showEditPhone(
+                            context,
+                            currentPhone: _phone,
+                            onSaved: (p) => setState(() => _phone = p),
+                          ),
                         ),
                         _SettingsTile(
                           icon: Icons.lock_outline_rounded,
                           iconColor: AppColors.violetAccent,
                           title: 'Change Password',
-                          onTap: () {},
+                          onTap: () => context.push('/change-password'),
                         ),
                         _SettingsTile(
                           icon: Icons.shield_outlined,
                           iconColor: AppColors.cyanAccent,
                           title: 'Privacy & Security',
-                          onTap: () {},
+                          onTap: () => context.push('/privacy-security'),
                         ),
                         _SettingsTile(
                           icon: Icons.payment_rounded,
                           iconColor: AppColors.warningAmber,
                           title: 'Payment & Earnings',
-                          onTap: () {},
+                          onTap: () => context.push('/payment-methods'),
                           isLast: true,
                         ),
                       ]),
@@ -268,7 +348,11 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           iconColor: const Color(0xFFEC4899),
                           title: 'Subject',
                           subtitle: _subject,
-                          onTap: () {},
+                          onTap: () => SettingsDialogs.showEditSubject(
+                            context,
+                            currentSubject: _subject,
+                            onSaved: (s) => setState(() => _subject = s),
+                          ),
                         ),
                         _SettingsTile(
                           icon: Icons.calendar_month_outlined,
@@ -280,14 +364,20 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           icon: Icons.attach_money_rounded,
                           iconColor: AppColors.successGreen,
                           title: 'Hourly Rate',
-                          subtitle: '\$25 / hour',
-                          onTap: () {},
+                          subtitle: _hourlyRate == null || _hourlyRate == 0
+                              ? '\$0 / hour (Tap to set rate)'
+                              : '\$${_hourlyRate!.toStringAsFixed(_hourlyRate! % 1 == 0 ? 0 : 2)} / hour',
+                          onTap: () => SettingsDialogs.showEditHourlyRate(
+                            context,
+                            currentRate: _hourlyRate ?? 0.0,
+                            onSaved: (r) => setState(() => _hourlyRate = r),
+                          ),
                         ),
                         _SettingsTile(
                           icon: Icons.workspace_premium_outlined,
                           iconColor: AppColors.warningAmber,
                           title: 'Certificates & Credentials',
-                          onTap: () {},
+                          onTap: () => SettingsDialogs.showCertificates(context),
                           isLast: true,
                         ),
                       ]),
@@ -302,7 +392,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           title: 'Push Notifications',
                           trailing: Switch.adaptive(
                             value: _notificationsEnabled,
-                            onChanged: (v) => setState(() => _notificationsEnabled = v),
+                            onChanged: (v) {
+                              setState(() => _notificationsEnabled = v);
+                              _updatePref('pref_teacher_notifications', v);
+                            },
                             activeTrackColor: AppColors.accentBlue,
                           ),
                         ),
@@ -312,7 +405,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           title: 'New Student Requests',
                           trailing: Switch.adaptive(
                             value: _studentRequestAlert,
-                            onChanged: (v) => setState(() => _studentRequestAlert = v),
+                            onChanged: (v) {
+                              setState(() => _studentRequestAlert = v);
+                              _updatePref('pref_teacher_student_requests', v);
+                            },
                             activeTrackColor: AppColors.accentBlue,
                           ),
                         ),
@@ -322,7 +418,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           title: 'Email Updates',
                           trailing: Switch.adaptive(
                             value: _emailUpdates,
-                            onChanged: (v) => setState(() => _emailUpdates = v),
+                            onChanged: (v) {
+                              setState(() => _emailUpdates = v);
+                              _updatePref('pref_teacher_email_updates', v);
+                            },
                             activeTrackColor: AppColors.accentBlue,
                           ),
                         ),
@@ -332,7 +431,10 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           title: 'Dark Mode',
                           trailing: Switch.adaptive(
                             value: _darkMode,
-                            onChanged: (v) => setState(() => _darkMode = v),
+                            onChanged: (v) {
+                              setState(() => _darkMode = v);
+                              _updatePref('pref_teacher_dark_mode', v);
+                            },
                             activeTrackColor: AppColors.accentBlue,
                           ),
                         ),
@@ -354,20 +456,20 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           icon: Icons.help_outline_rounded,
                           iconColor: AppColors.cyanAccent,
                           title: 'Help & Support',
-                          onTap: () {},
+                          onTap: () => SettingsDialogs.showHelpSupport(context),
                         ),
                         _SettingsTile(
                           icon: Icons.star_outline_rounded,
                           iconColor: AppColors.warningAmber,
                           title: 'Rate Jomnes',
-                          onTap: () {},
+                          onTap: () => SettingsDialogs.showRateJomnes(context),
                         ),
                         _SettingsTile(
                           icon: Icons.info_outline_rounded,
                           iconColor: AppColors.textSecondary,
                           title: 'About',
                           subtitle: 'Version 1.0.0',
-                          onTap: () {},
+                          onTap: () => SettingsDialogs.showAboutJomnes(context),
                           isLast: true,
                         ),
                       ]),
@@ -408,7 +510,9 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: const TeacherBottomNavBar(currentTab: TeacherNavTab.settings),
+      bottomNavigationBar: const SafeArea(
+        child: TeacherBottomNavBar(currentTab: TeacherNavTab.settings),
+      ),
     );
   }
 
