@@ -1,4 +1,5 @@
-import { registerUser, loginUser, forgotPassword, checkUserExists, resetPassword } from "../services/auth.service.js";
+import { registerUser, loginUser, getAccountRole, forgotPassword, checkUserExists, resetPassword } from "../services/auth.service.js";
+import { roleMismatchNotice } from "../services/role.service.js";
 import { supabase, supabaseAdmin } from "../config/supabase.js";
 
 export async function register(req, res) {
@@ -64,7 +65,7 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -86,9 +87,14 @@ export async function login(req, res) {
       password,
     });
 
+    // The app shows this message after login, so a teacher who used the
+    // student screen (or the reverse) is told why the other view opened.
+    const accountRole = await getAccountRole(result.user.id);
+    const notice = roleMismatchNotice(role, accountRole);
+
     return res.status(200).json({
       success: true,
-      message: "Login Successful",
+      message: notice ?? "Login Successful",
       user: result.user,
       session: result.session,
     });
