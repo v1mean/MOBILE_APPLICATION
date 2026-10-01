@@ -1,23 +1,32 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../config/app_config.dart';
 import 'supabase_service.dart';
 
 class ApiService {
   static String get baseUrl {
-    const envUrl = String.fromEnvironment('API_BASE_URL');
-    if (envUrl.isNotEmpty) return envUrl;
+    if (AppConfig.apiBaseUrl.isNotEmpty) return AppConfig.apiBaseUrl;
 
-    if (kIsWeb) {
-      return 'http://localhost:5005/api';
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      return AppConfig.devApiEmulator;
     }
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:5005/api';
-    }
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return 'http://localhost:5005/api';
-    }
-    return 'http://localhost:5005/api';
+    return AppConfig.devApiLocalhost;
+  }
+
+  /// A second address to try when the first fails, for development only: an
+  /// Android emulator and a real phone reach a locally running backend at
+  /// different addresses.
+  ///
+  /// Null once the build targets a deployed backend, so a request (and the
+  /// password or token inside it) is never retried against a local address.
+  static String? get _devFallbackBase {
+    if (AppConfig.apiBaseUrl.isNotEmpty) return null;
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return null;
+
+    return baseUrl == AppConfig.devApiEmulator
+        ? AppConfig.devApiLocalhost
+        : AppConfig.devApiEmulator;
   }
 
   static Future<http.Response> _postWithFallback(
@@ -37,10 +46,8 @@ class ApiService {
           )
           .timeout(timeout);
     } catch (e) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackBase = baseUrl.contains('10.0.2.2')
-            ? 'http://localhost:5005/api'
-            : 'http://10.0.2.2:5005/api';
+      final fallbackBase = _devFallbackBase;
+      if (fallbackBase != null) {
         try {
           return await http
               .post(
@@ -65,10 +72,8 @@ class ApiService {
           .get(Uri.parse('$baseUrl$endpoint'), headers: headers)
           .timeout(timeout);
     } catch (e) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackBase = baseUrl.contains('10.0.2.2')
-            ? 'http://localhost:5005/api'
-            : 'http://10.0.2.2:5005/api';
+      final fallbackBase = _devFallbackBase;
+      if (fallbackBase != null) {
         try {
           return await http
               .get(Uri.parse('$fallbackBase$endpoint'), headers: headers)
@@ -96,10 +101,8 @@ class ApiService {
           )
           .timeout(timeout);
     } catch (e) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackBase = baseUrl.contains('10.0.2.2')
-            ? 'http://localhost:5005/api'
-            : 'http://10.0.2.2:5005/api';
+      final fallbackBase = _devFallbackBase;
+      if (fallbackBase != null) {
         try {
           return await http
               .patch(
@@ -213,10 +216,8 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) {
       // Android fallback
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackBase = baseUrl.contains('10.0.2.2')
-            ? 'http://localhost:5005/api'
-            : 'http://10.0.2.2:5005/api';
+      final fallbackBase = _devFallbackBase;
+      if (fallbackBase != null) {
         final fallbackUri = Uri.parse(
           '$fallbackBase/users/mentors/search',
         ).replace(queryParameters: params.isNotEmpty ? params : null);
@@ -270,10 +271,8 @@ class ApiService {
       final response = await http.get(uri).timeout(const Duration(seconds: 10));
       return jsonDecode(response.body);
     } catch (e) {
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackBase = baseUrl.contains('10.0.2.2')
-            ? 'http://localhost:5005/api'
-            : 'http://10.0.2.2:5005/api';
+      final fallbackBase = _devFallbackBase;
+      if (fallbackBase != null) {
         final fallbackUri = Uri.parse(
           '$fallbackBase/users/mentors',
         ).replace(queryParameters: params.isNotEmpty ? params : null);
@@ -451,10 +450,9 @@ class ApiService {
       return jsonDecode(response.body);
     } catch (e) {
       // Android fallback
-      if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-        final fallbackUri = Uri.parse(
-          'http://10.0.2.2:5005/api/users/upload-avatar',
-        );
+      final fallbackBase = _devFallbackBase;
+      if (fallbackBase != null) {
+        final fallbackUri = Uri.parse('$fallbackBase/users/upload-avatar');
         final fallbackRequest = http.MultipartRequest('POST', fallbackUri)
           ..headers['Authorization'] = 'Bearer $accessToken'
           ..files.add(await http.MultipartFile.fromPath('avatar', filePath));

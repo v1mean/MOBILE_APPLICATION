@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_application/services/notification_service.dart';
 import 'package:provider/provider.dart';
 import 'app_providers.dart';
+import 'config/app_config.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -18,7 +19,7 @@ Future<void> main() async {
   final studentNotifications = StudentNotificationRepository();
   await studentNotifications.init();
 
-  Stripe.publishableKey = 'pk_test_51UJ6f2B0wqWK1qEi3bVUPVjkVgMHvDSNYX5uPE5upF8jspWGXdpWMrxK5HTuoUkgrlqT1p2YlBzm1U2qUxD6dCnV003xsA7fWa';
+  Stripe.publishableKey = AppConfig.stripePublishableKey;
 
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -28,13 +29,13 @@ Future<void> main() async {
   ));
 
   await Supabase.initialize(
-    url: 'https://lfmllyuecleqnympfnqm.supabase.co',
-    publishableKey: 'sb_publishable_90gMuHhur1aCcOiYH0Qr_g_B6d_tqrz',
+    url: AppConfig.supabaseUrl,
+    publishableKey: AppConfig.supabasePublishableKey,
   );
 
   if (kIsWeb) {
     await FacebookAuth.i.webAndDesktopInitialize(
-      appId: '2172302643350758',
+      appId: AppConfig.facebookAppId,
       cookie: true,
       xfbml: true,
       version: 'v18.0',
