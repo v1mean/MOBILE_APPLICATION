@@ -1,4 +1,5 @@
 import '../constants/mock_data.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -14,7 +15,15 @@ import '../theme/app_colors.dart';
 
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;
-  const MentorProfileScreen({super.key, required this.mentorId});
+
+  /// Set when the browser returns from Stripe Checkout (web payments only).
+  final String? checkoutSessionId;
+
+  const MentorProfileScreen({
+    super.key,
+    required this.mentorId,
+    this.checkoutSessionId,
+  });
 
   @override
   State<MentorProfileScreen> createState() => _MentorProfileScreenState();
@@ -37,8 +46,18 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
-    _fetchMentor();
+    _fetchMentor().then((_) => _resumeAfterWebCheckout());
     _fetchReviews();
+  }
+
+  Future<void> _resumeAfterWebCheckout() async {
+    final sessionId = widget.checkoutSessionId;
+    if (sessionId == null || _mentor == null) return;
+
+    final usable = await PaymentService.isCheckoutSessionUsable(sessionId);
+    if (mounted && usable) {
+      _showBookingSheet();
+    }
   }
 
   Future<void> _fetchReviews() async {
@@ -183,8 +202,21 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     }
 
     try {
+      if (kIsWeb) {
+        // Leaves the page for Stripe Checkout; the booking sheet opens when
+        // the browser comes back with a paid session.
+        final started = await PaymentService.startWebCheckout(_mentor!.id);
+        if (!started && mounted) {
+          setState(() => _isBooking = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error initializing payment.')),
+          );
+        }
+        return;
+      }
+
       final paymentSuccess = await PaymentService.initPaymentSheet(_mentor!.id);
-      
+
       if (!paymentSuccess) {
          if (mounted) {
            setState(() => _isBooking = false);
@@ -236,15 +268,19 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         timeSlot: time,
         hourlyRate: _mentor!.bookingPrice,
         totalPrice: _mentor!.bookingPrice,
+        checkoutSessionId: widget.checkoutSessionId,
       );
 
       if (mounted) {
         setState(() => _isBooking = false);
         if (res['success'] == true) {
-          await NotificationService.showInstantNotification(
-            title: 'Booking Confirmed! 🎉',
-            body: 'Request sent to ${_mentor!.name}!',
-          );
+          // Device notifications and the calendar plugin are mobile-only.
+          if (!kIsWeb) {
+            await NotificationService.showInstantNotification(
+              title: 'Booking Confirmed! 🎉',
+              body: 'Request sent to ${_mentor!.name}!',
+            );
+          }
           await StudentNotificationService.addNotification(
             title: 'Booking Confirmed! 🎉',
             body: 'Your class with ${_mentor!.name} on ${date.toIso8601String().split('T')[0]} at $time has been scheduled.',
@@ -252,13 +288,15 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
             route: '/courses',
           );
 
-          final event = Event(
-            title: 'Lesson with ${_mentor!.name}',
-            description: 'Jomnes App - Study Session',
-            startDate: startTime,
-            endDate: endTime,
-          );
-          await Add2Calendar.addEvent2Cal(event);
+          if (!kIsWeb) {
+            final event = Event(
+              title: 'Lesson with ${_mentor!.name}',
+              description: 'Jomnes App - Study Session',
+              startDate: startTime,
+              endDate: endTime,
+            );
+            await Add2Calendar.addEvent2Cal(event);
+          }
 
           context.go('/courses');
         } else {

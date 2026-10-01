@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/api_service.dart';
 import '../main.dart'; // For session
 
@@ -38,6 +39,55 @@ class PaymentService {
       } else {
         debugPrint('Unforeseen error: $e');
       }
+      return false;
+    }
+  }
+
+  /// Web only: the payment sheet doesn't exist in browsers, so send the user
+  /// to a Stripe-hosted checkout page. The page reloads the app on return.
+  static Future<bool> startWebCheckout(String tutorId) async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) throw Exception('User not logged in');
+
+      final response = await http.post(
+        Uri.parse('${ApiService.baseUrl}/payments/create-checkout-session'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${session.accessToken}',
+        },
+        body: jsonEncode({'tutor_id': tutorId, 'origin': Uri.base.origin}),
+      );
+
+      final body = jsonDecode(response.body);
+      if (response.statusCode != 200 || body['success'] != true) {
+        throw Exception(body['message'] ?? 'Failed to start checkout');
+      }
+
+      return launchUrl(
+        Uri.parse(body['url'] as String),
+        webOnlyWindowName: '_self',
+      );
+    } catch (e) {
+      debugPrint('Web checkout error: $e');
+      return false;
+    }
+  }
+
+  /// True when the checkout session is paid and not yet used for a booking.
+  static Future<bool> isCheckoutSessionUsable(String sessionId) async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return false;
+
+      final response = await http.get(
+        Uri.parse('${ApiService.baseUrl}/payments/checkout-session/$sessionId'),
+        headers: {'Authorization': 'Bearer ${session.accessToken}'},
+      );
+      final body = jsonDecode(response.body);
+      return body['success'] == true && body['usable'] == true;
+    } catch (e) {
+      debugPrint('Checkout session check error: $e');
       return false;
     }
   }

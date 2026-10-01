@@ -111,6 +111,8 @@ set isGuestMode(bool value) => guestModeNotifier.setGuest(value);
 
 final _authRefresh = GoRouterRefreshStream(JomnesDB.auth.onAuthStateChange);
 
+bool _checkoutReturnHandled = false;
+
 final GoRouter router = GoRouter(
   initialLocation: '/',
   refreshListenable: Listenable.merge([_authRefresh, guestModeNotifier]),
@@ -118,6 +120,18 @@ final GoRouter router = GoRouter(
     final session = JomnesDB.auth.currentSession;
     final isGuest = isGuestMode;
     final loggedIn = session != null || isGuest;
+
+    // Returning from Stripe Checkout reloads the web app with the paid session
+    // in the page URL; send the student back to that mentor to pick a slot.
+    if (kIsWeb && !_checkoutReturnHandled && session != null) {
+      final params = Uri.base.queryParameters;
+      final checkoutSessionId = params['checkout_session_id'];
+      final tutorId = params['tutor_id'];
+      if (checkoutSessionId != null && tutorId != null) {
+        _checkoutReturnHandled = true;
+        return '/mentor/$tutorId?checkout_session_id=$checkoutSessionId';
+      }
+    }
     final isGoingToLogin = state.matchedLocation == '/login';
     final isGoingToRegister = state.matchedLocation == '/register';
     final isGoingToSplash = state.matchedLocation == '/';
@@ -221,7 +235,13 @@ final GoRouter router = GoRouter(
       path: '/mentor/:id',
       pageBuilder: (c, s) {
         final id = s.pathParameters['id']!;
-        return _instant(s, MentorProfileScreen(mentorId: id));
+        return _instant(
+          s,
+          MentorProfileScreen(
+            mentorId: id,
+            checkoutSessionId: s.uri.queryParameters['checkout_session_id'],
+          ),
+        );
       },
     ),
     GoRoute(

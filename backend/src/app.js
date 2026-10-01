@@ -11,6 +11,7 @@ import reviewRoutes from "./routes/review.routes.js";
 import courseRoutes from "./routes/course.routes.js";
 import paymentRoutes from "./routes/payment.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
+import { getAllowedOrigins } from "./config/origins.js";
 
 const app = express();
 
@@ -18,12 +19,7 @@ app.use(helmet());
 
 // Native mobile clients (Android/iOS) don't send an Origin header, so this
 // allowlist only restricts browser-based clients (Flutter web / local dev).
-const allowedOrigins = (
-  process.env.CORS_ORIGINS || "http://localhost:5173,http://localhost:8080"
-)
-  .split(",")
-  .map((origin) => origin.trim())
-  .filter(Boolean);
+const allowedOrigins = getAllowedOrigins();
 
 app.use(
   cors({
