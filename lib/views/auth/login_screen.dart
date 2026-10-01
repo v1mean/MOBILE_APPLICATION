@@ -9,10 +9,8 @@ import '../../widgets/primary_auth_button.dart';
 import '../../widgets/social_auth_row.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_colors.dart';
-import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
-import '../../main.dart';
-import '../../router.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/auth/login_view_model.dart';
 
 class LoginScreen extends StatefulWidget {
   final bool passwordResetSuccess;
@@ -26,11 +24,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
 
   bool _rememberMe = false;
   bool _obscurePassword = true;
-  bool _isLoading = false;
 
   @override
   void initState() {
@@ -64,117 +60,46 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    final result = await context.read<LoginViewModel>().login(
+      email: email,
+      password: password,
+      role: widget.role,
+    );
+    if (!mounted) return;
 
-    try {
-      final response = await ApiService.loginUser(email, password, widget.role);
-
-      if (response['success'] == true) {
-        try {
-          final session = response['session'];
-          if (session != null && session['refresh_token'] != null) {
-            await JomnesDB.auth.setSession(
-              session['refresh_token'],
-              accessToken: session['access_token'],
-            );
-          } else if (response['token'] != null) {
-            try {
-              await JomnesDB.auth.setSession(response['token']);
-            } catch (e) {
-              // Ignore if not a valid refresh token
-            }
-          }
-        } catch (e) {
-          // Ignore session sync errors if the backend doesn't provide valid tokens
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Login Successful')),
-          );
-          final session = JomnesDB.auth.currentSession;
-          String finalRole = widget.role;
-          if (session != null) {
-             try {
-                final data = await JomnesDB.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
-                if (data != null && data['role'] != null) {
-                  finalRole = data['role'];
-                }
-             } catch (_) {}
-          }
-          if (!mounted) return;
-          if (finalRole == 'teacher' || finalRole == 'mentor') {
-             context.go('/teacher-home');
-          } else {
-             context.go('/home');
-          }
-        }
-      } else {
-        if (mounted) {
-          String errorMessage = response['message'] ?? 'Login failed';
-          if (errorMessage == 'Email not confirmed') {
-            errorMessage =
-                'Please confirm your email address before logging in.';
-          }
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(errorMessage)));
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error connecting to server: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message ?? '')),
+    );
+    if (result.success) {
+      context.go(result.isTeacher ? '/teacher-home' : '/home');
     }
   }
 
+  // After a social sign-in starts there is nothing to navigate to yet: the
+  // router's auth listener sends the user on once the session arrives.
   Future<void> _handleGoogleLogin() async {
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signInWithGoogle(widget.role);
-     
-      // Dynamic routing will be handled by router.dart based on DB role
-    } catch (e) {
-      debugPrint('Google Login error: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Google Login failed: $e'),
-            duration: const Duration(seconds: 6),
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final error = await context.read<LoginViewModel>().signInWithGoogle(
+      widget.role,
+    );
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error), duration: const Duration(seconds: 6)),
+      );
     }
   }
 
   Future<void> _handleFacebookLogin() async {
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signInWithFacebook(widget.role);
-      // Do NOT navigate here: signInWithOAuth only launches the browser and
-      // returns immediately, long before the user has logged in. Navigating
-      // now would hit the router's auth guard (no session yet) and bounce
-      // straight back to /login. The onAuthStateChange listener in router.dart
-      // handles the redirect to /home once the session actually lands.
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Facebook Login failed: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final error = await context.read<LoginViewModel>().signInWithFacebook(
+      widget.role,
+    );
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = context.watch<LoginViewModel>().isBusy;
     final h = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -277,7 +202,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ],
                         ).animate(delay: 300.ms).fadeIn(),
                         const SizedBox(height: 28),
-                        PrimaryAuthButton(label: 'Log In', isLoading: _isLoading, onPressed: _handleLogin).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
+                        PrimaryAuthButton(label: 'Log In', isLoading: isBusy, onPressed: _handleLogin).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 16),
                         GestureDetector(
                           onTap: () => context.push('/register'),
@@ -293,7 +218,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
                         GestureDetector(
                           onTap: () {
-                            isGuestMode = true;
+                            context.read<LoginViewModel>().continueAsGuest();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(

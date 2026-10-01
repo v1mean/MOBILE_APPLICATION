@@ -5,8 +5,18 @@ import 'package:flutter/foundation.dart';
 /// touches widgets.
 abstract class BaseViewModel extends ChangeNotifier {
   bool _disposed = false;
+  bool _isBusy = false;
 
   bool get isDisposed => _disposed;
+
+  /// True while an action the user started (log in, save, upload) is running.
+  bool get isBusy => _isBusy;
+
+  @protected
+  void setBusy(bool value) {
+    _isBusy = value;
+    notifyListeners();
+  }
 
   @override
   void dispose() {

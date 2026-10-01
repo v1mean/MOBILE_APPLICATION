@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/galaxy_background.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/auth/forgot_password_view_model.dart';
 import '../../theme/app_text_styles.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
@@ -17,7 +18,6 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -34,31 +34,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    final result = await context.read<ForgotPasswordViewModel>().requestReset(
+      email,
+    );
+    if (!mounted) return;
 
-    try {
-      final response = await ApiService.requestPasswordReset(email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(response['message'] ?? 'Check your email for reset instructions')),
-        );
-        if (response['success'] == true) {
-          context.pop();
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(result.message ?? '')),
+    );
+    if (result.success) {
+      context.pop();
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = context.watch<ForgotPasswordViewModel>().isBusy;
     final h = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -101,14 +92,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleReset,
+                          onPressed: isBusy ? null : _handleReset,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.white, foregroundColor: AppColors.darkBg,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             elevation: 0,
                           ),
-                          child: _isLoading 
+                          child: isBusy
                               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                               : Text('Send Reset Link', style: AppTextStyles.primaryButton),
                         ),

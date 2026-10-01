@@ -8,7 +8,13 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'package:provider/provider.dart';
+import 'repositories/auth_repository.dart';
 import 'services/guest_mode.dart';
+import 'viewmodels/auth/forgot_password_view_model.dart';
+import 'viewmodels/auth/login_view_model.dart';
+import 'viewmodels/auth/register_view_model.dart';
+import 'viewmodels/auth/reset_password_view_model.dart';
 export 'services/guest_mode.dart';
 import 'views/auth/splash_screen.dart';
 import 'views/auth/login_screen.dart';
@@ -179,17 +185,40 @@ final GoRouter router = GoRouter(
       pageBuilder: (c, s) {
         final resetSuccess = s.uri.queryParameters['reset'] == 'success';
         final role = s.uri.queryParameters['role'] ?? 'student';
-        return _instant(s, LoginScreen(passwordResetSuccess: resetSuccess, role: role));
+        return _instant(
+          s,
+          _screen(
+            (c) => LoginViewModel(authRepository: c.read<AuthRepository>()),
+            LoginScreen(passwordResetSuccess: resetSuccess, role: role),
+          ),
+        );
       },
     ),
     GoRoute(
       path: '/register', 
       pageBuilder: (c, s) {
         final role = s.uri.queryParameters['role'] ?? 'student';
-        return _instant(s, RegisterScreen(role: role));
+        return _instant(
+          s,
+          _screen(
+            (c) => RegisterViewModel(authRepository: c.read<AuthRepository>()),
+            RegisterScreen(role: role),
+          ),
+        );
       }
     ),
-    GoRoute(path: '/forgot-password', pageBuilder: (c, s) => _instant(s, const ForgotPasswordScreen())),
+    GoRoute(
+      path: '/forgot-password',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => ForgotPasswordViewModel(
+            authRepository: c.read<AuthRepository>(),
+          ),
+          const ForgotPasswordScreen(),
+        ),
+      ),
+    ),
     GoRoute(
       path: '/reset-password',
       pageBuilder: (c, s) {
@@ -201,7 +230,15 @@ final GoRouter router = GoRouter(
           token = uri.queryParameters['access_token'] ?? '';
         }
         
-        return _instant(s, ResetPasswordScreen(accessToken: token));
+        return _instant(
+          s,
+          _screen(
+            (c) => ResetPasswordViewModel(
+              authRepository: c.read<AuthRepository>(),
+            ),
+            ResetPasswordScreen(accessToken: token),
+          ),
+        );
       },
     ),
     GoRoute(path: '/home', pageBuilder: (c, s) => _instant(s, const HomeScreen())),
@@ -245,6 +282,16 @@ final GoRouter router = GoRouter(
     ),
   ],
 );
+
+/// Pairs a screen with the view model it listens to. The router is the one
+/// place that knows which repositories each view model needs; the view model
+/// lives as long as its page does.
+Widget _screen<T extends ChangeNotifier>(
+  T Function(BuildContext context) create,
+  Widget view,
+) {
+  return ChangeNotifierProvider<T>(create: create, child: view);
+}
 
 NoTransitionPage<void> _instant(GoRouterState state, Widget child) {
   return NoTransitionPage<void>(

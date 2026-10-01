@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../widgets/galaxy_background.dart';
 import '../../widgets/auth_widgets.dart';
 import '../../theme/app_colors.dart';
-import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/auth/reset_password_view_model.dart';
 import '../../theme/app_text_styles.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
@@ -20,7 +21,6 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _confirmController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -47,32 +47,24 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    final result = await context.read<ResetPasswordViewModel>().updatePassword(
+      password: password,
+      accessToken: widget.accessToken,
+    );
+    if (!mounted) return;
 
-    try {
-      final response = await ApiService.updatePassword(password, widget.accessToken);
-      if (mounted) {
-        if (response['success'] == true) {
-          context.go('/login?reset=success');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Password update failed')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (result.success) {
+      context.go('/login?reset=success');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message ?? '')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = context.watch<ResetPasswordViewModel>().isBusy;
     final h = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -130,14 +122,14 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isLoading ? null : _handleUpdate,
+                          onPressed: isBusy ? null : _handleUpdate,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.white, foregroundColor: AppColors.darkBg,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(50)),
                             elevation: 0,
                           ),
-                          child: _isLoading 
+                          child: isBusy
                               ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
                               : Text('Save New Password', style: AppTextStyles.primaryButton),
                         ),

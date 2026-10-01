@@ -8,10 +8,8 @@ import '../../widgets/primary_auth_button.dart';
 import '../../widgets/social_auth_row.dart';
 import '../../theme/app_text_styles.dart';
 import '../../theme/app_colors.dart';
-import '../../services/api_service.dart';
-import '../../services/auth_service.dart';
-import '../../router.dart';
-import '../../main.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/auth/register_view_model.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String role;
@@ -26,11 +24,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
 
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
-  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -61,91 +57,54 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
+    final result = await context.read<RegisterViewModel>().register(
+      fullName: fullName,
+      email: email,
+      password: password,
+      role: widget.role,
+    );
+    if (!mounted) return;
 
-    try {
-      final response = await ApiService.registerUser(email, password, fullName, widget.role);
-      
-      if (response['success'] == true) {
-        if (mounted) {
-          if (response['session'] != null) {
-            final session = JomnesDB.auth.currentSession;
-            String finalRole = widget.role;
-            if (session != null) {
-               try {
-                  final data = await JomnesDB.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
-                  if (data != null && data['role'] != null) {
-                    finalRole = data['role'];
-                  }
-               } catch (_) {}
-            }
-            if (!mounted) return;
-            if (finalRole == 'teacher' || finalRole == 'mentor') {
-               context.go('/teacher-home');
-            } else {
-               context.go('/home');
-            }
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Registration successful! Please check your email to verify your account before logging in.')),
-            );
-            context.go('/login');
-          }
-        }
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(response['message'] ?? 'Registration failed')),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error connecting to server: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    if (!result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message ?? '')),
+      );
+      return;
+    }
+
+    if (result.hasSession) {
+      context.go(result.isTeacher ? '/teacher-home' : '/home');
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message ?? '')),
+      );
+      context.go('/login');
     }
   }
 
+  // After a social sign-in starts there is nothing to navigate to yet: the
+  // router's auth listener sends the user on once the session arrives.
   Future<void> _handleGoogleLogin() async {
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signInWithGoogle(widget.role);
-      // Dynamic routing handled in router.dart
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Google Login failed: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final error = await context.read<RegisterViewModel>().signInWithGoogle(
+      widget.role,
+    );
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
   Future<void> _handleFacebookLogin() async {
-    setState(() => _isLoading = true);
-    try {
-      await _authService.signInWithFacebook(widget.role);
-      // No navigation here — signInWithOAuth returns as soon as the browser is
-      // launched, before login completes. router.dart's onAuthStateChange
-      // listener sends us to /home once the session actually arrives.
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Facebook Login failed: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final error = await context.read<RegisterViewModel>().signInWithFacebook(
+      widget.role,
+    );
+    if (error != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = context.watch<RegisterViewModel>().isBusy;
     final h = MediaQuery.of(context).size.height;
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -210,7 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ).animate(delay: 300.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 28),
-                        PrimaryAuthButton(label: 'Register Account', isLoading: _isLoading, onPressed: _handleRegister).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
+                        PrimaryAuthButton(label: 'Register Account', isLoading: isBusy, onPressed: _handleRegister).animate(delay: 350.ms).fadeIn().slideY(begin: 0.2),
                         const SizedBox(height: 16),
                         GestureDetector(
                           onTap: () => context.pop(),
@@ -221,7 +180,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         const SizedBox(height: 24),
                         GestureDetector(
                           onTap: () {
-                            isGuestMode = true;
+                            context.read<RegisterViewModel>().continueAsGuest();
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
