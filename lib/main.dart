@@ -12,9 +12,6 @@ import 'theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
-// Handy shortcut you'll use everywhere in the app
-final JomnesDB = Supabase.instance.client;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.initialize();

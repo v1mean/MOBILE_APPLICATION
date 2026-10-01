@@ -1,8 +1,7 @@
 import 'dart:convert';
-import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import '../main.dart';
+import 'supabase_service.dart';
 
 class ApiService {
   static String get baseUrl {
@@ -479,7 +478,7 @@ class ApiService {
     String? videoPath,
   }) async {
     try {
-      final token = JomnesDB.auth.currentSession?.accessToken;
+      final token = supabaseClient.auth.currentSession?.accessToken;
       if (token == null) return false;
 
       final uri = Uri.parse('$baseUrl/courses/upload');

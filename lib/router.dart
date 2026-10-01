@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'main.dart';
 import 'package:provider/provider.dart';
 import 'repositories/auth_repository.dart';
 import 'repositories/booking_repository.dart';
@@ -36,7 +35,6 @@ import 'viewmodels/teacher/teacher_pc_request_view_model.dart';
 import 'viewmodels/teacher/teacher_schedules_view_model.dart';
 import 'viewmodels/teacher/teacher_students_view_model.dart';
 import 'viewmodels/teacher/teacher_upload_course_view_model.dart';
-export 'services/guest_mode.dart';
 import 'views/auth/splash_screen.dart';
 import 'views/auth/login_screen.dart';
 import 'views/auth/register_screen.dart';
@@ -62,10 +60,13 @@ import 'views/teacher/teacher_pc_request_screen.dart';
 import 'views/teacher/teacher_schedules_screen.dart';
 import 'views/teacher/teacher_upload_course_screen.dart';
 import 'views/settings/teacher_settings_screen.dart';
-import 'services/api_service.dart';
+
+// The router is created before the widget tree exists, so it keeps its own
+// AuthRepository; the repository holds no state of its own.
+final _auth = AuthRepository();
 
 void setupDeepLinkListener() {
-  Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+  _auth.authStateChanges.listen((data) {
     final AuthChangeEvent event = data.event;
     final Session? session = data.session;
 
@@ -79,16 +80,10 @@ void setupDeepLinkListener() {
       // Fetch role from SharedPreferences
       SharedPreferences.getInstance().then((prefs) async {
         final role = prefs.getString('pending_role') ?? 'student';
-        await ApiService.syncSocialUser(session.accessToken, role);
+        await _auth.syncSocialUser(session.accessToken, role);
         await prefs.remove('pending_role');
 
-        String finalRole = role;
-        try {
-          final data = await JomnesDB.from('profiles').select('role').eq('id', session.user.id).maybeSingle();
-          if (data != null && data['role'] != null) {
-            finalRole = data['role'];
-          }
-        } catch (_) {}
+        final finalRole = await _auth.resolveRole(fallback: role);
 
         if (finalRole == 'mentor' || finalRole == 'teacher') {
           router.go('/teacher-home');
@@ -119,7 +114,7 @@ class GoRouterRefreshStream extends ChangeNotifier {
   }
 }
 
-final _authRefresh = GoRouterRefreshStream(JomnesDB.auth.onAuthStateChange);
+final _authRefresh = GoRouterRefreshStream(_auth.authStateChanges);
 
 bool _checkoutReturnHandled = false;
 
@@ -127,7 +122,7 @@ final GoRouter router = GoRouter(
   initialLocation: '/',
   refreshListenable: Listenable.merge([_authRefresh, guestModeNotifier]),
   redirect: (context, state) {
-    final session = JomnesDB.auth.currentSession;
+    final session = _auth.currentSession;
     final isGuest = isGuestMode;
     final loggedIn = session != null || isGuest;
 
