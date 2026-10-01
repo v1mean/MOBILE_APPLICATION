@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../main.dart';
-import '../models/user_profile.dart';
-import '../widgets/bottom_nav_bar.dart';
-import '../theme/app_colors.dart';
-import '../widgets/user_avatar_header.dart';
-import '../services/auth_service.dart';
+import '../../main.dart';
+import '../../models/user_profile.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});

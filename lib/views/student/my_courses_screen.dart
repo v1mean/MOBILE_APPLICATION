@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../widgets/user_avatar_header.dart';
-import '../widgets/notification_bell.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../widgets/notification_bell.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../models/user_profile.dart';
-import '../models/mentor.dart';
-import '../widgets/bottom_nav_bar.dart';
-import '../widgets/course_card.dart';
-import '../theme/app_colors.dart';
-import '../main.dart';
-import '../services/api_service.dart';
+import '../../models/user_profile.dart';
+import '../../models/mentor.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/course_card.dart';
+import '../../theme/app_colors.dart';
+import '../../main.dart';
+import '../../services/api_service.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});

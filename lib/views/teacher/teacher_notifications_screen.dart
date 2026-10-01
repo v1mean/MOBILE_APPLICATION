@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../models/app_notification.dart';
-import '../services/teacher_notification_service.dart';
-import '../theme/app_colors.dart';
+import '../../models/app_notification.dart';
+import '../../services/teacher_notification_service.dart';
+import '../../theme/app_colors.dart';
 
 class TeacherNotificationsScreen extends StatefulWidget {
   const TeacherNotificationsScreen({super.key});

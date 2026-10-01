@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
-import '../models/mentor.dart';
-import '../widgets/mentor_card.dart';
-import '../widgets/rich_course_card.dart';
-import '../constants/course_categories.dart';
-import '../constants/mock_data.dart';
-import '../main.dart';
+import '../../theme/app_colors.dart';
+import '../../models/mentor.dart';
+import '../../widgets/mentor_card.dart';
+import '../../widgets/rich_course_card.dart';
+import '../../constants/course_categories.dart';
+import '../../constants/mock_data.dart';
+import '../../main.dart';
 
 class CourseListingScreen extends StatefulWidget {
   final String subject;

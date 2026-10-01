@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:audioplayers/audioplayers.dart';
-import '../widgets/user_avatar_header.dart';
-import '../widgets/teacher_bottom_nav_bar.dart';
-import '../main.dart';
-import '../theme/app_colors.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../widgets/teacher_bottom_nav_bar.dart';
+import '../../main.dart';
+import '../../theme/app_colors.dart';
 
 class TeacherSchedulesScreen extends StatefulWidget {
   const TeacherSchedulesScreen({super.key});

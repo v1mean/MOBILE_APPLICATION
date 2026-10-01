@@ -2,15 +2,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../models/mentor.dart';
-import '../models/user_profile.dart';
-import '../services/mentor_directory_service.dart';
-import '../widgets/bottom_nav_bar.dart';
-import '../widgets/mentor_card.dart';
-import '../widgets/notification_bell.dart';
-import '../theme/app_colors.dart';
-import '../constants/course_categories.dart';
-import '../main.dart';
+import '../../models/mentor.dart';
+import '../../models/user_profile.dart';
+import '../../services/mentor_directory_service.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/mentor_card.dart';
+import '../../widgets/notification_bell.dart';
+import '../../theme/app_colors.dart';
+import '../../constants/course_categories.dart';
+import '../../main.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});

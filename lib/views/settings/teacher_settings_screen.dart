@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
-import '../widgets/teacher_bottom_nav_bar.dart';
-import '../widgets/user_avatar_header.dart';
-import '../main.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/teacher_bottom_nav_bar.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../main.dart';
 
 class TeacherSettingsScreen extends StatefulWidget {
   const TeacherSettingsScreen({super.key});

@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import '../widgets/user_avatar_header.dart';
+import '../../widgets/user_avatar_header.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/teacher_bottom_nav_bar.dart';
-import '../services/teacher_course_service.dart';
-import '../services/teacher_notification_service.dart';
-import '../widgets/notification_bell.dart';
-import '../main.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
+import '../../widgets/teacher_bottom_nav_bar.dart';
+import '../../services/teacher_course_service.dart';
+import '../../services/teacher_notification_service.dart';
+import '../../widgets/notification_bell.dart';
+import '../../main.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 class _ScheduleItem {
   final String name;

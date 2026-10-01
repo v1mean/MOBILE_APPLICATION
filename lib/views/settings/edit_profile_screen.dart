@@ -3,12 +3,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../main.dart';
-import '../models/user_profile.dart';
-import '../services/api_service.dart';
-import '../services/permission_service.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
+import '../../main.dart';
+import '../../models/user_profile.dart';
+import '../../services/api_service.dart';
+import '../../services/permission_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/teacher_bottom_nav_bar.dart';
-import '../main.dart';
-import '../theme/app_colors.dart';
-import '../services/api_service.dart';
+import '../../widgets/teacher_bottom_nav_bar.dart';
+import '../../main.dart';
+import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
 
 class _StudentItem {
   final String name;

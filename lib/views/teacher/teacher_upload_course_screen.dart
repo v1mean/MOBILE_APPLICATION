@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../main.dart';
-import '../constants/course_categories.dart';
-import '../services/api_service.dart';
-import '../widgets/user_avatar_header.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
+import '../../main.dart';
+import '../../constants/course_categories.dart';
+import '../../services/api_service.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
 
 class TeacherUploadCourseScreen extends StatefulWidget {
   const TeacherUploadCourseScreen({super.key});

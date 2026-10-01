@@ -1,17 +1,17 @@
-import '../constants/mock_data.dart';
+import '../../constants/mock_data.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
-import '../models/mentor.dart';
-import '../widgets/course_card.dart';
-import '../main.dart';
-import '../services/api_service.dart';
-import '../services/notification_service.dart';
-import '../services/student_notification_service.dart';
-import '../services/payment_service.dart';
-import '../theme/app_colors.dart';
+import '../../models/mentor.dart';
+import '../../widgets/course_card.dart';
+import '../../main.dart';
+import '../../services/api_service.dart';
+import '../../services/notification_service.dart';
+import '../../services/student_notification_service.dart';
+import '../../services/payment_service.dart';
+import '../../theme/app_colors.dart';
 
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;

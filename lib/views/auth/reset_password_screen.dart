@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/galaxy_background.dart';
-import '../widgets/auth_widgets.dart';
-import '../theme/app_colors.dart';
-import '../services/api_service.dart';
-import '../theme/app_text_styles.dart';
+import '../../widgets/galaxy_background.dart';
+import '../../widgets/auth_widgets.dart';
+import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
+import '../../theme/app_text_styles.dart';
 
 class ResetPasswordScreen extends StatefulWidget {
   final String accessToken;

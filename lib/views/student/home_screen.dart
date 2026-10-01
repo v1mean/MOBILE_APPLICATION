@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../router.dart';
-import '../main.dart';
-import '../models/user_profile.dart';
-import '../models/mentor.dart';
-import '../services/mentor_directory_service.dart';
-import '../widgets/bottom_nav_bar.dart';
-import '../widgets/mentor_card.dart';
-import '../widgets/featured_course_card.dart';
-import '../widgets/user_avatar_header.dart';
-import '../widgets/notification_bell.dart';
-import '../theme/app_colors.dart';
-import '../constants/course_categories.dart';
+import '../../router.dart';
+import '../../main.dart';
+import '../../models/user_profile.dart';
+import '../../models/mentor.dart';
+import '../../services/mentor_directory_service.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/mentor_card.dart';
+import '../../widgets/featured_course_card.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../widgets/notification_bell.dart';
+import '../../theme/app_colors.dart';
+import '../../constants/course_categories.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

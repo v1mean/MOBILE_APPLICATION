@@ -2,9 +2,9 @@
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/app_colors.dart';
-import '../widgets/auth_widgets.dart';
-import '../theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
+import '../../widgets/auth_widgets.dart';
+import '../../theme/app_text_styles.dart';
 
 class _DomeClipper extends CustomClipper<Path> {
   const _DomeClipper();

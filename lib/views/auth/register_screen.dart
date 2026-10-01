@@ -2,16 +2,16 @@
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/galaxy_background.dart';
-import '../widgets/auth_widgets.dart';
-import '../widgets/primary_auth_button.dart';
-import '../widgets/social_auth_row.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_colors.dart';
-import '../services/api_service.dart';
-import '../services/auth_service.dart';
-import '../router.dart';
-import '../main.dart';
+import '../../widgets/galaxy_background.dart';
+import '../../widgets/auth_widgets.dart';
+import '../../widgets/primary_auth_button.dart';
+import '../../widgets/social_auth_row.dart';
+import '../../theme/app_text_styles.dart';
+import '../../theme/app_colors.dart';
+import '../../services/api_service.dart';
+import '../../services/auth_service.dart';
+import '../../router.dart';
+import '../../main.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String role;
