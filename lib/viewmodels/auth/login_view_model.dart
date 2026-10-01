@@ -20,8 +20,12 @@ class LoginViewModel extends BaseViewModel {
 
       if (response['success'] == true) {
         final finalRole = await _auth.resolveRole(fallback: role);
+        final notice = roleMismatchNotice(
+          chosenRole: role,
+          accountRole: finalRole,
+        );
         return AuthResult.success(
-          message: response['message'] ?? 'Login Successful',
+          message: notice ?? response['message'] ?? 'Login Successful',
           role: finalRole,
         );
       }

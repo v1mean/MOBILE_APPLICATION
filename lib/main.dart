@@ -62,6 +62,7 @@ class JomnesApp extends StatelessWidget {
         title: 'Jomnes',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.theme,
+        scaffoldMessengerKey: scaffoldMessengerKey,
         routerConfig: router,
       ),
     );

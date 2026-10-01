@@ -35,6 +35,49 @@ void main() {
     expect(result.isTeacher, isTrue);
   });
 
+  test('a teacher account on the student login is told why', () async {
+    final result = await login(
+      FakeAuthRepository(
+        loginResponse: {'success': true, 'message': 'Login Successful'},
+        storedRole: 'mentor',
+      ),
+      role: 'student',
+    );
+
+    expect(
+      result.message,
+      'This account is registered as a teacher, so the teacher view was opened.',
+    );
+  });
+
+  test('a student account on the teacher login is told why', () async {
+    final result = await login(
+      FakeAuthRepository(
+        loginResponse: {'success': true, 'message': 'Login Successful'},
+        storedRole: 'student',
+      ),
+      role: 'teacher',
+    );
+
+    expect(result.isTeacher, isFalse);
+    expect(
+      result.message,
+      'This account is registered as a student, so the student view was opened.',
+    );
+  });
+
+  test('a teacher on the teacher login gets the normal message', () async {
+    final result = await login(
+      FakeAuthRepository(
+        loginResponse: {'success': true, 'message': 'Login Successful'},
+        storedRole: 'mentor',
+      ),
+      role: 'teacher',
+    );
+
+    expect(result.message, 'Login Successful');
+  });
+
   test('an unconfirmed email gets a clearer message', () async {
     final result = await login(
       FakeAuthRepository(

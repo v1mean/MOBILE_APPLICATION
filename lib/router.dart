@@ -17,6 +17,7 @@ import 'repositories/student_notification_repository.dart';
 import 'repositories/teacher_course_store.dart';
 import 'repositories/user_repository.dart';
 import 'services/guest_mode.dart';
+import 'viewmodels/auth/auth_result.dart';
 import 'viewmodels/auth/forgot_password_view_model.dart';
 import 'viewmodels/auth/login_view_model.dart';
 import 'viewmodels/auth/register_view_model.dart';
@@ -65,6 +66,9 @@ import 'views/settings/teacher_settings_screen.dart';
 // AuthRepository; the repository holds no state of its own.
 final _auth = AuthRepository();
 
+// Lets the auth listener below show a message without a BuildContext.
+final scaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+
 void setupDeepLinkListener() {
   _auth.authStateChanges.listen((data) {
     final AuthChangeEvent event = data.event;
@@ -79,11 +83,26 @@ void setupDeepLinkListener() {
     } else if (event == AuthChangeEvent.signedIn && session != null) {
       // Fetch role from SharedPreferences
       SharedPreferences.getInstance().then((prefs) async {
-        final role = prefs.getString('pending_role') ?? 'student';
+        // Only set when a Google/Facebook sign-in was started.
+        final pendingRole = prefs.getString('pending_role');
+        final role = pendingRole ?? 'student';
         await _auth.syncSocialUser(session.accessToken, role);
         await prefs.remove('pending_role');
 
         final finalRole = await _auth.resolveRole(fallback: role);
+
+        // Email logins show this from the login screen instead.
+        if (pendingRole != null) {
+          final notice = roleMismatchNotice(
+            chosenRole: pendingRole,
+            accountRole: finalRole,
+          );
+          if (notice != null) {
+            scaffoldMessengerKey.currentState?.showSnackBar(
+              SnackBar(content: Text(notice)),
+            );
+          }
+        }
 
         if (finalRole == 'mentor' || finalRole == 'teacher') {
           router.go('/teacher-home');
