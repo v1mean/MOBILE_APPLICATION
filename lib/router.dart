@@ -16,6 +16,7 @@ import 'repositories/payment_repository.dart';
 import 'repositories/student_notification_repository.dart';
 import 'repositories/teacher_course_store.dart';
 import 'repositories/user_repository.dart';
+import 'route_guard.dart';
 import 'services/guest_mode.dart';
 import 'viewmodels/auth/auth_result.dart';
 import 'viewmodels/auth/forgot_password_view_model.dart';
@@ -142,8 +143,6 @@ final GoRouter router = GoRouter(
   refreshListenable: Listenable.merge([_authRefresh, guestModeNotifier]),
   redirect: (context, state) {
     final session = _auth.currentSession;
-    final isGuest = isGuestMode;
-    final loggedIn = session != null || isGuest;
 
     // Returning from Stripe Checkout reloads the web app with the paid session
     // in the page URL; send the student back to that mentor to pick a slot.
@@ -156,51 +155,13 @@ final GoRouter router = GoRouter(
         return '/mentor/$tutorId?checkout_session_id=$checkoutSessionId';
       }
     }
-    final isGoingToLogin = state.matchedLocation == '/login';
-    final isGoingToRegister = state.matchedLocation == '/register';
-    final isGoingToSplash = state.matchedLocation == '/';
-    final isGoingToForgotPassword = state.matchedLocation == '/forgot-password';
-    final isGoingToResetPassword = state.matchedLocation == '/reset-password';
-    final isGoingToRoleSelect = state.matchedLocation == '/role-select';
-    final isGoingToTeacherLogin = state.matchedLocation == '/teacher-login';
-    final isGoingToTeacherRegister = state.matchedLocation == '/teacher-register';
-    final isGoingToTeacherForgotPassword = state.matchedLocation == '/teacher-forgot-password';
-    final isGoingToTeacherHome = state.matchedLocation == '/teacher-home';
-    final isGoingToTeacherStudents = state.matchedLocation == '/teacher-students';
-    final isGoingToTeacherPcRequest = state.matchedLocation == '/teacher-pc-request';
-    final isGoingToTeacherSchedules = state.matchedLocation == '/teacher-schedules';
-    final isGoingToTeacherUpload = state.matchedLocation == '/teacher-upload';
-    final isGoingToTeacherSettings = state.matchedLocation == '/teacher-settings';
-
-    final isAuthPage = isGoingToLogin ||
-        isGoingToRegister ||
-        isGoingToSplash ||
-        isGoingToForgotPassword ||
-        isGoingToResetPassword ||
-        isGoingToRoleSelect ||
-        isGoingToTeacherLogin ||
-        isGoingToTeacherRegister ||
-        isGoingToTeacherForgotPassword ||
-        isGoingToTeacherHome ||
-        isGoingToTeacherStudents ||
-        isGoingToTeacherPcRequest ||
-        isGoingToTeacherSchedules ||
-        isGoingToTeacherUpload ||
-        isGoingToTeacherSettings;
-
-    // If unauthenticated (and not guest) and trying to access a protected route
-    if (!loggedIn && !isAuthPage) {
-      return '/login';
-    }
-    // If logged in (real session OR guest) and on student login/register -> go home
-    if (loggedIn && (isGoingToLogin || isGoingToRegister)) {
-      final appRole = session?.user.appMetadata['role'];
-      if (appRole == 'mentor' || appRole == 'teacher') {
-        return '/teacher-home';
-      }
-      return '/home';
-    }
-    return null; // No redirection needed
+    final appRole = session?.user.appMetadata['role'];
+    return guardRoute(
+      location: state.matchedLocation,
+      hasSession: session != null,
+      isGuest: isGuestMode,
+      appRole: appRole is String ? appRole : null,
+    );
   },
   routes: [
     GoRoute(path: '/', pageBuilder: (c, s) => _instant(s, const SplashScreen())),
