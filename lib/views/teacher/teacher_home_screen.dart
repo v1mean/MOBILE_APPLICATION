@@ -4,10 +4,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/teacher_bottom_nav_bar.dart';
-import '../../services/teacher_course_service.dart';
-import '../../services/teacher_notification_service.dart';
+import 'package:provider/provider.dart';
+import '../../models/teacher_course.dart';
+import '../../viewmodels/teacher/teacher_home_view_model.dart';
+import '../../viewmodels/teacher/teacher_notifications_view_model.dart';
 import '../../widgets/notification_bell.dart';
-import '../../main.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
@@ -27,8 +28,7 @@ class TeacherHomeScreen extends StatefulWidget {
 }
 
 class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
-  String _userName = 'Teacher';
-  String? _avatarUrl;
+  late final TeacherHomeViewModel _vm;
 
   static final _schedule = [
     _ScheduleItem('Socheatre', 'Chroy Chongva', '10am - 11am', AppColors.purpleBgLight),
@@ -36,8 +36,6 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', AppColors.successBgLight),
   ];
 
-  List<TeacherCourse> _courses = [];
-  bool _isLoadingCourses = true;
   void _showCourseDetailModal(BuildContext context, TeacherCourse course) {
     showModalBottomSheet(
       context: context,
@@ -204,7 +202,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   child: OutlinedButton.icon(
                     onPressed: () {
                       Navigator.pop(ctx);
-                      TeacherCourseService.instance.removeCourse(course.id);
+                      _vm.deleteCourse(course.id);
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Course deleted.')),
                       );
@@ -246,88 +244,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-    _fetchCourses();
-    TeacherNotificationService.init();
-  }
-
-  Future<void> _fetchCourses() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) return;
-      final data = await JomnesDB.from('courses')
-          .select()
-          .eq('tutor_id', session.user.id)
-          .order('created_at', ascending: false);
-          
-      if (mounted) {
-        setState(() {
-          _courses = (data as List).map((c) => TeacherCourse(
-            id: c['id']?.toString() ?? '',
-            title: c['title'] ?? 'Course Title',
-            description: c['description'] ?? 'No description',
-            category: c['category']?.toString() ?? 'General',
-            rating: (c['rating'] as num?)?.toDouble() ?? 5.0,
-            timeAgo: _formatTimeAgo(c['created_at']),
-            color: _parseColor(c['card_color']),
-          )).toList();
-          _isLoadingCourses = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isLoadingCourses = false);
-    }
-  }
-
-  String _formatTimeAgo(String? dateStr) {
-    if (dateStr == null) return 'Just now';
-    final date = DateTime.tryParse(dateStr);
-    if (date == null) return 'Just now';
-    final diff = DateTime.now().difference(date);
-    if (diff.inDays > 0) return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
-    if (diff.inHours > 0) return '${diff.inHours} hr${diff.inHours == 1 ? '' : 's'} ago';
-    if (diff.inMinutes > 0) return '${diff.inMinutes} min${diff.inMinutes == 1 ? '' : 's'} ago';
-    return 'Just now';
-  }
-
-  Color _parseColor(String? colorStr) {
-    switch (colorStr) {
-      case 'pink': return AppColors.pastelPurple;
-      case 'blue': return const Color(0xFFE0F2FE);
-      case 'green': return AppColors.successBgLight;
-      case 'orange': return const Color(0xFFFFEDD5);
-      case 'slate': return AppColors.slateBorderLight;
-      case 'cyan': return const Color(0xFFCFFAFE);
-      default: return AppColors.pastelPurple;
-    }
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) return;
-      final uData = await JomnesDB.from('Users').select('name, profile_image').eq('user_id', session.user.id).maybeSingle();
-      if (uData != null && mounted) {
-        setState(() {
-          _userName = uData['name'] ?? 'Teacher';
-          _avatarUrl = uData['profile_image'];
-          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
-        });
-        return;
-      }
-      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
-      if (data != null && mounted) {
-        setState(() {
-          _userName = data['full_name'] ?? 'Teacher';
-          _avatarUrl = data['avatar_url'];
-          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
-        });
-      }
-    } catch (_) {}
+    _vm = context.read<TeacherHomeViewModel>();
+    context.read<TeacherNotificationsViewModel>().init();
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<TeacherHomeViewModel>();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
       backgroundColor: AppColors.surfaceSoft,
@@ -343,9 +266,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                 child: Row(
                   children: [
                     UserAvatarHeader(
-                      name: _userName,
+                      name: _vm.userName,
                       role: 'Teacher',
-                      avatarUrl: _avatarUrl,
+                      avatarUrl: _vm.avatarUrl,
                     ),
                     const Spacer(),
                     Container(
@@ -356,15 +279,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
-                      child: ValueListenableBuilder<int>(
-                        valueListenable:
-                            TeacherNotificationService.unreadCountNotifier,
-                        builder: (context, unreadCount, _) => NotificationBell(
-                          color: Colors.white70,
-                          size: 22,
-                          unreadCount: unreadCount,
-                          onTap: () => context.push('/teacher-notifications'),
-                        ),
+                      child: NotificationBell(
+                        color: Colors.white70,
+                        size: 22,
+                        unreadCount: context
+                            .watch<TeacherNotificationsViewModel>()
+                            .unreadCount,
+                        onTap: () => context.push('/teacher-notifications'),
                       ),
                     ),
                   ],
@@ -446,14 +367,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (_isLoadingCourses)
+                  if (_vm.isLoadingCourses)
                     const Center(
                       child: Padding(
                         padding: EdgeInsets.all(20.0),
                         child: CircularProgressIndicator(color: AppColors.galaxyPurple),
                       ),
                     )
-                  else if (_courses.isEmpty)
+                  else if (_vm.courses.isEmpty)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.all(20.0),
@@ -463,7 +384,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       ),
                     )
                   else
-                    ..._courses.map((c) => Padding(
+                    ..._vm.courses.map((c) => Padding(
                       padding: const EdgeInsets.only(bottom: 14),
                       child: _CourseCard(
                         item: c,
@@ -471,10 +392,9 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       ),
                     )),
 
-                  AnimatedBuilder(
-                    animation: TeacherCourseService.instance,
-                    builder: (context, _) {
-                      final courses = TeacherCourseService.instance.courses;
+                  Builder(
+                    builder: (context) {
+                      final courses = _vm.sampleCourses;
                       return Column(
                         children: [
                           ...courses.map((c) => Padding(
@@ -536,7 +456,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await context.push('/teacher-upload');
-          _fetchCourses();
+          _vm.loadCourses();
         },
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,

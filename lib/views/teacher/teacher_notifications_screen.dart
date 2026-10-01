@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/app_notification.dart';
-import '../../services/teacher_notification_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/teacher/teacher_notifications_view_model.dart';
 import '../../theme/app_colors.dart';
 
 class TeacherNotificationsScreen extends StatefulWidget {
@@ -18,11 +19,12 @@ class _TeacherNotificationsScreenState
   @override
   void initState() {
     super.initState();
-    TeacherNotificationService.refresh();
+    context.read<TeacherNotificationsViewModel>().refresh();
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<TeacherNotificationsViewModel>();
     return Scaffold(
       backgroundColor: AppColors.pageBg,
       body: SafeArea(
@@ -31,11 +33,10 @@ class _TeacherNotificationsScreenState
             _buildAppBar(context),
             Expanded(
               child: RefreshIndicator(
-                onRefresh: TeacherNotificationService.refresh,
-                child: ValueListenableBuilder<List<AppNotification>>(
-                  valueListenable:
-                      TeacherNotificationService.notificationsNotifier,
-                  builder: (context, notifications, _) {
+                onRefresh: vm.refresh,
+                child: Builder(
+                  builder: (context) {
+                    final notifications = vm.notifications;
                     if (notifications.isEmpty) {
                       return _buildEmptyState();
                     }
@@ -106,10 +107,11 @@ class _TeacherNotificationsScreenState
                   ),
                 ),
                 const SizedBox(width: 8),
-                ValueListenableBuilder<int>(
-                  valueListenable:
-                      TeacherNotificationService.unreadCountNotifier,
-                  builder: (context, count, _) {
+                Builder(
+                  builder: (context) {
+                    final count = context
+                        .watch<TeacherNotificationsViewModel>()
+                        .unreadCount;
                     if (count == 0) return const SizedBox.shrink();
                     return Container(
                       padding: const EdgeInsets.symmetric(
@@ -138,7 +140,7 @@ class _TeacherNotificationsScreenState
           IconButton(
             tooltip: 'Mark all as read',
             onPressed: () {
-              TeacherNotificationService.markAllAsRead();
+              context.read<TeacherNotificationsViewModel>().markAllAsRead();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -187,7 +189,8 @@ class _TeacherNotificationsScreenState
     }
 
     return GestureDetector(
-      onTap: () => TeacherNotificationService.markAsRead(item.id),
+      onTap: () =>
+          context.read<TeacherNotificationsViewModel>().markAsRead(item.id),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(

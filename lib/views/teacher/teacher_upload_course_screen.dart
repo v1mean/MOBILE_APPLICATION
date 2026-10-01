@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../main.dart';
+import 'package:provider/provider.dart';
 import '../../constants/course_categories.dart';
-import '../../services/api_service.dart';
+import '../../viewmodels/teacher/teacher_upload_course_view_model.dart';
 import '../../widgets/user_avatar_header.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -19,38 +19,13 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
 
-  String _userName = 'Teacher';
-  String? _avatarUrl;
-
-  String _selectedCategory = kCourseCategories[0]; // Default: 'Math'
-  final List<String> _categories = kCourseCategories;
-
-  String? _thumbnailPath;
-  String? _materialPath;
-  String? _videoPath;
-
-  bool _isUploading = false;
+  late final TeacherUploadCourseViewModel _vm;
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) return;
-      final data = await JomnesDB.from('Users').select('name, profile_image').eq('user_id', session.user.id).maybeSingle();
-      if (data != null && mounted) {
-        setState(() {
-          _userName = data['name'] ?? 'Teacher';
-          _avatarUrl = data['profile_image'];
-          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
-        });
-      }
-    } catch (_) {}
+    _vm = context.read<TeacherUploadCourseViewModel>();
   }
 
   @override
@@ -63,21 +38,21 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
   Future<void> _pickThumbnail() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      setState(() => _thumbnailPath = image.path);
+      _vm.setThumbnail(image.path);
     }
   }
 
   Future<void> _pickMaterial() async {
     final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
-      setState(() => _materialPath = image.path);
+      _vm.setMaterial(image.path);
     }
   }
 
   Future<void> _pickVideo() async {
     final XFile? video = await _picker.pickVideo(source: ImageSource.gallery);
     if (video != null) {
-      setState(() => _videoPath = video.path);
+      _vm.setVideo(video.path);
     }
   }
 
@@ -90,47 +65,20 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
       return;
     }
 
-    setState(() => _isUploading = true);
+    final error = await _vm.upload(
+      title: title,
+      description: _descController.text.trim(),
+    );
+    if (!mounted) return;
 
-    
-    // 1. Upload to backend (which handles both file uploads and DB insertion securely)
-    try {
-      final success = await ApiService.uploadCourse(
-        title: title,
-        description: _descController.text.trim().isEmpty ? 'Practice exercise and course materials.' : _descController.text.trim(),
-        category: _selectedCategory,
-        thumbnailPath: _thumbnailPath,
-        materialPath: _materialPath,
-        videoPath: _videoPath,
-      );
-      
-      if (!success) {
-        if (mounted) {
-          setState(() => _isUploading = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Upload failed. Please try again.')),
-          );
-        }
-        return;
-      }
-    } catch (e) {
-      debugPrint('Backend upload error: $e');
-      if (mounted) {
-        setState(() => _isUploading = false);
-        String msg = e.toString().replaceAll('Exception: ', '');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
-      }
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
       return;
     }
 
-    if (!mounted) return;
-    setState(() => _isUploading = false);
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('🎉 "$title" uploaded to $_selectedCategory & Featured Courses!'),
+        content: Text('🎉 "$title" uploaded to ${_vm.selectedCategory} & Featured Courses!'),
         backgroundColor: AppColors.successGreen,
       ),
     );
@@ -140,6 +88,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<TeacherUploadCourseViewModel>();
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: Column(
@@ -166,9 +115,9 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                   ),
                   const SizedBox(width: 14),
                   UserAvatarHeader(
-                    name: _userName,
+                    name: _vm.userName,
                     role: 'Lecturer',
-                    avatarUrl: _avatarUrl,
+                    avatarUrl: _vm.avatarUrl,
                   ),
                   const Spacer(),
                   Container(
@@ -220,12 +169,12 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                         ),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _selectedCategory,
+                            value: _vm.selectedCategory,
                             isExpanded: true,
                             dropdownColor: AppColors.darkCard,
                             icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white70),
                             style: GoogleFonts.inter(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
-                            items: _categories.map((c) {
+                            items: _vm.categories.map((c) {
                               final theme = getCategoryTheme(c);
                               return DropdownMenuItem<String>(
                                 value: c,
@@ -240,7 +189,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                             }).toList(),
                             onChanged: (val) {
                               if (val != null) {
-                                setState(() => _selectedCategory = val);
+                                _vm.selectCategory(val);
                               }
                             },
                           ),
@@ -266,8 +215,8 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _UploadBox(
                         icon: Icons.add_photo_alternate_outlined, 
-                        label: _thumbnailPath != null ? 'Thumbnail Selected' : 'Upload New Thumbnail',
-                        isSelected: _thumbnailPath != null,
+                        label: _vm.hasThumbnail ? 'Thumbnail Selected' : 'Upload New Thumbnail',
+                        isSelected: _vm.hasThumbnail,
                         onTap: _pickThumbnail,
                       ),
                     ),
@@ -281,8 +230,8 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _UploadBox(
                         icon: Icons.insert_drive_file_outlined, 
-                        label: _materialPath != null ? 'Material Selected' : 'Upload Material', 
-                        isSelected: _materialPath != null,
+                        label: _vm.hasMaterial ? 'Material Selected' : 'Upload Material', 
+                        isSelected: _vm.hasMaterial,
                         onTap: _pickMaterial,
                       ),
                     ),
@@ -296,8 +245,8 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: _UploadBox(
                         icon: Icons.video_camera_back_outlined, 
-                        label: _videoPath != null ? 'Video Selected' : 'Upload Video', 
-                        isSelected: _videoPath != null,
+                        label: _vm.hasVideo ? 'Video Selected' : 'Upload Video', 
+                        isSelected: _vm.hasVideo,
                         onTap: _pickVideo,
                       ),
                     ),
@@ -310,7 +259,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                       child: SizedBox(
                         width: double.infinity,
                         child: ElevatedButton(
-                          onPressed: _isUploading ? null : _uploadCourse,
+                          onPressed: _vm.isBusy ? null : _uploadCourse,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.black,
                             foregroundColor: Colors.white,
@@ -318,7 +267,7 @@ class _TeacherUploadCourseScreenState extends State<TeacherUploadCourseScreen> {
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             elevation: 0,
                           ),
-                          child: _isUploading 
+                          child: _vm.isBusy 
                             ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                             : Text('Upload Course', style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700)),
                         ),

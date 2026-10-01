@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/teacher_bottom_nav_bar.dart';
-import '../../main.dart';
-import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/teacher/teacher_pc_request_view_model.dart';
 import '../../theme/app_colors.dart';
 
 class _RequestItem {
@@ -21,10 +21,7 @@ class TeacherPcRequestScreen extends StatefulWidget {
 }
 
 class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
-  String _userName = 'Teacher';
-  String? _avatarUrl;
-  List<Map<String, dynamic>> _bookings = [];
-  bool _isLoadingBookings = true;
+  late final TeacherPcRequestViewModel _vm;
 
   static final _requests = [
     _RequestItem(
@@ -48,60 +45,12 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-    _fetchBookings();
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) return;
-      final data = await JomnesDB.from(
-        'profiles',
-      ).select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
-      if (data != null && mounted) {
-        setState(() {
-          _userName = data['full_name'] ?? 'Teacher';
-          _avatarUrl = data['avatar_url'];
-          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
-        });
-      }
-    } catch (_) {}
-  }
-
-  Future<void> _fetchBookings() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-
-      if (session == null) {
-        if (mounted) {
-          setState(() => _isLoadingBookings = false);
-        }
-        return;
-      }
-
-      final bookings = await ApiService.fetchTeacherBookings(
-        session.accessToken,
-      );
-
-      if (mounted) {
-        setState(() {
-          _bookings = bookings
-              .where((booking) => booking['status'] == 'pending')
-              .toList();
-
-          _isLoadingBookings = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingBookings = false);
-      }
-    }
+    _vm = context.read<TeacherPcRequestViewModel>();
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<TeacherPcRequestViewModel>();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     return Scaffold(
       backgroundColor: Colors.black,
@@ -117,10 +66,10 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.galaxyPurple,
-                    backgroundImage: _avatarUrl != null
-                        ? NetworkImage(_avatarUrl!)
+                    backgroundImage: _vm.avatarUrl != null
+                        ? NetworkImage(_vm.avatarUrl!)
                         : null,
-                    child: _avatarUrl == null
+                    child: _vm.avatarUrl == null
                         ? const Icon(
                             Icons.person,
                             color: Colors.white,
@@ -133,7 +82,7 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _userName,
+                        _vm.userName,
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

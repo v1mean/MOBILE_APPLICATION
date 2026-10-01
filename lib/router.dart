@@ -15,6 +15,7 @@ import 'repositories/course_repository.dart';
 import 'repositories/mentor_repository.dart';
 import 'repositories/payment_repository.dart';
 import 'repositories/student_notification_repository.dart';
+import 'repositories/teacher_course_store.dart';
 import 'repositories/user_repository.dart';
 import 'services/guest_mode.dart';
 import 'viewmodels/auth/forgot_password_view_model.dart';
@@ -26,6 +27,11 @@ import 'viewmodels/student/home_view_model.dart';
 import 'viewmodels/student/mentor_profile_view_model.dart';
 import 'viewmodels/student/my_courses_view_model.dart';
 import 'viewmodels/student/search_view_model.dart';
+import 'viewmodels/teacher/teacher_home_view_model.dart';
+import 'viewmodels/teacher/teacher_pc_request_view_model.dart';
+import 'viewmodels/teacher/teacher_schedules_view_model.dart';
+import 'viewmodels/teacher/teacher_students_view_model.dart';
+import 'viewmodels/teacher/teacher_upload_course_view_model.dart';
 export 'services/guest_mode.dart';
 import 'views/auth/splash_screen.dart';
 import 'views/auth/login_screen.dart';
@@ -184,11 +190,77 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/teacher-login', pageBuilder: (c, s) => _instant(s, const TeacherLoginScreen())),
     GoRoute(path: '/teacher-register', pageBuilder: (c, s) => _instant(s, const TeacherRegisterScreen())),
     GoRoute(path: '/teacher-forgot-password', pageBuilder: (c, s) => _instant(s, const TeacherForgotPasswordScreen())),
-    GoRoute(path: '/teacher-home', pageBuilder: (c, s) => _instant(s, const TeacherHomeScreen())),
-    GoRoute(path: '/teacher-students', pageBuilder: (c, s) => _instant(s, const TeacherStudentsScreen())),
-    GoRoute(path: '/teacher-pc-request', pageBuilder: (c, s) => _instant(s, const TeacherPcRequestScreen())),
-    GoRoute(path: '/teacher-schedules', pageBuilder: (c, s) => _instant(s, const TeacherSchedulesScreen())),
-    GoRoute(path: '/teacher-upload', pageBuilder: (c, s) => _instant(s, const TeacherUploadCourseScreen())),
+    GoRoute(
+      path: '/teacher-home',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => TeacherHomeViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            courseRepository: c.read<CourseRepository>(),
+            courseStore: c.read<TeacherCourseStore>(),
+          )..load(),
+          const TeacherHomeScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/teacher-students',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => TeacherStudentsViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            bookingRepository: c.read<BookingRepository>(),
+          )..load(),
+          const TeacherStudentsScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/teacher-pc-request',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => TeacherPcRequestViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            bookingRepository: c.read<BookingRepository>(),
+          )..load(),
+          const TeacherPcRequestScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/teacher-schedules',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => TeacherSchedulesViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            bookingRepository: c.read<BookingRepository>(),
+          )..load(),
+          const TeacherSchedulesScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/teacher-upload',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => TeacherUploadCourseViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            courseRepository: c.read<CourseRepository>(),
+          )..loadHeader(),
+          const TeacherUploadCourseScreen(),
+        ),
+      ),
+    ),
     GoRoute(path: '/teacher-settings', pageBuilder: (c, s) => _instant(s, const TeacherSettingsScreen())),
     GoRoute(path: '/teacher-notifications', pageBuilder: (c, s) => _instant(s, const TeacherNotificationsScreen())),
     GoRoute(

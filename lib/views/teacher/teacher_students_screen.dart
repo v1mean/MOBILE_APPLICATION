@@ -3,17 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../../widgets/teacher_bottom_nav_bar.dart';
-import '../../main.dart';
+import 'package:provider/provider.dart';
 import '../../theme/app_colors.dart';
-import '../../services/api_service.dart';
-
-class _StudentItem {
-  final String name;
-  final String phone;
-  final String location;
-  final String avatarUrl;
-  _StudentItem(this.name, this.phone, this.location, this.avatarUrl);
-}
+import '../../viewmodels/teacher/teacher_students_view_model.dart';
 
 class TeacherStudentsScreen extends StatefulWidget {
   const TeacherStudentsScreen({super.key});
@@ -23,77 +15,17 @@ class TeacherStudentsScreen extends StatefulWidget {
 }
 
 class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
-  String _userName = 'Teacher';
-  String? _avatarUrl;
-
-  List<_StudentItem> _students = [];
-  bool _isLoading = true;
-  String? _error;
+  late final TeacherStudentsViewModel _vm;
 
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-    _fetchStudents();
-  }
-
-  Future<void> _fetchStudents() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) {
-        if (mounted) setState(() => _isLoading = false);
-        return;
-      }
-
-      final bookings = await ApiService.fetchTeacherBookings(session.accessToken);
-      
-      final Map<String, _StudentItem> uniqueStudents = {};
-      
-      for (final b in bookings) {
-        final sId = b['student_id'] as String?;
-        if (sId == null || uniqueStudents.containsKey(sId)) continue;
-        
-        uniqueStudents[sId] = _StudentItem(
-          b['student_name'] as String? ?? 'Unknown Student',
-          b['student_phone'] as String? ?? '',
-          b['student_city'] as String? ?? 'No Location',
-          b['student_avatar'] as String? ?? '',
-        );
-      }
-
-      if (mounted) {
-        setState(() {
-          _students = uniqueStudents.values.toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = 'Failed to load students.';
-          _isLoading = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) return;
-      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
-      if (data != null && mounted) {
-        setState(() {
-          _userName = data['full_name'] ?? 'Teacher';
-          _avatarUrl = data['avatar_url'];
-          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
-        });
-      }
-    } catch (_) {}
+    _vm = context.read<TeacherStudentsViewModel>();
   }
 
   @override
   Widget build(BuildContext context) {
+    context.watch<TeacherStudentsViewModel>();
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.light);
     return Scaffold(
       backgroundColor: Colors.black,
@@ -109,8 +41,8 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                   CircleAvatar(
                     radius: 24,
                     backgroundColor: AppColors.galaxyPurple,
-                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
-                    child: _avatarUrl == null
+                    backgroundImage: _vm.avatarUrl != null ? NetworkImage(_vm.avatarUrl!) : null,
+                    child: _vm.avatarUrl == null
                         ? const Icon(Icons.person, color: Colors.white, size: 28)
                         : null,
                   ),
@@ -119,7 +51,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _userName,
+                        _vm.userName,
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
@@ -181,21 +113,21 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                         ),
                       ),
                       const SizedBox(height: 18),
-                      if (_isLoading)
+                      if (_vm.isLoading)
                         const Center(
                           child: Padding(
                             padding: EdgeInsets.only(top: 40),
                             child: CircularProgressIndicator(color: AppColors.accentBlue),
                           ),
                         )
-                      else if (_error != null)
+                      else if (_vm.error != null)
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 40),
-                            child: Text(_error!, style: GoogleFonts.inter(color: Colors.red)),
+                            child: Text(_vm.error!, style: GoogleFonts.inter(color: Colors.red)),
                           ),
                         )
-                      else if (_students.isEmpty)
+                      else if (_vm.students.isEmpty)
                         Center(
                           child: Padding(
                             padding: const EdgeInsets.only(top: 60),
@@ -216,7 +148,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                           ),
                         )
                       else
-                        ..._students.map((s) => _StudentCard(student: s)),
+                        ..._vm.students.map((s) => _StudentCard(student: s)),
                     ],
                   ),
                 ),
@@ -239,7 +171,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
 }
 
 class _StudentCard extends StatelessWidget {
-  final _StudentItem student;
+  final TeacherStudent student;
   const _StudentCard({required this.student});
 
   @override
