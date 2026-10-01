@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
+import '../theme/app_colors.dart';
 
 enum TeacherNavTab { course, students, pcRequest, schedules, settings }
 
@@ -26,8 +27,6 @@ class TeacherBottomNavBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: const BoxDecoration(
         color: Colors.white,
         boxShadow: [
@@ -35,48 +34,56 @@ class TeacherBottomNavBar extends StatelessWidget {
             color: Color(0x10000000),
             blurRadius: 16,
             offset: Offset(0, -4),
-          )
+          ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _NavItem(
-            icon: Icons.ondemand_video_outlined,
-            label: 'Courses',
-            tab: TeacherNavTab.course,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.course),
+      // Keeps the buttons above the phone's gesture/navigation area.
+      child: SafeArea(
+        top: false,
+        child: Container(
+          height: 72,
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: Icons.ondemand_video_outlined,
+                label: 'Courses',
+                tab: TeacherNavTab.course,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.course),
+              ),
+              _NavItem(
+                icon: Icons.group_outlined,
+                label: 'Students',
+                tab: TeacherNavTab.students,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.students),
+              ),
+              _NavItem(
+                icon: Icons.star_border_rounded,
+                label: 'PC Request',
+                tab: TeacherNavTab.pcRequest,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.pcRequest),
+              ),
+              _NavItem(
+                icon: Icons.calendar_month_outlined,
+                label: 'Schedules',
+                tab: TeacherNavTab.schedules,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.schedules),
+              ),
+              _NavItem(
+                icon: Icons.settings_outlined,
+                label: 'Settings',
+                tab: TeacherNavTab.settings,
+                currentTab: currentTab,
+                onTap: () => _onTap(context, TeacherNavTab.settings),
+              ),
+            ],
           ),
-          _NavItem(
-            icon: Icons.group_outlined,
-            label: 'Students',
-            tab: TeacherNavTab.students,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.students),
-          ),
-          _NavItem(
-            icon: Icons.star_border_rounded,
-            label: 'PC Request',
-            tab: TeacherNavTab.pcRequest,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.pcRequest),
-          ),
-          _NavItem(
-            icon: Icons.calendar_month_outlined,
-            label: 'Schedules',
-            tab: TeacherNavTab.schedules,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.schedules),
-          ),
-          _NavItem(
-            icon: Icons.settings_outlined,
-            label: 'Settings',
-            tab: TeacherNavTab.settings,
-            currentTab: currentTab,
-            onTap: () => _onTap(context, TeacherNavTab.settings),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -110,11 +117,11 @@ class _NavItem extends StatelessWidget {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: isActive ? Colors.black : const Color(0xFFF3F4F6),
+          color: isActive ? Colors.black : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(10),
           border: isActive
               ? null
-              : Border.all(color: const Color(0xFFE5E7EB), width: 1),
+              : Border.all(color: AppColors.border, width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,

@@ -1,6 +1,7 @@
 import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../theme/app_colors.dart';
 
 class BottomNavBar extends StatefulWidget {
   final int currentIndex;
@@ -29,11 +30,10 @@ class _BottomNavBarState extends State<BottomNavBar>
     _NavItem(icon: Icons.home_outlined, activeIcon: Icons.home_rounded, label: 'Home'),
     _NavItem(icon: Icons.search_rounded, activeIcon: Icons.search_rounded, label: 'Search'),
     _NavItem(icon: Icons.menu_book_outlined, activeIcon: Icons.menu_book_rounded, label: 'Course'),
-    _NavItem(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profile'),
     _NavItem(icon: Icons.settings_outlined, activeIcon: Icons.settings_rounded, label: 'Settings'),
   ];
 
-  static const List<double> _activeWidths = [94.0, 102.0, 102.0, 98.0, 108.0];
+  static const List<double> _activeWidths = [94.0, 102.0, 102.0, 108.0];
   static const double _inactiveWidth = 46.0;
 
   @override
@@ -102,7 +102,7 @@ class _BottomNavBarState extends State<BottomNavBar>
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF6F7F9),
+      color: AppColors.pageBg,
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
       child: SafeArea(
         top: false,
@@ -161,7 +161,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(16),
                                 border: Border.all(
-                                  color: const Color(0xFFE5E7EB),
+                                  color: AppColors.border,
                                   width: 1,
                                 ),
                                 boxShadow: [
@@ -175,7 +175,7 @@ class _BottomNavBarState extends State<BottomNavBar>
                               alignment: Alignment.center,
                               child: Icon(
                                 _items[i].icon,
-                                color: const Color(0xFF111827),
+                                color: AppColors.textPrimary,
                                 size: 20,
                               ),
                             ),

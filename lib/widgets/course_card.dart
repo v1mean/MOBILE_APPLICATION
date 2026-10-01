@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
+import '../theme/app_colors.dart';
 
 class CourseCard extends StatefulWidget {
   final Course course;
@@ -59,7 +60,7 @@ class _CourseCardState extends State<CourseCard> {
                         style: GoogleFonts.inter(
                           fontSize: 16.5,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                           height: 1.25,
                         ),
                       ),
@@ -89,7 +90,7 @@ class _CourseCardState extends State<CourseCard> {
                           child: Icon(
                             widget.course.isFavorited ? Icons.favorite : Icons.favorite_border_rounded,
                             size: 22,
-                            color: const Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                       ),
@@ -102,7 +103,7 @@ class _CourseCardState extends State<CourseCard> {
                   style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w400,
-                    color: const Color(0xFF374151),
+                    color: AppColors.borderDark,
                     height: 1.35,
                   ),
                 ),
@@ -114,7 +115,7 @@ class _CourseCardState extends State<CourseCard> {
                     style: GoogleFonts.inter(
                       fontSize: 24,
                       fontWeight: FontWeight.w900,
-                      color: const Color(0xFF111827),
+                      color: AppColors.textPrimary,
                       letterSpacing: -0.5,
                     ),
                   )
@@ -184,7 +185,7 @@ class _CourseCardState extends State<CourseCard> {
                         style: GoogleFonts.inter(
                           fontSize: 24,
                           fontWeight: FontWeight.w900,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                           letterSpacing: -0.5,
                         ),
                       ),
@@ -193,7 +194,7 @@ class _CourseCardState extends State<CourseCard> {
                         style: GoogleFonts.inter(
                           fontSize: 14,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                     ],

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../main.dart';
 import '../models/user_profile.dart';
 import '../widgets/bottom_nav_bar.dart';
 import '../theme/app_colors.dart';
+import '../widgets/user_avatar_header.dart';
 import '../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -16,7 +17,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  final int _navIndex = 4;
+  final int _navIndex = 3;
   bool _notificationsEnabled = true;
   bool _emailUpdates = false;
   bool _darkMode = false;
@@ -77,7 +78,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       case 0: context.go('/home'); break;
       case 1: context.go('/search'); break;
       case 2: context.go('/courses'); break;
-      case 3: context.go('/profile'); break;
     }
   }
 
@@ -87,64 +87,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
       backgroundColor: AppColors.darkBg,
       body: Column(
         children: [
-          // Top bar
+          // Top bar matching Home Screen layout
           SafeArea(
             bottom: false,
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
-              child: Builder(builder: (context) {
-                final name = _displayName;
-                final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
-                final avatar = _avatarUrl;
-                return Row(
-                  children: [
-                    ClipOval(
-                      child: SizedBox(
-                        width: 48,
-                        height: 48,
-                        child: avatar != null
-                            ? Image.network(
-                                avatar,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) => CircleAvatar(
-                                  backgroundColor: const Color(0xFFFFD5DC),
-                                  child: Text(initial,
-                                      style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                                ),
-                              )
-                            : CircleAvatar(
-                                backgroundColor: const Color(0xFFFFD5DC),
-                                child: Text(initial,
-                                    style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.black)),
-                              ),
-                      ),
+              child: Row(
+                children: [
+                  UserAvatarHeader(
+                    name: _displayName,
+                    role: _displayRole,
+                    avatarUrl: _avatarUrl,
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                      size: 26,
                     ),
-                    const SizedBox(width: 14),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          name,
-                          style: GoogleFonts.inter(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          _displayRole,
-                          style: GoogleFonts.inter(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w400,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                );
-              }),
+                  ),
+                ],
+              ),
             ),
           ),
           // White card body
@@ -197,19 +162,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.lock_outline_rounded,
-                            iconColor: const Color(0xFF8B5CF6),
+                            iconColor: AppColors.violetAccent,
                             title: 'Change Password',
                             onTap: () => context.push('/change-password'),
                           ),
                           _SettingsTile(
                             icon: Icons.shield_outlined,
-                            iconColor: const Color(0xFF10B981),
+                            iconColor: AppColors.successGreen,
                             title: 'Privacy & Security',
                             onTap: () => context.push('/privacy-security'),
                           ),
                           _SettingsTile(
                             icon: Icons.payment_rounded,
-                            iconColor: const Color(0xFFF59E0B),
+                            iconColor: AppColors.warningAmber,
                             title: 'Payment Methods',
                             onTap: () => context.push('/payment-methods'),
                             isLast: true,
@@ -225,7 +190,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         items: [
                           _SettingsTile(
                             icon: Icons.notifications_outlined,
-                            iconColor: const Color(0xFFEF4444),
+                            iconColor: AppColors.liveRed,
                             title: 'Push Notifications',
                             trailing: Switch.adaptive(
                               value: _notificationsEnabled,
@@ -235,7 +200,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.mail_outline_rounded,
-                            iconColor: const Color(0xFF3B82F6),
+                            iconColor: AppColors.skyBlueAccent,
                             title: 'Email Updates',
                             trailing: Switch.adaptive(
                               value: _emailUpdates,
@@ -245,7 +210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.dark_mode_outlined,
-                            iconColor: const Color(0xFF6366F1),
+                            iconColor: AppColors.indigoAccent,
                             title: 'Dark Mode',
                             trailing: Switch.adaptive(
                               value: _darkMode,
@@ -255,7 +220,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           ),
                           _SettingsTile(
                             icon: Icons.language_rounded,
-                            iconColor: const Color(0xFF14B8A6),
+                            iconColor: AppColors.tealAccent,
                             title: 'Language',
                             subtitle: _selectedLanguage,
                             onTap: () => _showLanguagePicker(),
@@ -272,13 +237,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         items: [
                           _SettingsTile(
                             icon: Icons.help_outline_rounded,
-                            iconColor: const Color(0xFF0EA5E9),
+                            iconColor: AppColors.cyanAccent,
                             title: 'Help & Support',
                             onTap: () {},
                           ),
                           _SettingsTile(
                             icon: Icons.star_outline_rounded,
-                            iconColor: const Color(0xFFF59E0B),
+                            iconColor: AppColors.warningAmber,
                             title: 'Rate Jomnes',
                             onTap: () {},
                           ),
@@ -340,14 +305,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Widget _buildProfileCard(BuildContext context) {
     final name = _displayName;
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     final avatar = _avatarUrl;
+    final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Container(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.accentBlue, Color(0xFF6366F1)],
+            colors: [AppColors.accentBlue, AppColors.indigoAccent],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -382,13 +347,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               avatar,
                               fit: BoxFit.cover,
                               errorBuilder: (_, _, _) => CircleAvatar(
-                                backgroundColor: const Color(0xFFFFD5DC),
+                                backgroundColor: AppColors.pastelPink,
                                 child: Text(initial,
                                     style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
                               ),
                             )
                           : CircleAvatar(
-                              backgroundColor: const Color(0xFFFFD5DC),
+                              backgroundColor: AppColors.pastelPink,
                               child: Text(initial,
                                   style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: Colors.black)),
                             ),
@@ -659,3 +624,4 @@ class _SettingsTile extends StatelessWidget {
     );
   }
 }
+

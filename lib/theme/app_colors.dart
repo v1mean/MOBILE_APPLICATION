@@ -50,4 +50,40 @@ class AppColors {
   // === Borders ===
   static const Color border = Color(0xFFE5E7EB);
   static const Color borderDark = Color(0xFF374151);
+
+  // === Slate text/surface family (forms, settings screens) ===
+  static const Color slateText = Color(0xFF64748B);
+  static const Color slateDark = Color(0xFF0F172A);
+  static const Color slateGray = Color(0xFF475569);
+  static const Color surfaceLight = Color(0xFFF8FAFC);
+  static const Color pageBg = Color(0xFFF6F7F9);
+  static const Color navyText = Color(0xFF1A1A2E);
+
+  // === Status ===
+  static const Color successGreen = Color(0xFF10B981);
+  static const Color successBgLight = Color(0xFFDCFCE7);
+  static const Color successTextDark = Color(0xFF15803D);
+  static const Color warningAmber = Color(0xFFF59E0B);
+
+  // === Extended slate/surface family ===
+  static const Color slateBorderLight = Color(0xFFE2E8F0);
+  static const Color slateIconMuted = Color(0xFF94A3B8);
+  static const Color slateTextDark = Color(0xFF4B5563);
+  static const Color surfaceMuted = Color(0xFFF3F4F6);
+  static const Color slateBgSoft = Color(0xFFF1F5F9);
+  static const Color slateNavy = Color(0xFF1E293B);
+  static const Color surfaceSoft = Color(0xFFF5F6FA);
+
+  // === Extended accents ===
+  static const Color pastelPink = Color(0xFFFFD5DC);
+  static const Color pastelPurple = Color(0xFFF3D0FF);
+  static const Color purpleBgLight = Color(0xFFF3E8FF);
+  static const Color violetAccent = Color(0xFF8B5CF6);
+  static const Color indigoAccent = Color(0xFF6366F1);
+  static const Color indigoDeep = Color(0xFF4F46E5);
+  static const Color indigoBgLight = Color(0xFFE0E7FF);
+  static const Color skyBlueAccent = Color(0xFF3B82F6);
+  static const Color tealAccent = Color(0xFF14B8A6);
+  static const Color tealDark = Color(0xFF0F766E);
+  static const Color cyanAccent = Color(0xFF0EA5E9);
 }

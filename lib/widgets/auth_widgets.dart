@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+﻿import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class SparkleIcon extends StatelessWidget {
   const SparkleIcon({super.key});
@@ -21,6 +21,8 @@ class SparkleIcon extends StatelessWidget {
   }
 }
 
+/// Dark-themed text field used on all auth screens.
+/// Uses [AppTextStyles.inputText] for consistent input font.
 class DarkTextField extends StatelessWidget {
   final String hint;
   final IconData icon;
@@ -45,7 +47,7 @@ class DarkTextField extends StatelessWidget {
       controller: controller,
       obscureText: obscureText,
       keyboardType: keyboardType,
-      style: GoogleFonts.inter(color: AppColors.white, fontSize: 15),
+      style: AppTextStyles.inputText,
       decoration: InputDecoration(
         hintText: hint,
         prefixIcon: Icon(icon, color: AppColors.textSecondary, size: 20),
@@ -55,9 +57,12 @@ class DarkTextField extends StatelessWidget {
   }
 }
 
+/// Square icon button used for Google / Facebook / Apple sign-in.
+/// Fixed 52×52 size with [AppColors.darkCard] background and rounded corners.
 class SocialBtn extends StatelessWidget {
   final VoidCallback onTap;
   final Widget child;
+
   const SocialBtn({super.key, required this.onTap, required this.child});
 
   @override

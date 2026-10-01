@@ -7,16 +7,28 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 
 import bookingRoutes from "./routes/booking.routes.js";
-
 import reviewRoutes from "./routes/review.routes.js";
+import courseRoutes from "./routes/course.routes.js";
+import paymentRoutes from "./routes/payment.routes.js";
+import notificationRoutes from "./routes/notification.routes.js";
+import { getAllowedOrigins } from "./config/origins.js";
 
 const app = express();
 
 app.use(helmet());
 
+// Native mobile clients (Android/iOS) don't send an Origin header, so this
+// allowlist only restricts browser-based clients (Flutter web / local dev).
+const allowedOrigins = getAllowedOrigins();
+
 app.use(
   cors({
-    origin: true,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   })
 );
@@ -36,7 +48,9 @@ app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/reviews", reviewRoutes);
-
+app.use("/api/courses", courseRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/api/health", (req, res) => {
   res.json({

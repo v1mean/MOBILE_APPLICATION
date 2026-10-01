@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../main.dart';
+import '../theme/app_colors.dart';
+import '../services/api_service.dart';
 
 class _StudentItem {
   final String name;
@@ -24,37 +26,55 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
   String _userName = 'Teacher';
   String? _avatarUrl;
 
-  static final _students = [
-    _StudentItem(
-      'Srey Pich',
-      '098 765 432',
-      'Preak Leab',
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-    ),
-    _StudentItem(
-      'Bros Sok',
-      '056 789 123',
-      'Orussey',
-      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80',
-    ),
-    _StudentItem(
-      'Socheatre',
-      '012 345 678',
-      'Chroy Chongva',
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-    ),
-    _StudentItem(
-      'Ni Ta',
-      '099 887 766',
-      'Toul Kork',
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
-    ),
-  ];
+  List<_StudentItem> _students = [];
+  bool _isLoading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchStudents();
+  }
+
+  Future<void> _fetchStudents() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
+      final bookings = await ApiService.fetchTeacherBookings(session.accessToken);
+      
+      final Map<String, _StudentItem> uniqueStudents = {};
+      
+      for (final b in bookings) {
+        final sId = b['student_id'] as String?;
+        if (sId == null || uniqueStudents.containsKey(sId)) continue;
+        
+        uniqueStudents[sId] = _StudentItem(
+          b['student_name'] as String? ?? 'Unknown Student',
+          b['student_phone'] as String? ?? '',
+          b['student_city'] as String? ?? 'No Location',
+          b['student_avatar'] as String? ?? '',
+        );
+      }
+
+      if (mounted) {
+        setState(() {
+          _students = uniqueStudents.values.toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load students.';
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   Future<void> _fetchProfile() async {
@@ -88,7 +108,7 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: const Color(0xFF7B3FC8),
+                    backgroundColor: AppColors.galaxyPurple,
                     backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
                     child: _avatarUrl == null
                         ? const Icon(Icons.person, color: Colors.white, size: 28)
@@ -157,11 +177,46 @@ class _TeacherStudentsScreenState extends State<TeacherStudentsScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 18),
-                      ..._students.map((s) => _StudentCard(student: s)),
+                      if (_isLoading)
+                        const Center(
+                          child: Padding(
+                            padding: EdgeInsets.only(top: 40),
+                            child: CircularProgressIndicator(color: AppColors.accentBlue),
+                          ),
+                        )
+                      else if (_error != null)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 40),
+                            child: Text(_error!, style: GoogleFonts.inter(color: Colors.red)),
+                          ),
+                        )
+                      else if (_students.isEmpty)
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 60),
+                            child: Column(
+                              children: [
+                                Icon(Icons.people_outline, size: 64, color: AppColors.textSecondary.withOpacity(0.3)),
+                                const SizedBox(height: 16),
+                                Text(
+                                  "No students yet",
+                                  style: GoogleFonts.inter(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        ..._students.map((s) => _StudentCard(student: s)),
                     ],
                   ),
                 ),
@@ -195,7 +250,7 @@ class _StudentCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -208,7 +263,7 @@ class _StudentCard extends StatelessWidget {
         children: [
           CircleAvatar(
             radius: 22,
-            backgroundColor: const Color(0xFFF3F4F6),
+            backgroundColor: AppColors.surfaceMuted,
             child: ClipOval(
               child: Image.network(
                 student.avatarUrl,
@@ -217,7 +272,7 @@ class _StudentCard extends StatelessWidget {
                 fit: BoxFit.cover,
                 errorBuilder: (ctx, e, st) => CircleAvatar(
                   radius: 22,
-                  backgroundColor: const Color(0xFFE0E7FF),
+                  backgroundColor: AppColors.indigoBgLight,
                   child: Text(
                     student.name.isNotEmpty ? student.name[0] : 'S',
                     style: const TextStyle(
@@ -239,7 +294,7 @@ class _StudentCard extends StatelessWidget {
                   style: GoogleFonts.inter(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF111827),
+                    color: AppColors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -247,7 +302,7 @@ class _StudentCard extends StatelessWidget {
                   student.phone,
                   style: GoogleFonts.inter(
                     fontSize: 12,
-                    color: const Color(0xFF6B7280),
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -258,7 +313,7 @@ class _StudentCard extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 12,
               fontWeight: FontWeight.w500,
-              color: const Color(0xFF6B7280),
+              color: AppColors.textSecondary,
             ),
           ),
         ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/mentor.dart';
 import '../constants/course_categories.dart';
+import '../theme/app_colors.dart';
 
 class FeaturedCourseCard extends StatelessWidget {
   final FeaturedCourse course;
@@ -11,15 +12,6 @@ class FeaturedCourseCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String? assetImage;
-    if (course.cardColor == 'orange' || course.subject.toLowerCase() == 'math') {
-      assetImage = 'assets/images/featured_math.png';
-    } else if (course.cardColor == 'teal') {
-      assetImage = 'assets/images/featured_geography.png';
-    } else if (course.cardColor == 'teal2') {
-      assetImage = 'assets/images/featured_chemistry.png';
-    }
-
     final theme = getCategoryTheme(course.subject.isNotEmpty ? course.subject : course.cardColor);
 
     return MouseRegion(
@@ -29,7 +21,7 @@ class FeaturedCourseCard extends StatelessWidget {
         height: 125,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFF1E293B),
+          color: AppColors.slateNavy,
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
@@ -50,13 +42,6 @@ class FeaturedCourseCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Background Image or Themed Gradient
-                    if (assetImage != null)
-                      Image.asset(
-                        assetImage,
-                        fit: BoxFit.cover,
-                      )
-                else
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -67,8 +52,6 @@ class FeaturedCourseCard extends StatelessWidget {
                     ),
                   ),
 
-                // Bottom-Right 3D Styled Graphic for non-asset cards
-                if (assetImage == null)
                   Positioned(
                     right: -8,
                     bottom: -8,
@@ -130,4 +113,4 @@ class FeaturedCourseCard extends StatelessWidget {
   ),
     );
   }
-}
+}

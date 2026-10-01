@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 // Matches the DomeClipper used in login_screen.dart
 class _DomeClipper extends CustomClipper<Path> {
@@ -37,9 +38,9 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
   String? _selectedRole;
 
   List<Widget> _asterisks(double h) => [
-        Positioned(left: 20, top: h * 0.42, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 18))),
+        Positioned(left: 20, top: h * 0.42, child: Text('*', style: AppTextStyles.decorativeStarLg)),
         Positioned(right: 28, top: h * 0.45, child: Text('*', style: GoogleFonts.inter(color: Colors.white70, fontSize: 16))),
-        Positioned(left: 60, top: h * 0.5, child: Text('*', style: GoogleFonts.inter(color: Colors.white54, fontSize: 14))),
+        Positioned(left: 60, top: h * 0.5, child: Text('*', style: AppTextStyles.decorativeStarSm)),
       ];
 
   @override
@@ -103,11 +104,7 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                         // Title
                         Text(
                           'Who are you?',
-                          style: GoogleFonts.inter(
-                            fontSize: 26,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.white,
-                          ),
+                          style: AppTextStyles.h1,
                         ).animate(delay: 100.ms).fadeIn().slideY(begin: 0.2),
 
                         const SizedBox(height: 6),
@@ -127,8 +124,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           icon: '🎓',
                           title: 'Student',
                           subtitle: 'Find mentors, join courses and track your learning progress.',
-                          accentColor: const Color(0xFF7B3FC8),
-                          borderColor: const Color(0xFF7B3FC8),
+                          accentColor: AppColors.galaxyPurple,
+                          borderColor: AppColors.galaxyPurple,
                           bgColor: const Color(0xFF1A1230),
                           isSelected: _selectedRole == 'student',
                           onTap: () => setState(() => _selectedRole = 'student'),
@@ -142,8 +139,8 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
                           icon: '🏫',
                           title: 'Teacher / Coach / Trainer',
                           subtitle: 'Share your skills, manage your students and grow your career.',
-                          accentColor: const Color(0xFF2563EB),
-                          borderColor: const Color(0xFF2563EB),
+                          accentColor: AppColors.accentBlue,
+                          borderColor: AppColors.accentBlue,
                           bgColor: const Color(0xFF0E1A2E),
                           isSelected: _selectedRole == 'teacher',
                           onTap: () => setState(() => _selectedRole = 'teacher'),
@@ -233,7 +230,7 @@ class _RoleCard extends StatelessWidget {
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         decoration: BoxDecoration(
-          color: isSelected ? bgColor : const Color(0xFF16161E),
+          color: isSelected ? bgColor : AppColors.darkCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? borderColor : const Color(0xFF2A2A3A),

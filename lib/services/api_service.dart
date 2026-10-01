@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import '../main.dart';
 
 class ApiService {
   static String get baseUrl {
@@ -117,10 +118,11 @@ class ApiService {
   static Future<Map<String, dynamic>> loginUser(
     String email,
     String password,
+    String role,
   ) async {
     final response = await _postWithFallback(
       '/auth/login',
-      body: jsonEncode({'email': email, 'password': password}),
+      body: jsonEncode({'email': email, 'password': password, 'role': role}),
     );
 
     return jsonDecode(response.body);
@@ -158,7 +160,7 @@ class ApiService {
     String newPassword,
     String accessToken,
   ) async {
-    final response = await _postWithFallback(
+    final response = await _patchWithFallback(
       '/auth/update-password',
       headers: {'Authorization': 'Bearer $accessToken'},
       body: jsonEncode({'newPassword': newPassword}),
@@ -175,9 +177,14 @@ class ApiService {
         headers: {'Authorization': 'Bearer $accessToken'},
         body: body,
       );
-      log('Social sync completed. Status: ${response.statusCode}');
+      final jsonResponse = jsonDecode(response.body);
+      if (response.statusCode == 403 && jsonResponse['mismatch'] == true) {
+        throw Exception(jsonResponse['message']);
+      }
+      debugPrint('Social sync completed. Status: ${response.statusCode}');
     } catch (e) {
-      log('Social sync error: $e');
+      debugPrint('Social sync error: $e');
+      rethrow;
     }
   }
 
@@ -322,6 +329,41 @@ class ApiService {
     }
   }
 
+  // ── Fetch Teacher Bookings ────────────────────────────────────────────────
+
+  static Future<List<Map<String, dynamic>>> fetchTeacherBookings(
+    String accessToken,
+  ) async {
+    final response = await _getWithFallback(
+      '/bookings/teachers',
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+
+    final body = jsonDecode(response.body);
+
+    if (body['success'] != true) {
+      throw Exception(body['message'] ?? 'Failed to fetch teacher bookings');
+    }
+
+    final raw = body['bookings'] as List? ?? [];
+
+    return raw.cast<Map<String, dynamic>>();
+  }
+
+  static Future<Map<String, dynamic>> updateBookingStatus({
+    required String accessToken,
+    required String bookingId,
+    required String status,
+  }) async {
+    final response = await _patchWithFallback(
+      '/bookings/$bookingId/status',
+      headers: {'Authorization': 'Bearer $accessToken'},
+      body: jsonEncode({'status': status}),
+    );
+
+    return jsonDecode(response.body);
+  }
+
   // ── Create Booking ────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> createBooking({
     required String accessToken,
@@ -329,14 +371,20 @@ class ApiService {
     String? courseId,
     String? startTime,
     String? endTime,
+    String? bookingDate,
+    String? timeSlot,
     double? hourlyRate,
     double? totalPrice,
+    String? checkoutSessionId,
   }) async {
     final body = jsonEncode({
       'tutor_id': tutorId,
+      if (checkoutSessionId != null) 'checkout_session_id': checkoutSessionId,
       if (courseId != null) 'course_id': courseId,
       if (startTime != null) 'start_time': startTime,
       if (endTime != null) 'end_time': endTime,
+      if (bookingDate != null) 'booking_date': bookingDate,
+      if (timeSlot != null) 'time_slot': timeSlot,
       if (hourlyRate != null) 'hourly_rate': hourlyRate,
       if (totalPrice != null) 'total_price': totalPrice,
     });
@@ -371,7 +419,9 @@ class ApiService {
   }
 
   // ── Fetch Mentor Reviews ─────────────────────────────────────────────────
-  static Future<List<Map<String, dynamic>>> fetchMentorReviews(String mentorId) async {
+  static Future<List<Map<String, dynamic>>> fetchMentorReviews(
+    String mentorId,
+  ) async {
     try {
       final response = await _getWithFallback(
         '/reviews/mentor/$mentorId',
@@ -415,6 +465,59 @@ class ApiService {
         final response = await http.Response.fromStream(streamedResponse);
         return jsonDecode(response.body);
       }
+      rethrow;
+    }
+  }
+
+  // ── Upload Course ────────────────────────────────────────────────────────
+  static Future<bool> uploadCourse({
+    required String title,
+    required String description,
+    required String category,
+    String? thumbnailPath,
+    String? materialPath,
+    String? videoPath,
+  }) async {
+    try {
+      final token = JomnesDB.auth.currentSession?.accessToken;
+      if (token == null) return false;
+
+      final uri = Uri.parse('$baseUrl/courses/upload');
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+
+      request.fields['title'] = title;
+      request.fields['description'] = description;
+      request.fields['category'] = category;
+
+      if (thumbnailPath != null && thumbnailPath.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath('thumbnail', thumbnailPath),
+        );
+      }
+      if (materialPath != null && materialPath.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath('material', materialPath),
+        );
+      }
+      if (videoPath != null && videoPath.isNotEmpty) {
+        request.files.add(
+          await http.MultipartFile.fromPath('video', videoPath),
+        );
+      }
+
+      final streamedResponse = await request.send().timeout(
+        const Duration(minutes: 5),
+      );
+      final response = await http.Response.fromStream(streamedResponse);
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        final jsonResponse = jsonDecode(response.body);
+        throw Exception(jsonResponse['message'] ?? 'Upload failed.');
+      }
+    } catch (e) {
+      debugPrint('Error uploading course: $e');
       rethrow;
     }
   }

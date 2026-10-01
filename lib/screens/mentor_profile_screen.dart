@@ -1,3 +1,5 @@
+import '../constants/mock_data.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
@@ -7,11 +9,21 @@ import '../widgets/course_card.dart';
 import '../main.dart';
 import '../services/api_service.dart';
 import '../services/notification_service.dart';
-
+import '../services/student_notification_service.dart';
+import '../services/payment_service.dart';
+import '../theme/app_colors.dart';
 
 class MentorProfileScreen extends StatefulWidget {
   final String mentorId;
-  const MentorProfileScreen({super.key, required this.mentorId});
+
+  /// Set when the browser returns from Stripe Checkout (web payments only).
+  final String? checkoutSessionId;
+
+  const MentorProfileScreen({
+    super.key,
+    required this.mentorId,
+    this.checkoutSessionId,
+  });
 
   @override
   State<MentorProfileScreen> createState() => _MentorProfileScreenState();
@@ -34,8 +46,18 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
-    _fetchMentor();
+    _fetchMentor().then((_) => _resumeAfterWebCheckout());
     _fetchReviews();
+  }
+
+  Future<void> _resumeAfterWebCheckout() async {
+    final sessionId = widget.checkoutSessionId;
+    if (sessionId == null || _mentor == null) return;
+
+    final usable = await PaymentService.isCheckoutSessionUsable(sessionId);
+    if (mounted && usable) {
+      _showBookingSheet();
+    }
   }
 
   Future<void> _fetchReviews() async {
@@ -49,7 +71,10 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     if (_mentor == null) return;
     DateTime? selectedDate;
     String? selectedTime;
-    final timeSlots = ['9:00 AM', '11:00 AM', '2:00 PM', '4:00 PM'];
+    final timeSlots = [
+      '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM',
+      '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'
+    ];
 
     await showModalBottomSheet(
       context: context,
@@ -63,26 +88,42 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(context).viewInsets.bottom,
-                left: 20, right: 20, top: 20,
+                left: 20,
+                right: 20,
+                top: 20,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Book Session', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Text(
+                    'Book Session',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(selectedDate == null ? 'Select Date' : '${selectedDate!.toLocal()}'.split(' ')[0], 
-                           style: GoogleFonts.inter(fontSize: 16)),
+                      Text(
+                        selectedDate == null
+                            ? 'Select Date'
+                            : '${selectedDate!.toLocal()}'.split(' ')[0],
+                        style: GoogleFonts.inter(fontSize: 16),
+                      ),
                       TextButton(
                         onPressed: () async {
                           final date = await showDatePicker(
                             context: context,
-                            initialDate: DateTime.now().add(const Duration(days: 1)),
+                            initialDate: DateTime.now().add(
+                              const Duration(days: 1),
+                            ),
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 60)),
+                            lastDate: DateTime.now().add(
+                              const Duration(days: 60),
+                            ),
                           );
                           if (date != null) {
                             setSheetState(() => selectedDate = date);
@@ -93,7 +134,13 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text('Time Slot', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Text(
+                    'Time Slot',
+                    style: GoogleFonts.inter(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   const SizedBox(height: 10),
                   Wrap(
                     spacing: 10,
@@ -102,7 +149,9 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         label: Text(slot),
                         selected: selectedTime == slot,
                         onSelected: (selected) {
-                          setSheetState(() => selectedTime = selected ? slot : null);
+                          setSheetState(
+                            () => selectedTime = selected ? slot : null,
+                          );
                         },
                       );
                     }).toList(),
@@ -111,17 +160,26 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: (selectedDate != null && selectedTime != null && !_isBooking)
+                      onPressed:
+                          (selectedDate != null &&
+                              selectedTime != null &&
+                              !_isBooking)
                           ? () {
                               Navigator.pop(context);
                               _confirmBooking(selectedDate!, selectedTime!);
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2563EB),
+                        backgroundColor: AppColors.accentBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      child: Text('Confirm Booking', style: GoogleFonts.inter(color: Colors.white, fontSize: 16)),
+                      child: Text(
+                        'Confirm Booking',
+                        style: GoogleFonts.inter(
+                          color: Colors.white,
+                          fontSize: 16,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -132,6 +190,57 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
         );
       },
     );
+  }
+
+  Future<void> _handleInitialPayment() async {
+    setState(() => _isBooking = true);
+
+    final session = JomnesDB.auth.currentSession;
+    if (session == null) {
+      context.go('/login');
+      return;
+    }
+
+    try {
+      if (kIsWeb) {
+        // Leaves the page for Stripe Checkout; the booking sheet opens when
+        // the browser comes back with a paid session.
+        final started = await PaymentService.startWebCheckout(_mentor!.id);
+        if (!started && mounted) {
+          setState(() => _isBooking = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Error initializing payment.')),
+          );
+        }
+        return;
+      }
+
+      final paymentSuccess = await PaymentService.initPaymentSheet(_mentor!.id);
+
+      if (!paymentSuccess) {
+         if (mounted) {
+           setState(() => _isBooking = false);
+           ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Payment failed or was cancelled.')),
+           );
+         }
+         return;
+      }
+      
+      // Payment success! Proceed to booking sheet.
+      if (mounted) {
+        setState(() => _isBooking = false);
+        _showBookingSheet();
+      }
+    } catch (e) {
+      debugPrint('Stripe initialization error: $e');
+      if (mounted) {
+        setState(() => _isBooking = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error initializing payment.')),
+        );
+      }
+    }
   }
 
   Future<void> _confirmBooking(DateTime date, String time) async {
@@ -153,35 +262,61 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
       final res = await ApiService.createBooking(
         accessToken: session.accessToken,
         tutorId: _mentor!.id,
+        startTime: startTime.toIso8601String(),
+        endTime: endTime.toIso8601String(),
+        bookingDate: date.toIso8601String().split('T')[0],
+        timeSlot: time,
         hourlyRate: _mentor!.bookingPrice,
         totalPrice: _mentor!.bookingPrice,
+        checkoutSessionId: widget.checkoutSessionId,
       );
 
       if (mounted) {
         setState(() => _isBooking = false);
         if (res['success'] == true) {
-          await NotificationService.showInstantNotification(
+          // Device notifications and the calendar plugin are mobile-only.
+          if (!kIsWeb) {
+            await NotificationService.showInstantNotification(
+              title: 'Booking Confirmed! 🎉',
+              body: 'Request sent to ${_mentor!.name}!',
+            );
+          }
+          await StudentNotificationService.addNotification(
             title: 'Booking Confirmed! 🎉',
-            body: 'You have booked a session with ${_mentor!.name} on ${startTime.toLocal().toString().split(' ')[0]} at $time.',
+            body: 'Your class with ${_mentor!.name} on ${date.toIso8601String().split('T')[0]} at $time has been scheduled.',
+            type: 'booking',
+            route: '/courses',
           );
-          
-          final event = Event(
-            title: 'Lesson with ${_mentor!.name}',
-            description: 'Jomnes App - Study Session',
-            startDate: startTime,
-            endDate: endTime,
-          );
-          await Add2Calendar.addEvent2Cal(event);
+
+          if (!kIsWeb) {
+            final event = Event(
+              title: 'Lesson with ${_mentor!.name}',
+              description: 'Jomnes App - Study Session',
+              startDate: startTime,
+              endDate: endTime,
+            );
+            await Add2Calendar.addEvent2Cal(event);
+          }
 
           context.go('/courses');
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(res['message'] ?? 'Failed to book'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res['message'] ?? 'Failed to book'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isBooking = false);
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error connecting to server'), backgroundColor: Colors.red));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error connecting to server'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     }
   }
@@ -191,18 +326,29 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
       var user = await JomnesDB.from(
         'Users',
       ).select().eq('user_id', widget.mentorId).maybeSingle();
-      user ??= await JomnesDB.from(
+      // The avatar may live in either table (social logins only fill
+      // `profiles`), so read both rather than only falling back when the
+      // `Users` row is missing.
+      final profileRow = await JomnesDB.from(
         'profiles',
       ).select().eq('id', widget.mentorId).maybeSingle();
+      user ??= profileRow;
 
-      var profile = await JomnesDB.from('tutor_profiles')
-          .select()
-          .eq('user_id', widget.mentorId)
-          .maybeSingle();
-      profile ??= await JomnesDB.from('tutor_profiles')
-          .select()
-          .eq('tutor_id', widget.mentorId)
-          .maybeSingle();
+      final avatarCandidates = [
+        user?['profile_image'],
+        profileRow?['avatar_url'],
+        user?['avatar_url'],
+      ].map((value) => value?.toString() ?? '').where((url) => url.isNotEmpty);
+      final avatarUrl = avatarCandidates.isNotEmpty
+          ? avatarCandidates.first
+          : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}';
+
+      var profile = await JomnesDB.from(
+        'tutor_profiles',
+      ).select().eq('user_id', widget.mentorId).maybeSingle();
+      profile ??= await JomnesDB.from(
+        'tutor_profiles',
+      ).select().eq('tutor_id', widget.mentorId).maybeSingle();
 
       final coursesData = await JomnesDB.from(
         'courses',
@@ -215,7 +361,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
       if (mounted && user != null) {
         final p = profile ?? {};
         final rawSub = p['subject'] as String? ?? p['category'] as String?;
-        final subject = (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
+        final subject =
+            (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
             ? rawSub
             : Mentor.inferMentorSubject(p['bio'], p['education']);
 
@@ -226,14 +373,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
             subject: subject,
             experience: '${p['experience_years'] ?? 5} years experience',
             timeSlot: 'Flexible',
-            avatarUrl:
-                (user?['profile_image'] != null &&
-                        user!['profile_image'].toString().isNotEmpty)
-                    ? user['profile_image']
-                    : (user?['avatar_url'] != null &&
-                            user!['avatar_url'].toString().isNotEmpty)
-                        ? user['avatar_url']
-                        : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}',
+            avatarUrl: avatarUrl,
             rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
             students: (p['total_students'] as num?)?.toInt() ?? 120,
             classes: 50,
@@ -245,12 +385,20 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
           _isLoading = false;
         });
       } else if (mounted) {
-        setState(() => _isLoading = false);
+        final mock = getMockMentorById(widget.mentorId);
+        setState(() {
+          if (mock != null) _mentor = mock;
+          _isLoading = false;
+        });
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('ERROR in _fetchMentor: $e');
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        final mock = getMockMentorById(widget.mentorId);
+        setState(() {
+          if (mock != null) _mentor = mock;
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -271,19 +419,19 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF6F7F9),
+        backgroundColor: AppColors.pageBg,
         body: Center(child: CircularProgressIndicator()),
       );
     }
     final m = _mentor;
     if (m == null) {
       return const Scaffold(
-        backgroundColor: Color(0xFFF6F7F9),
+        backgroundColor: AppColors.pageBg,
         body: Center(child: Text('Mentor not found.')),
       );
     }
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7F9),
+      backgroundColor: AppColors.pageBg,
       body: SafeArea(
         child: Column(
           children: [
@@ -299,7 +447,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                     child: Icon(
                       Icons.close_rounded,
                       size: 24,
-                      color: Color(0xFF111827),
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),
@@ -345,19 +493,23 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           style: GoogleFonts.inter(
                             fontSize: 27,
                             fontWeight: FontWeight.w900,
-                            color: const Color(0xFF111827),
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         Row(
                           children: [
-                            const Icon(Icons.star_rounded, color: Colors.amber, size: 28),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Colors.amber,
+                              size: 28,
+                            ),
                             const SizedBox(width: 4),
                             Text(
                               m.rating.toStringAsFixed(1),
                               style: GoogleFonts.inter(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
-                                color: const Color(0xFF111827),
+                                color: AppColors.textPrimary,
                               ),
                             ),
                           ],
@@ -371,7 +523,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w400,
-                        color: const Color(0xFF4B5563),
+                        color: AppColors.slateTextDark,
                         height: 1.45,
                       ),
                     ),
@@ -382,9 +534,9 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         Expanded(
                           flex: 3,
                           child: ElevatedButton(
-                            onPressed: _isBooking ? null : _showBookingSheet,
+                            onPressed: _isBooking ? null : _handleInitialPayment,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2563EB),
+                              backgroundColor: AppColors.accentBlue,
                               foregroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -417,8 +569,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                             onPressed: () =>
                                 setState(() => _following = !_following),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFFE5E7EB),
-                              foregroundColor: const Color(0xFF111827),
+                              backgroundColor: AppColors.border,
+                              foregroundColor: AppColors.textPrimary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
@@ -475,8 +627,8 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                         ),
-                        labelColor: const Color(0xFF111827),
-                        unselectedLabelColor: const Color(0xFF6B7280),
+                        labelColor: AppColors.textPrimary,
+                        unselectedLabelColor: AppColors.textSecondary,
                         indicatorSize: TabBarIndicatorSize.tab,
                         indicator: BoxDecoration(
                           color: Colors.white,
@@ -497,7 +649,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                       ),
                     ),
                     const SizedBox(height: 20),
-                    
+
                     // Tab Content
                     if (_tabController.index == 0)
                       // Courses List
@@ -515,7 +667,11 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                               child: Center(
                                 child: Column(
                                   children: [
-                                    Icon(Icons.rate_review_outlined, size: 48, color: Colors.grey.shade400),
+                                    Icon(
+                                      Icons.rate_review_outlined,
+                                      size: 48,
+                                      color: Colors.grey.shade400,
+                                    ),
                                     const SizedBox(height: 12),
                                     Text(
                                       'No reviews yet.\nBe the first to leave one!',
@@ -532,33 +688,46 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                             )
                           : Column(
                               children: _reviews.map((r) {
-                                final profile = r['profiles'] ?? {};
-                                final name = profile['full_name'] ?? 'Student';
-                                final avatar = profile['avatar_url'];
-                                final initial = name.isNotEmpty ? name[0].toUpperCase() : 'S';
-                                
+                                final user = r['Users'] ?? r['profiles'] ?? {};
+                                final name = user['name'] ?? user['full_name'] ?? 'Student';
+                                final avatar = user['profile_image'] ?? user['avatar_url'];
+                                final initial = name.isNotEmpty
+                                    ? name[0].toUpperCase()
+                                    : 'S';
+
                                 return Container(
                                   margin: const EdgeInsets.only(bottom: 16),
                                   padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(color: Colors.grey.shade200),
+                                    border: Border.all(
+                                      color: Colors.grey.shade200,
+                                    ),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
                                           CircleAvatar(
                                             radius: 16,
-                                            backgroundColor: const Color(0xFFFFD5DC),
-                                            backgroundImage: avatar != null ? NetworkImage(avatar) : null,
+                                            backgroundColor: const Color(
+                                              0xFFFFD5DC,
+                                            ),
+                                            backgroundImage: avatar != null
+                                                ? NetworkImage(avatar)
+                                                : null,
                                             child: avatar == null
                                                 ? Text(
                                                     initial,
                                                     style: const TextStyle(
-                                                        fontSize: 12, fontWeight: FontWeight.w700, color: Colors.black),
+                                                      fontSize: 12,
+                                                      fontWeight:
+                                                          FontWeight.w700,
+                                                      color: Colors.black,
+                                                    ),
                                                   )
                                                 : null,
                                           ),
@@ -569,13 +738,17 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                               style: GoogleFonts.inter(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w700,
-                                                color: const Color(0xFF111827),
+                                                color: AppColors.textPrimary,
                                               ),
                                             ),
                                           ),
                                           Row(
                                             children: [
-                                              const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                                              const Icon(
+                                                Icons.star_rounded,
+                                                color: Colors.amber,
+                                                size: 16,
+                                              ),
                                               const SizedBox(width: 4),
                                               Text(
                                                 '${r['rating']}',
@@ -588,13 +761,17 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                                           ),
                                         ],
                                       ),
-                                      if (r['comment'] != null && r['comment'].toString().trim().isNotEmpty) ...[
+                                      if (r['comment'] != null &&
+                                          r['comment']
+                                              .toString()
+                                              .trim()
+                                              .isNotEmpty) ...[
                                         const SizedBox(height: 12),
                                         Text(
                                           r['comment'],
                                           style: GoogleFonts.inter(
                                             fontSize: 14,
-                                            color: const Color(0xFF4B5563),
+                                            color: AppColors.slateTextDark,
                                             height: 1.4,
                                           ),
                                         ),
@@ -614,7 +791,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                           ),
                         ),
                       ),
-                    
+
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -645,7 +822,7 @@ class _StatItem extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 11.5,
               fontWeight: FontWeight.w600,
-              color: const Color(0xFF6B7280),
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 5),
@@ -654,7 +831,7 @@ class _StatItem extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 14.5,
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF111827),
+              color: AppColors.textPrimary,
             ),
           ),
         ],
@@ -662,3 +839,4 @@ class _StatItem extends StatelessWidget {
     );
   }
 }
+

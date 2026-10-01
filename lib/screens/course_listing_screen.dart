@@ -6,6 +6,7 @@ import '../models/mentor.dart';
 import '../widgets/mentor_card.dart';
 import '../widgets/rich_course_card.dart';
 import '../constants/course_categories.dart';
+import '../constants/mock_data.dart';
 import '../main.dart';
 
 class CourseListingScreen extends StatefulWidget {
@@ -68,7 +69,6 @@ class _CourseListingScreenState extends State<CourseListingScreen>
       final mentors = userList.map((u) {
         final uid = u['user_id'].toString();
         final p = profileMap[uid] ?? {};
-        // Clean data: subject is always correctly set in tutor_profiles
         final subject = (p['subject'] as String? ?? '').isNotEmpty
             ? p['subject'] as String
             : Mentor.inferMentorSubject(p['bio'], p['education']);
@@ -95,32 +95,61 @@ class _CourseListingScreenState extends State<CourseListingScreen>
         );
       }).toList();
 
+      // Combine real mentors from database with mock mentors across all subjects
+      final combinedMentors = <Mentor>[...mentors];
+      final seenIds = mentors.map((m) => m.id).toSet();
+      for (final mockM in kMockMentors) {
+        if (seenIds.add(mockM.id)) {
+          combinedMentors.add(mockM);
+        }
+      }
+
       if (mounted) {
         setState(() {
-          _allMentors = mentors;
+          _allMentors = combinedMentors;
         });
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('ERROR fetching mentors: $e');
+      if (mounted) {
+        setState(() {
+          _allMentors = kMockMentors;
+        });
+      }
     }
   }
 
 
   Future<void> _fetchCourses() async {
     try {
-      final data = await JomnesDB.from('courses')
-          .select('*, Users!inner(name)')
-          .order('id', ascending: true) as List;
+      List<Map<String, dynamic>> dbCourses = [];
+      try {
+        final data = await JomnesDB.from('courses')
+            .select('*, Users(name)')
+            .order('id', ascending: true);
+        dbCourses = List<Map<String, dynamic>>.from(data);
+      } catch (_) {}
+
+      // Combine real uploaded courses from DB with mock courses
+      final combinedCourses = <Map<String, dynamic>>[...dbCourses];
+      final seenTitles = dbCourses.map((c) => (c['title'] ?? '').toString().toLowerCase().trim()).toSet();
+      for (final mc in getMockCoursesAsJson()) {
+        final title = (mc['title'] ?? '').toString().toLowerCase().trim();
+        if (seenTitles.add(title)) {
+          combinedCourses.add(mc);
+        }
+      }
 
       if (mounted) {
         setState(() {
-          _courses = data.cast<Map<String, dynamic>>();
+          _courses = combinedCourses;
         });
       }
     } catch (e) {
-      // ignore: avoid_print
-      print('ERROR fetching courses: $e');
+      if (mounted) {
+        setState(() {
+          _courses = getMockCoursesAsJson();
+        });
+      }
     }
   }
 
@@ -128,7 +157,8 @@ class _CourseListingScreenState extends State<CourseListingScreen>
     final sub = widget.subject.toLowerCase().trim();
     final list = _allMentors.where((m) {
       final mSub = m.subject.toLowerCase().trim();
-      return mSub.contains(sub) ||
+      return mSub == sub ||
+          mSub.contains(sub) ||
           sub.contains(mSub) ||
           m.name.toLowerCase().contains(sub);
     }).toList();
@@ -141,16 +171,16 @@ class _CourseListingScreenState extends State<CourseListingScreen>
   List<Map<String, dynamic>> get _filteredCourses {
     final sub = widget.subject.toLowerCase().trim();
 
-    // First try to match by category column or title
+    // Match by category column or title
     final matched = _courses.where((c) {
-      final cat = (c['category'] as String? ?? '').toLowerCase();
-      final title = (c['title'] as String? ?? '').toLowerCase();
-      return cat.contains(sub) ||
+      final cat = (c['category'] as String? ?? '').toLowerCase().trim();
+      final title = (c['title'] as String? ?? '').toLowerCase().trim();
+      return cat == sub ||
+          cat.contains(sub) ||
           sub.contains(cat) ||
           title.contains(sub);
     }).toList();
 
-    if (matched.isEmpty) return _courses;
     return matched;
   }
 
@@ -266,7 +296,7 @@ class _CourseListingScreenState extends State<CourseListingScreen>
                 labelStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
                 unselectedLabelStyle:
                     GoogleFonts.inter(fontWeight: FontWeight.w500, fontSize: 13),
-                labelColor: const Color(0xFF111827),
+                labelColor: AppColors.textPrimary,
                 unselectedLabelColor: Colors.white70,
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
@@ -312,7 +342,7 @@ class _CourseListingScreenState extends State<CourseListingScreen>
             child: Container(
               margin: const EdgeInsets.only(top: 14),
               decoration: const BoxDecoration(
-                color: Color(0xFFF6F7F9),
+                color: AppColors.pageBg,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -372,7 +402,7 @@ class _CoursesTabContent extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'No courses found for $subject',
-                style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF6B7280)),
+                style: GoogleFonts.inter(fontSize: 14, color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -393,7 +423,7 @@ class _CoursesTabContent extends StatelessWidget {
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFF111827),
+                color: AppColors.textPrimary,
               ),
             ),
           );
@@ -490,12 +520,12 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
             decoration: BoxDecoration(
               color: const Color(0xFFEFF6FF),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: const Color(0xFFBFDBFE)),
+              border: Border.all(color: AppColors.tagBlue),
             ),
             child: Row(
               children: [
                 const Icon(Icons.info_outline_rounded,
-                    color: Color(0xFF2563EB), size: 20),
+                    color: AppColors.accentBlue, size: 20),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -517,7 +547,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
           style: GoogleFonts.inter(
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: const Color(0xFF111827),
+            color: AppColors.textPrimary,
           ),
         ),
         const SizedBox(height: 12),
@@ -530,7 +560,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
               child: Text(
                 'No mentors found for ${widget.subject}.',
                 style: GoogleFonts.inter(
-                    fontSize: 14, color: const Color(0xFF6B7280)),
+                    fontSize: 14, color: AppColors.textSecondary),
               ),
             ),
           )
@@ -556,7 +586,7 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
           color: isSelected ? Colors.black : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.black : const Color(0xFFE5E7EB),
+            color: isSelected ? Colors.black : AppColors.border,
           ),
           boxShadow: [
             if (!isSelected)
@@ -572,10 +602,11 @@ class _MentorsTabContentState extends State<_MentorsTabContent> {
           style: GoogleFonts.inter(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-            color: isSelected ? Colors.white : const Color(0xFF374151),
+            color: isSelected ? Colors.white : AppColors.borderDark,
           ),
         ),
       ),
     );
   }
 }
+

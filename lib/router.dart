@@ -1,7 +1,10 @@
+import 'screens/notifications_screen.dart';
+import 'screens/teacher_notifications_screen.dart';
 import 'dart:async';
 import 'dart:developer';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
@@ -11,7 +14,6 @@ import 'screens/register_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/mentor_profile_screen.dart';
-import 'screens/user_profile_screen.dart';
 import 'screens/my_courses_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/forgot_password_screen.dart';
@@ -40,7 +42,7 @@ void setupDeepLinkListener() {
 
     log('DEBUG: onAuthStateChange fired — event=$event, hasSession=${session != null}');
     // ignore: avoid_print
-    print('>>> AUTH EVENT: $event, hasSession=${session != null}');
+    if (kDebugMode) debugPrint('AUTH_EVENT: $event hasSession=${session != null}');
 
     if (event == AuthChangeEvent.passwordRecovery && session != null) {
       router.go('/reset-password?access_token=${session.accessToken}');
@@ -109,6 +111,8 @@ set isGuestMode(bool value) => guestModeNotifier.setGuest(value);
 
 final _authRefresh = GoRouterRefreshStream(JomnesDB.auth.onAuthStateChange);
 
+bool _checkoutReturnHandled = false;
+
 final GoRouter router = GoRouter(
   initialLocation: '/',
   refreshListenable: Listenable.merge([_authRefresh, guestModeNotifier]),
@@ -116,6 +120,18 @@ final GoRouter router = GoRouter(
     final session = JomnesDB.auth.currentSession;
     final isGuest = isGuestMode;
     final loggedIn = session != null || isGuest;
+
+    // Returning from Stripe Checkout reloads the web app with the paid session
+    // in the page URL; send the student back to that mentor to pick a slot.
+    if (kIsWeb && !_checkoutReturnHandled && session != null) {
+      final params = Uri.base.queryParameters;
+      final checkoutSessionId = params['checkout_session_id'];
+      final tutorId = params['tutor_id'];
+      if (checkoutSessionId != null && tutorId != null) {
+        _checkoutReturnHandled = true;
+        return '/mentor/$tutorId?checkout_session_id=$checkoutSessionId';
+      }
+    }
     final isGoingToLogin = state.matchedLocation == '/login';
     final isGoingToRegister = state.matchedLocation == '/register';
     final isGoingToSplash = state.matchedLocation == '/';
@@ -174,6 +190,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/teacher-schedules', pageBuilder: (c, s) => _instant(s, const TeacherSchedulesScreen())),
     GoRoute(path: '/teacher-upload', pageBuilder: (c, s) => _instant(s, const TeacherUploadCourseScreen())),
     GoRoute(path: '/teacher-settings', pageBuilder: (c, s) => _instant(s, const TeacherSettingsScreen())),
+    GoRoute(path: '/teacher-notifications', pageBuilder: (c, s) => _instant(s, const TeacherNotificationsScreen())),
     GoRoute(
       path: '/login',
       pageBuilder: (c, s) {
@@ -207,7 +224,8 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/home', pageBuilder: (c, s) => _instant(s, const HomeScreen())),
     GoRoute(path: '/search', pageBuilder: (c, s) => _instant(s, const SearchScreen())),
     GoRoute(path: '/courses', pageBuilder: (c, s) => _instant(s, const MyCoursesScreen())),
-    GoRoute(path: '/profile', pageBuilder: (c, s) => _instant(s, const UserProfileScreen())),
+    GoRoute(path: '/notifications', pageBuilder: (c, s) => _instant(s, const NotificationsScreen())),
+    GoRoute(path: '/profile', redirect: (c, s) => '/settings'),
     GoRoute(path: '/settings', pageBuilder: (c, s) => _instant(s, const SettingsScreen())),
     GoRoute(path: '/edit-profile', pageBuilder: (c, s) => _instant(s, const EditProfileScreen())),
     GoRoute(path: '/change-password', pageBuilder: (c, s) => _instant(s, const ChangePasswordScreen())),
@@ -217,7 +235,13 @@ final GoRouter router = GoRouter(
       path: '/mentor/:id',
       pageBuilder: (c, s) {
         final id = s.pathParameters['id']!;
-        return _instant(s, MentorProfileScreen(mentorId: id));
+        return _instant(
+          s,
+          MentorProfileScreen(
+            mentorId: id,
+            checkoutSessionId: s.uri.queryParameters['checkout_session_id'],
+          ),
+        );
       },
     ),
     GoRoute(

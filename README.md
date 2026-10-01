@@ -1,341 +1,120 @@
-# 🎓 Jomnes — Mentor Booking & Learning App
+# Jomnes
 
-[![Flutter](https://img.shields.io/badge/Flutter-3.12%2B-blue.svg?logo=flutter)](https://flutter.dev)
-[![Dart](https://img.shields.io/badge/Dart-3.0%2B-0175C2.svg?logo=dart)](https://dart.dev)
-[![GoRouter](https://img.shields.io/badge/Routing-go__router%2014-purple.svg)](https://pub.dev/packages/go_router)
-[![Status](https://img.shields.io/badge/UI%20Status-Pixel--Perfect%20Figma-success.svg)](#features--screens)
+Jomnes is a cross-platform Flutter application that connects students with subject mentors for one-on-one tutoring. Students can browse courses and mentors, book sessions, pay for courses, and track their progress, while mentors (teachers) have a separate portal to manage students, schedules, and course uploads. The app is backed by Supabase for authentication, database, and storage, and by a companion Node.js/Express API for server-side operations such as payments, course management, bookings, and reviews.
 
-**Jomnes** is a modern, high-performance Flutter mobile application designed to connect students with top-tier subject mentors, browse live & interactive courses, book 1-on-1 tutoring sessions, and track learning progress with a sleek, dark-themed user interface.
+## Tech Stack
 
----
+**Mobile app (Flutter)**
+- Flutter / Dart, targeting Android, iOS, Web, Windows, macOS, and Linux
+- `go_router` for declarative routing and navigation guards (auth/guest/role-based redirects)
+- `supabase_flutter` for authentication (email/password, Google, Facebook) and data access
+- `flutter_stripe` for in-app payments
+- `google_fonts`, `flutter_animate` for styling and micro-animations
+- `flutter_local_notifications`, `add_2_calendar`, `permission_handler`, `image_picker`, `file_picker`, `audioplayers`, `shared_preferences` for supporting device features
 
-## 📑 Table of Contents
-- [▶️ How to Run the Project](#️-how-to-run-the-project)
-- [✨ Key Features & Implemented Screens](#-key-features--implemented-screens)
-- [🛠️ Tech Stack & Dependencies](#️-tech-stack--dependencies)
-- [📂 Project Directory Structure](#-project-directory-structure)
-- [🎨 Design System & Visual Guidelines](#-design-system--visual-guidelines)
-- [🚀 Getting Started & Local Development](#-getting-started--local-development)
-- [🗺️ Routing & Navigation Matrix](#️-routing--navigation-matrix)
-- [🔮 Supabase & Backend Roadmap](#-supabase--backend-roadmap)
-- [📚 Additional Documentation](#-additional-documentation)
+**Backend (`backend/`)**
+- Node.js with Express 5
+- `@supabase/supabase-js` for server-side Supabase access (auth sync, database operations)
+- `stripe` for payment intent creation and verification
+- `helmet`, `cors`, and `express-rate-limit` for basic API hardening
+- `multer` for file uploads
 
----
+## Project Structure
 
-## ▶️ How to Run the Project
+```text
+MOBILE_APPLICATION/
+├── lib/
+│   ├── constants/        # Static data (course categories, mock data used as fallback)
+│   ├── models/            # Mentor, user profile, and notification models
+│   ├── screens/           # Student and teacher screens (auth, home, courses, settings, etc.)
+│   ├── services/          # API client, auth, payments, notifications, file picking
+│   ├── theme/             # Colors, text styles, and ThemeData
+│   ├── widgets/           # Shared and reusable UI components
+│   ├── main.dart          # App entry point, Supabase/Stripe initialization
+│   └── router.dart        # GoRouter configuration, auth/role-based redirects
+├── backend/
+│   └── src/
+│       ├── controllers/   # Auth, booking, course, payment, review, user logic
+│       ├── routes/        # Express route definitions
+│       ├── middleware/    # Auth middleware
+│       ├── services/      # Auth service helpers
+│       ├── config/        # Supabase client configuration
+│       └── app.js, server.js
+├── docs/                  # Architecture notes, project state, and backend integration plan
+├── assets/                # Images used by the app
+└── pubspec.yaml           # Flutter project configuration
+```
 
-> [!TIP]
-> **✅ Recommended Method: Run on a Physical Android Phone via USB**
-> Plug your Android phone into your PC with a USB cable, enable USB Debugging, and run `flutter run`.
-> This gives the most accurate, native app experience and is the fastest to set up compared to emulators.
+## Features
 
-> **Prerequisites** — Make sure you have the following installed before running:
-> - [Flutter SDK 3.12+](https://docs.flutter.dev/get-started/install)
-> - [Dart SDK 3.0+](https://dart.dev/get-dart) *(bundled with Flutter)*
-> - [Android Studio](https://developer.android.com/studio) *(for emulator or USB device)*
-> - [Google Chrome](https://www.google.com/chrome/) *(for web)*
-> - [Node.js 18+](https://nodejs.org/) *(for the backend server)*
+- Student and mentor (teacher) authentication with role selection, including Google and Facebook sign-in
+- Home, search, and course listing screens for discovering mentors and courses
+- Mentor profile pages with booking
+- Course purchase flow with Stripe payments
+- In-app notifications with unread badge count
+- Student-side settings: profile editing, password change, privacy/security, payment methods
+- Teacher portal: dashboard, student list, schedules, course upload, and settings
+- Backend REST API for authentication sync, bookings, reviews, courses, and payments, backed by Supabase Postgres
 
-### Step 1 — Install Flutter Dependencies
+## Getting Started
 
-Run this once after cloning the project:
+### Prerequisites
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) (Dart SDK `^3.12.2` per `pubspec.yaml`)
+- [Node.js](https://nodejs.org/) (for the backend)
+- A Supabase project (URL, anon/publishable key, and service role key for the backend)
+- A Stripe account (test keys are sufficient for local development)
+
+### 1. Install Flutter dependencies
 
 ```bash
-cd MOBILE_APPLICATION
 flutter pub get
 ```
 
-### Step 2 — Set Up Environment Variables
+### 2. Configure the backend environment
 
-Copy the example `.env` file and fill in your Supabase credentials:
+Copy the example environment file and fill in your own Supabase and Stripe values:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` and set your values:
+The backend (`backend/src/server.js`) loads this `.env` file from the project root. Required variables include `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT`, and `CORS_ORIGINS`.
 
-```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key
-```
+Note: the Flutter app itself does not read `.env` — its Supabase URL/key and Stripe publishable key are currently set directly in `lib/main.dart`. Update them there if you point the app at a different Supabase project.
 
-### Step 3 — Start the Backend Server
-
-The app requires the Node.js backend to be running for API calls:
+### 3. Run the backend
 
 ```bash
 cd backend
-npm install       # only needed the first time
-npm start         # starts the server on http://localhost:5005
+npm install
+npm start        # or: npm run dev (nodemon, auto-restart)
 ```
 
-Leave this terminal running, then open a new terminal for the Flutter commands below.
+The API listens on the port set by `PORT` in `.env` (defaults to `5005`) and exposes a health check at `GET /api/health`.
 
----
+### 4. Run the Flutter app
 
-### 📲 Run on a Physical Android Phone (USB)
-
-**Step 1** — Enable Developer Mode on your phone:
-1. Go to **Settings → About Phone**
-2. Tap **Build Number** 7 times until you see *"You are now a developer"*
-3. Go to **Settings → Developer Options** → Enable **USB Debugging**
-
-**Step 2** — Connect your phone via USB cable, then verify Flutter detects it:
+With the backend running in a separate terminal:
 
 ```bash
-flutter devices
+flutter devices        # list available devices/emulators
+flutter run             # run on the default/connected device
+flutter run -d chrome   # run in a browser
 ```
 
-You should see your phone listed by model name.
-
-**Step 3** — Run the app on your phone:
-
-```bash
-flutter run
-```
-
-If multiple devices are connected, specify the device ID:
-
-```bash
-flutter run -d <your-device-id>
-```
-
-Replace `<your-device-id>` with the ID shown by `flutter devices` (e.g. `R3CN90ABCDE`).
-
----
-
-### 🌐 Run on Chrome (Web)
-
-This is the fastest way to preview the app in a browser:
-
-```bash
-flutter run -d chrome
-```
-
-- Chrome will **open automatically** with the app running.
-- The app URL will be a random `localhost` port (e.g. `http://localhost:54667`).
-- Use **`r`** in the terminal for hot reload, **`R`** for hot restart.
-
-To run on a **fixed port** (useful for sharing with teammates):
-
-```bash
-flutter run -d web-server --web-port 8080 --web-hostname localhost
-```
-
-Then open [http://localhost:8080](http://localhost:8080) manually in Chrome.
-
----
-
-### 📱 Run on Android Studio (Emulator)
-
-**Step 1** — Open Android Studio and create an emulator:
-1. Go to **Device Manager** → **Create Device**
-2. Choose a phone profile (e.g. *Pixel 6*) → Select a system image (API 33+)
-3. Click **Finish**, then **▶ Launch** the emulator
-
-**Step 2** — Verify Flutter can detect the emulator:
-
-```bash
-flutter devices
-```
-
-You should see your emulator listed (e.g. `sdk gphone64 x86 64 • emulator-5554`).
-
-**Step 3** — Run the app on the emulator:
-
-```bash
-flutter run -d emulator-5554
-```
-
-Or simply run `flutter run` — if only one emulator is running, Flutter picks it automatically:
-
-```bash
-flutter run
-```
-
----
-
-### 🛠️ Useful Flutter Commands
+Useful commands:
 
 | Command | Description |
-| :--- | :--- |
-| `flutter devices` | List all connected devices & emulators |
+| --- | --- |
+| `flutter pub get` | Install/update Flutter dependencies |
 | `flutter run` | Run on the default connected device |
-| `flutter run -d chrome` | Run on Chrome browser |
-| `flutter run -d emulator-5554` | Run on a specific emulator |
-| `flutter pub get` | Install/update dependencies |
-| `flutter clean` | Clear build cache (fixes most build errors) |
-| `flutter build apk` | Build release APK for Android |
-| `flutter analyze` | Run static code analysis |
+| `flutter run -d chrome` | Run in Chrome |
+| `flutter clean` | Clear the build cache |
+| `flutter build apk` | Build a release APK |
+| `flutter analyze` | Run static analysis |
 
----
+## Additional Documentation
 
-## ✨ Key Features & Implemented Screens
-
-| Screen | Route | Key Features & Implementation |
-| :--- | :--- | :--- |
-| **Splash / Onboarding** | `/` | Immersive hero illustration background, branded typography, animated entrance, and seamless onboarding flow. |
-| **Authentication** | `/login`<br>`/register` | Dark aesthetic cards with animated tab switching, input validation, password toggle, social login buttons (Google, Facebook). |
-| **Home Screen** | `/home` | Student profile banner with notification indicator, interactive search trigger, horizontal **Featured Courses** carousel (Math, Geography, Chemistry), and **Top Mentors** list with live availability badges. |
-| **Search & Discovery** | `/search` | Dynamic category filter chips (All, Math, Science, Language, etc.), search bar with real-time mentor filtering, rating/experience highlights. |
-| **Mentor Profile** | `/mentor/:id` | Detailed mentor header, rating/student/follower counters, subject badges, tabbed switcher (**About** vs. **Reviews**), and sticky **Book Session** CTA. |
-| **My Courses** | `/courses` | Enrolled courses list, progress bars, lesson count indicators, live timer badges (`30 mins remaining`), and mentor info. |
-| **User Profile** | `/profile` | Student dashboard (Jessica Carl), learning statistics (courses enrolled, hours learned, certificates earned), account management shortcuts. |
-| **Settings Panel** | `/settings` | Account preferences, push notifications, dark/light appearance toggles, privacy & security options, help center, and logout dialog. |
-
----
-
-## 🛠️ Tech Stack & Dependencies
-
-| Category | Technology | Purpose |
-| :--- | :--- | :--- |
-| **Framework** | Flutter (SDK `^3.12.2`) | Cross-platform UI toolkit (iOS, Android, Web, Windows) |
-| **Language** | Dart (SDK `^3.0.0`) | Object-oriented, client-optimized programming language |
-| **Routing** | [`go_router: ^14.6.3`](https://pub.dev/packages/go_router) | Declarative navigation, deep linking, custom page transitions |
-| **Typography** | [`google_fonts: ^6.2.1`](https://pub.dev/packages/google_fonts) | Inter font family integration |
-| **Micro-Animations** | [`flutter_animate: ^4.5.0`](https://pub.dev/packages/flutter_animate) | Smooth staggered entrance transitions & micro-interactions |
-| **Icons** | `cupertino_icons: ^1.0.8` & Material Icons | Pixel-crisp icon sets |
-
----
-
-## 📂 Project Directory Structure
-
-```text
-MOBILE_APPLICATION/
-├── assets/
-│   └── images/                     # High-resolution course cards & mentor avatars
-│       ├── featured_chemistry.png
-│       ├── featured_geography.png
-│       ├── featured_math.png
-│       ├── hero_bg.png
-│       ├── jessica_avatar.png
-│       ├── jessica_large.png
-│       ├── mentor_channara.png
-│       └── mentor_thavy.png
-├── docs/                           # Detailed Architecture & Backend Specs
-│   ├── ARCHITECTURE.md             # Routing, widget hierarchy, design system tokens
-│   ├── PROJECT_STATE.md            # Detailed status of all screens, widgets & features
-│   └── BACKEND_INTEGRATION_PLAN.md # Supabase PostgreSQL Schema, RLS, & OAuth guide
-├── lib/
-│   ├── data/
-│   │   └── mock_data.dart          # Static mock models for mentors, courses, and reviews
-│   ├── models/
-│   │   └── mentor.dart             # Mentor, Course, and FeaturedCourse data classes
-│   ├── screens/
-│   │   ├── home_screen.dart        # Main dashboard with featured courses & mentors
-│   │   ├── login_screen.dart       # Sign-in screen with hero illustration
-│   │   ├── mentor_profile_screen.dart # Detailed mentor profile & booking CTA
-│   │   ├── my_courses_screen.dart  # Active learning & course progress tracker
-│   │   ├── register_screen.dart    # Account creation screen
-│   │   ├── search_screen.dart      # Mentor discovery & category filter screen
-│   │   ├── settings_screen.dart    # Comprehensive app & account settings
-│   │   ├── splash_screen.dart      # Brand splash screen
-│   │   └── user_profile_screen.dart # Student profile & learning stats
-│   ├── theme/
-│   │   ├── app_colors.dart         # Design tokens & color constants
-│   │   └── app_theme.dart          # ThemeData configuration & GoogleFonts Inter theme
-│   ├── widgets/
-│   │   ├── auth_widgets.dart       # Reusable auth text fields & social buttons
-│   │   ├── bottom_nav_bar.dart     # Custom 5-tab persistent bottom navigation bar
-│   │   ├── course_card.dart        # Horizontal & vertical course cards with progress
-│   │   ├── featured_course_card.dart # Visual card with artwork & mentor name
-│   │   ├── galaxy_background.dart  # Cosmic background decoration effect
-│   │   ├── mentor_card.dart        # Mentor card with status, rating, and quick-book
-│   │   └── tag_chip.dart           # Category and subject tag chips
-│   ├── main.dart                   # Application entry point & SystemUI configuration
-│   └── router.dart                 # Declarative GoRouter configuration & page transitions
-└── pubspec.yaml                    # Flutter project configuration & asset declarations
-```
-
----
-
-## 🎨 Design System & Visual Guidelines
-
-### Color Palette (`AppColors`)
-* **Dark Background**: `#0A0A12` (`darkBg`), `#16161E` (`darkCard`), `#1C1C26` (`darkInput`)
-* **Galaxy Accents**: `#7B3FC8` (Purple), `#3D1F8A` (Mid), `#1A0A4A` (Deep)
-* **Course Card Tints**: `#E8B4FF` (Pink), `#B3E6FF` (Blue), `#E8820C` (Orange), `#0C7B8C` (Teal)
-* **Brand Accents**: `#2563EB` (Accent Blue), `#EF4444` (Live Indicator Red)
-* **Text Colors**: `#111827` (Text Primary), `#FFFFFF` (Text White), `#6B7280` (Text Secondary)
-
-### Typography
-* **Primary Font**: `GoogleFonts.inter`
-* **Scale**:
-  - Screen Titles: `24px - 28px`, Bold (`w700`)
-  - Section Headers: `18px - 20px`, Semi-Bold (`w600`)
-  - Body / Subtitles: `13px - 15px`, Regular (`w400`) / Medium (`w500`)
-  - Badges & Micro-copy: `10px - 12px`, Medium (`w500`)
-
----
-
-## 🚀 Getting Started & Local Development
-
-See the [▶️ How to Run the Project](#️-how-to-run-the-project) section at the top for full setup and run instructions for Chrome, Android emulator, and physical devices.
-
-### Quick Start Summary
-
-```bash
-# 1. Install dependencies
-flutter pub get
-
-# 2. Start backend (in a separate terminal)
-cd backend && npm start
-
-# 3. Run on Chrome
-flutter run -d chrome
-
-# 4. Run on Android emulator or phone
-flutter run
-```
-
----
-
-## 🗺️ Routing & Navigation Matrix
-
-All navigation transitions use custom slide + fade animations (`CurvedAnimation(curve: Curves.easeOutCubic)`):
-
-```mermaid
-flowchart TD
-    Splash["/ (SplashScreen)"] -->|Get Started| Login["/login (LoginScreen)"]
-    Login <-->|Toggle Tab| Register["/register (RegisterScreen)"]
-    Login -->|Sign In| Home["/home (HomeScreen)"]
-    Register -->|Sign Up| Home
-    
-    subgraph BottomNav["Bottom Navigation Bar"]
-        Home <--> Search["/search (SearchScreen)"]
-        Home <--> Courses["/courses (MyCoursesScreen)"]
-        Home <--> Profile["/profile (UserProfileScreen)"]
-        Home <--> Settings["/settings (SettingsScreen)"]
-    end
-    
-    Home -->|Tap Mentor Card| MentorDetails["/mentor/:id (MentorProfileScreen)"]
-    Search -->|Tap Mentor Card| MentorDetails
-```
-
----
-
-## 🔮 Supabase & Backend Roadmap
-
-The application is structured to easily transition from static mock data to **Supabase** backend services:
-
-1. **Authentication**:
-   - Native Google Sign-In via `google_sign_in` + `supabase.auth.signInWithIdToken`
-   - Native Apple Sign-In via `sign_in_with_apple` + `supabase.auth.signInWithIdToken`
-   - Email / Password with JWT session management
-2. **PostgreSQL Relational Schema**:
-   - `profiles` (Student metadata & statistics)
-   - `mentors` (Bios, subjects, hourly rates, availability)
-   - `courses` (Course details, duration, lessons, live status)
-   - `bookings` (1-on-1 tutoring appointments & status tracking)
-   - `reviews` (Student ratings and testimonials)
-3. **Realtime & Storage**:
-   - Instant booking status updates via Supabase Realtime Channels
-   - Avatar & course asset uploads via Supabase Storage Buckets
-
----
-
-## 📚 Additional Documentation
-* [Architecture Deep Dive](docs/ARCHITECTURE.md)
-* [Current Project State & Screen Audit](docs/PROJECT_STATE.md)
-* [Supabase Backend & PostgreSQL Integration Plan](docs/BACKEND_INTEGRATION_PLAN.md)
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - routing and widget architecture notes
+- [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) - current status of screens and features
+- [docs/BACKEND_INTEGRATION_PLAN.md](docs/BACKEND_INTEGRATION_PLAN.md) - Supabase schema and integration notes

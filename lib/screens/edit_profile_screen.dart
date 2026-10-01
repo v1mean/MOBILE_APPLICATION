@@ -8,6 +8,7 @@ import '../models/user_profile.dart';
 import '../services/api_service.dart';
 import '../services/permission_service.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({super.key});
@@ -146,7 +147,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
               ],
             ),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: AppColors.successGreen,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -211,7 +212,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               Text('Photo uploaded!',
                   style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
             ]),
-            backgroundColor: const Color(0xFF10B981),
+            backgroundColor: AppColors.successGreen,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
@@ -265,9 +266,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       style: GoogleFonts.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF0F172A))),
+                          color: AppColors.slateDark)),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: Color(0xFF64748B)),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.slateText),
                     onPressed: () => Navigator.pop(ctx),
                   ),
                 ],
@@ -277,7 +278,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF64748B))),
+                      color: AppColors.slateText)),
               const SizedBox(height: 12),
               SizedBox(
                 height: 72,
@@ -328,20 +329,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: GoogleFonts.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: const Color(0xFF64748B))),
+                      color: AppColors.slateText)),
               const SizedBox(height: 8),
               Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
+                  color: AppColors.surfaceLight,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: const Color(0xFFE2E8F0)),
+                  border: Border.all(color: AppColors.slateBorderLight),
                 ),
                 child: TextField(
                   controller: urlController,
-                  style: GoogleFonts.inter(fontSize: 14, color: const Color(0xFF0F172A)),
+                  style: GoogleFonts.inter(fontSize: 14, color: AppColors.slateDark),
                   decoration: InputDecoration(
                     hintText: 'https://example.com/avatar.jpg',
-                    hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13),
+                    hintStyle: GoogleFonts.inter(color: AppColors.slateIconMuted, fontSize: 13),
                     border: InputBorder.none,
                     filled: true,
                     fillColor: Colors.transparent,
@@ -451,7 +452,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Container(
               width: double.infinity,
               decoration: const BoxDecoration(
-                color: Color(0xFFF8FAFC),
+                color: AppColors.surfaceLight,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
@@ -490,7 +491,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         decoration: BoxDecoration(
                                           shape: BoxShape.circle,
                                           gradient: const LinearGradient(
-                                            colors: [AppColors.accentBlue, Color(0xFF6366F1)],
+                                            colors: [AppColors.accentBlue, AppColors.indigoAccent],
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
                                           ),
@@ -505,7 +506,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         padding: const EdgeInsets.all(3),
                                         child: ClipOval(
                                           child: Container(
-                                            color: const Color(0xFFFFD5DC),
+                                            color: AppColors.pastelPink,
                                             child: _isUploadingAvatar
                                                 ? const Center(
                                                     child: SizedBox(
@@ -513,7 +514,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                       height: 36,
                                                       child: CircularProgressIndicator(
                                                           strokeWidth: 3,
-                                                          color: Color(0xFF3B82F6)),
+                                                          color: AppColors.skyBlueAccent),
                                                     ),
                                                   )
                                                 : _avatarUrl != null && _avatarUrl!.isNotEmpty
@@ -573,7 +574,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   style: GoogleFonts.inter(
                                       fontSize: 18,
                                       fontWeight: FontWeight.w800,
-                                      color: const Color(0xFF0F172A)),
+                                      color: AppColors.slateDark),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
@@ -581,7 +582,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                       ? _emailController.text
                                       : 'student@jomnes.com',
                                   style: GoogleFonts.inter(
-                                      fontSize: 13, color: const Color(0xFF64748B)),
+                                      fontSize: 13, color: AppColors.slateText),
                                 ),
                                 const SizedBox(height: 12),
                                 OutlinedButton.icon(
@@ -624,7 +625,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                     style: GoogleFonts.inter(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w800,
-                                        color: const Color(0xFF0F172A))),
+                                        color: AppColors.slateDark)),
                                 const SizedBox(height: 18),
                                 _buildFormField(
                                   label: 'Full Name',
@@ -642,7 +643,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   controller: _roleController,
                                   hint: 'e.g. Computer Science Student',
                                   icon: Icons.school_rounded,
-                                  iconColor: const Color(0xFF8B5CF6),
+                                  iconColor: AppColors.violetAccent,
                                 ),
                                 const SizedBox(height: 16),
                                 _buildFormField(
@@ -650,7 +651,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   controller: _phoneController,
                                   hint: '+855 12 345 678',
                                   icon: Icons.phone_rounded,
-                                  iconColor: const Color(0xFF10B981),
+                                  iconColor: AppColors.successGreen,
                                   keyboardType: TextInputType.phone,
                                 ),
                                 const SizedBox(height: 16),
@@ -659,7 +660,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                   controller: _locationController,
                                   hint: 'e.g. Phnom Penh, Cambodia',
                                   icon: Icons.location_on_rounded,
-                                  iconColor: const Color(0xFFF59E0B),
+                                  iconColor: AppColors.warningAmber,
                                 ),
                               ],
                             ),
@@ -693,8 +694,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         const Icon(Icons.check_rounded, size: 20),
                                         const SizedBox(width: 8),
                                         Text('Save Changes',
-                                            style: GoogleFonts.inter(
-                                                fontSize: 16, fontWeight: FontWeight.w700)),
+                                            style: AppTextStyles.boldLabelMd),
                                       ],
                                     ),
                             ),
@@ -725,13 +725,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF475569))),
+                color: AppColors.slateGray)),
         const SizedBox(height: 7),
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF8FAFC),
+            color: AppColors.surfaceLight,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.slateBorderLight),
           ),
           child: TextField(
             controller: controller,
@@ -740,10 +740,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             style: GoogleFonts.inter(
                 fontSize: 14.5,
                 fontWeight: FontWeight.w600,
-                color: const Color(0xFF0F172A)),
+                color: AppColors.slateDark),
             decoration: InputDecoration(
               hintText: hint,
-              hintStyle: GoogleFonts.inter(color: const Color(0xFF94A3B8), fontSize: 13.5),
+              hintStyle: GoogleFonts.inter(color: AppColors.slateIconMuted, fontSize: 13.5),
               filled: true,
               fillColor: Colors.transparent,
               prefixIcon: Container(
@@ -781,16 +781,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 style: GoogleFonts.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: const Color(0xFF475569))),
+                    color: AppColors.slateGray)),
             Row(
               children: [
-                const Icon(Icons.verified_rounded, size: 14, color: Color(0xFF10B981)),
+                const Icon(Icons.verified_rounded, size: 14, color: AppColors.successGreen),
                 const SizedBox(width: 4),
                 Text('Verified',
                     style: GoogleFonts.inter(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF10B981))),
+                        color: AppColors.successGreen)),
               ],
             ),
           ],
@@ -799,9 +799,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
           decoration: BoxDecoration(
-            color: const Color(0xFFF1F5F9),
+            color: AppColors.slateBgSoft,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFFE2E8F0)),
+            border: Border.all(color: AppColors.slateBorderLight),
           ),
           child: Row(
             children: [
@@ -812,7 +812,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   color: Colors.grey.withAlpha(30),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Icon(Icons.mail_rounded, color: Color(0xFF64748B), size: 18),
+                child: const Icon(Icons.mail_rounded, color: AppColors.slateText, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -823,10 +823,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   style: GoogleFonts.inter(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w600,
-                      color: const Color(0xFF64748B)),
+                      color: AppColors.slateText),
                 ),
               ),
-              const Icon(Icons.lock_rounded, size: 16, color: Color(0xFF94A3B8)),
+              const Icon(Icons.lock_rounded, size: 16, color: AppColors.slateIconMuted),
             ],
           ),
         ),

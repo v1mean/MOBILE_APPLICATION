@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import '../widgets/user_avatar_header.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../services/teacher_course_service.dart';
+import '../services/teacher_notification_service.dart';
+import '../widgets/notification_bell.dart';
 import '../main.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
 
 class _ScheduleItem {
   final String name;
@@ -26,11 +31,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   String? _avatarUrl;
 
   static final _schedule = [
-    _ScheduleItem('Socheatre', 'Chroy Chongva', '10am - 11am', const Color(0xFFF3E8FF)),
+    _ScheduleItem('Socheatre', 'Chroy Chongva', '10am - 11am', AppColors.purpleBgLight),
     _ScheduleItem('Srey Pich', 'Preak Leab', '8am - 9am', const Color(0xFFE0F2FE)),
-    _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', const Color(0xFFDCFCE7)),
+    _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', AppColors.successBgLight),
   ];
 
+  List<TeacherCourse> _courses = [];
+  bool _isLoadingCourses = true;
   void _showCourseDetailModal(BuildContext context, TeacherCourse course) {
     showModalBottomSheet(
       context: context,
@@ -79,12 +86,12 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF2563EB).withAlpha(20),
+                          color: AppColors.accentBlue.withAlpha(20),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           course.category,
-                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: const Color(0xFF2563EB)),
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accentBlue),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -118,14 +125,14 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
             const SizedBox(height: 8),
             Text(
               course.description,
-              style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF4B5563), height: 1.4),
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.slateTextDark, height: 1.4),
             ),
             const SizedBox(height: 16),
             if (course.materialName != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -160,7 +167,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF3F4F6),
+                  color: AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -240,6 +247,59 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchCourses();
+    TeacherNotificationService.init();
+  }
+
+  Future<void> _fetchCourses() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+      if (session == null) return;
+      final data = await JomnesDB.from('courses')
+          .select()
+          .eq('tutor_id', session.user.id)
+          .order('created_at', ascending: false);
+          
+      if (mounted) {
+        setState(() {
+          _courses = (data as List).map((c) => TeacherCourse(
+            id: c['id']?.toString() ?? '',
+            title: c['title'] ?? 'Course Title',
+            description: c['description'] ?? 'No description',
+            category: c['category']?.toString() ?? 'General',
+            rating: (c['rating'] as num?)?.toDouble() ?? 5.0,
+            timeAgo: _formatTimeAgo(c['created_at']),
+            color: _parseColor(c['card_color']),
+          )).toList();
+          _isLoadingCourses = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingCourses = false);
+    }
+  }
+
+  String _formatTimeAgo(String? dateStr) {
+    if (dateStr == null) return 'Just now';
+    final date = DateTime.tryParse(dateStr);
+    if (date == null) return 'Just now';
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays > 0) return '${diff.inDays} day${diff.inDays == 1 ? '' : 's'} ago';
+    if (diff.inHours > 0) return '${diff.inHours} hr${diff.inHours == 1 ? '' : 's'} ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes} min${diff.inMinutes == 1 ? '' : 's'} ago';
+    return 'Just now';
+  }
+
+  Color _parseColor(String? colorStr) {
+    switch (colorStr) {
+      case 'pink': return AppColors.pastelPurple;
+      case 'blue': return const Color(0xFFE0F2FE);
+      case 'green': return AppColors.successBgLight;
+      case 'orange': return const Color(0xFFFFEDD5);
+      case 'slate': return AppColors.slateBorderLight;
+      case 'cyan': return const Color(0xFFCFFAFE);
+      default: return AppColors.pastelPurple;
+    }
   }
 
   Future<void> _fetchProfile() async {
@@ -270,46 +330,39 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
   Widget build(BuildContext context) {
     SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
+      backgroundColor: AppColors.surfaceSoft,
       body: Column(
         children: [
           // ── Dark Top Header ──
           Container(
-            color: const Color(0xFF0A0A12),
+            color: AppColors.darkBg,
             child: SafeArea(
               bottom: false,
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 24,
-                      backgroundColor: const Color(0xFF7B3FC8),
-                      backgroundImage: _avatarUrl != null && _avatarUrl!.startsWith('http')
-                          ? NetworkImage(_avatarUrl!)
-                          : null,
-                      child: (_avatarUrl == null || !_avatarUrl!.startsWith('http'))
-                          ? const Icon(Icons.person, color: Colors.white, size: 28)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(_userName, style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
-                        Text('Teacher', style: GoogleFonts.inter(fontSize: 12, color: Colors.white54)),
-                      ],
+                    UserAvatarHeader(
+                      name: _userName,
+                      role: 'Teacher',
+                      avatarUrl: _avatarUrl,
                     ),
                     const Spacer(),
                     Container(
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: const Color(0xFF16161E),
+                        color: AppColors.darkCard,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
-                      child: const Icon(Icons.notifications_outlined, color: Colors.white70, size: 22),
+                      child: NotificationBell(
+                        color: Colors.white70,
+                        size: 22,
+                        unreadCountListenable:
+                            TeacherNotificationService.unreadCountNotifier,
+                        onTap: () => context.push('/teacher-notifications'),
+                      ),
                     ),
                   ],
                 ),
@@ -327,7 +380,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                   // Today Schedule
                   Text(
                     'Today Schedule',
-                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E)),
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.navyText),
                   ),
                   const SizedBox(height: 12),
                   Container(
@@ -347,7 +400,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                               onTap: () => context.go('/teacher-schedules'),
                               child: Text(
                                 'See more',
-                                style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF2563EB), fontWeight: FontWeight.w600),
+                                style: GoogleFonts.inter(fontSize: 13, color: AppColors.accentBlue, fontWeight: FontWeight.w600),
                               ),
                             ),
                           ),
@@ -364,7 +417,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     children: [
                       Text(
                         'Your Latest Courses',
-                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E)),
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.navyText),
                       ),
                       GestureDetector(
                         onTap: () => context.push('/teacher-upload'),
@@ -390,6 +443,30 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  if (_isLoadingCourses)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(color: AppColors.galaxyPurple),
+                      ),
+                    )
+                  else if (_courses.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text('No courses uploaded yet.\nClick + to upload one!',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(color: Colors.grey, fontSize: 14)),
+                      ),
+                    )
+                  else
+                    ..._courses.map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _CourseCard(
+                        item: c,
+                        onTap: () => _showCourseDetailModal(context, c),
+                      ),
+                    )),
 
                   AnimatedBuilder(
                     animation: TeacherCourseService.instance,
@@ -425,7 +502,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                   Container(
                                     padding: const EdgeInsets.all(6),
                                     decoration: const BoxDecoration(
-                                      color: Color(0xFFF3F4F6),
+                                      color: AppColors.surfaceMuted,
                                       shape: BoxShape.circle,
                                     ),
                                     child: const Icon(Icons.add_rounded, size: 18, color: Colors.black),
@@ -436,7 +513,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                                     style: GoogleFonts.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w700,
-                                      color: const Color(0xFF1E293B),
+                                      color: AppColors.slateNavy,
                                     ),
                                   ),
                                 ],
@@ -454,7 +531,10 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.push('/teacher-upload'),
+        onPressed: () async {
+          await context.push('/teacher-upload');
+          _fetchCourses();
+        },
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 4,
@@ -491,12 +571,12 @@ class _ScheduleRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: const Color(0xFF1A1A2E))),
-                Text(item.location, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
+                Text(item.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.navyText)),
+                Text(item.location, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
               ],
             ),
           ),
-          Text(item.time, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: const Color(0xFF374151))),
+          Text(item.time, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.borderDark)),
         ],
       ),
     );
@@ -552,14 +632,14 @@ class _CourseCard extends StatelessWidget {
                           ),
                           child: Text(
                             item.category,
-                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: const Color(0xFF1E293B)),
+                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.slateNavy),
                           ),
                         ),
                         const SizedBox(height: 4),
                       ],
                       Text(
                         item.title,
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E)),
+                        style: AppTextStyles.cardLabelBold,
                       ),
                     ],
                   ),
@@ -571,7 +651,7 @@ class _CourseCard extends StatelessWidget {
             const SizedBox(height: 6),
             Text(
               item.description,
-              style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF4B5563)),
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.slateTextDark),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
@@ -580,12 +660,12 @@ class _CourseCard extends StatelessWidget {
               children: [
                 Text(
                   '${item.rating} rating',
-                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: const Color(0xFF1A1A2E)),
+                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navyText),
                 ),
                 const Spacer(),
                 Text(
                   item.timeAgo,
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)),
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
                 ),
               ],
             ),
@@ -595,3 +675,5 @@ class _CourseCard extends StatelessWidget {
     );
   }
 }
+
+

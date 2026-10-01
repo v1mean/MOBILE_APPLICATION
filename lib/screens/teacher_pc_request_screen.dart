@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../main.dart';
+import '../services/api_service.dart';
+import '../theme/app_colors.dart';
 
 class _RequestItem {
   final String name;
@@ -21,6 +23,8 @@ class TeacherPcRequestScreen extends StatefulWidget {
 class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
   String _userName = 'Teacher';
   String? _avatarUrl;
+  List<Map<String, dynamic>> _bookings = [];
+  bool _isLoadingBookings = true;
 
   static final _requests = [
     _RequestItem(
@@ -45,13 +49,16 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
   void initState() {
     super.initState();
     _fetchProfile();
+    _fetchBookings();
   }
 
   Future<void> _fetchProfile() async {
     try {
       final session = JomnesDB.auth.currentSession;
       if (session == null) return;
-      final data = await JomnesDB.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
+      final data = await JomnesDB.from(
+        'profiles',
+      ).select('full_name, avatar_url').eq('id', session.user.id).maybeSingle();
       if (data != null && mounted) {
         setState(() {
           _userName = data['full_name'] ?? 'Teacher';
@@ -60,6 +67,37 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
         });
       }
     } catch (_) {}
+  }
+
+  Future<void> _fetchBookings() async {
+    try {
+      final session = JomnesDB.auth.currentSession;
+
+      if (session == null) {
+        if (mounted) {
+          setState(() => _isLoadingBookings = false);
+        }
+        return;
+      }
+
+      final bookings = await ApiService.fetchTeacherBookings(
+        session.accessToken,
+      );
+
+      if (mounted) {
+        setState(() {
+          _bookings = bookings
+              .where((booking) => booking['status'] == 'pending')
+              .toList();
+
+          _isLoadingBookings = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingBookings = false);
+      }
+    }
   }
 
   @override
@@ -78,10 +116,16 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: const Color(0xFF7B3FC8),
-                    backgroundImage: _avatarUrl != null ? NetworkImage(_avatarUrl!) : null,
+                    backgroundColor: AppColors.galaxyPurple,
+                    backgroundImage: _avatarUrl != null
+                        ? NetworkImage(_avatarUrl!)
+                        : null,
                     child: _avatarUrl == null
-                        ? const Icon(Icons.person, color: Colors.white, size: 28)
+                        ? const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 28,
+                          )
                         : null,
                   ),
                   const SizedBox(width: 12),
@@ -147,7 +191,7 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
                         style: GoogleFonts.inter(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
-                          color: const Color(0xFF111827),
+                          color: AppColors.textPrimary,
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -168,7 +212,9 @@ class _TeacherPcRequestScreenState extends State<TeacherPcRequestScreen> {
         shape: const CircleBorder(),
         child: const Icon(Icons.add_rounded, size: 28),
       ),
-      bottomNavigationBar: const TeacherBottomNavBar(currentTab: TeacherNavTab.pcRequest),
+      bottomNavigationBar: const TeacherBottomNavBar(
+        currentTab: TeacherNavTab.pcRequest,
+      ),
     );
   }
 }
@@ -185,7 +231,7 @@ class _RequestCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB), width: 1),
+        border: Border.all(color: AppColors.border, width: 1),
         boxShadow: const [
           BoxShadow(
             color: Color(0x04000000),
@@ -201,7 +247,7 @@ class _RequestCard extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: const Color(0xFFF3F4F6),
+                backgroundColor: AppColors.surfaceMuted,
                 child: ClipOval(
                   child: Image.network(
                     item.avatarUrl,
@@ -210,7 +256,7 @@ class _RequestCard extends StatelessWidget {
                     fit: BoxFit.cover,
                     errorBuilder: (ctx, e, st) => CircleAvatar(
                       radius: 20,
-                      backgroundColor: const Color(0xFFE0E7FF),
+                      backgroundColor: AppColors.indigoBgLight,
                       child: Text(
                         item.name.isNotEmpty ? item.name[0] : 'S',
                         style: const TextStyle(
@@ -228,7 +274,7 @@ class _RequestCard extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
@@ -238,7 +284,7 @@ class _RequestCard extends StatelessWidget {
             'Has request for a private class of yours.',
             style: GoogleFonts.inter(
               fontSize: 13,
-              color: const Color(0xFF374151),
+              color: AppColors.borderDark,
             ),
           ),
           const SizedBox(height: 8),
@@ -251,7 +297,7 @@ class _RequestCard extends StatelessWidget {
                 style: GoogleFonts.inter(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
-                  color: const Color(0xFF111827),
+                  color: AppColors.textPrimary,
                 ),
               ),
             ),

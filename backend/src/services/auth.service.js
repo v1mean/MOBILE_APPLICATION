@@ -64,6 +64,7 @@ export async function registerUser({
   if (role === 'mentor') {
     try {
       const { error: tutorError } = await supabaseAdmin.from('tutor_profiles').insert({
+        tutor_id: data.user.id,
         user_id: data.user.id,
         bio: 'New mentor profile',
         hourly_rate: 0,
