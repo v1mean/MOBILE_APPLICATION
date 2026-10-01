@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import '../../main.dart';
-import '../../models/user_profile.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/settings/settings_view_model.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/user_avatar_header.dart';
-import '../../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -22,54 +21,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _emailUpdates = false;
   bool _darkMode = false;
   String _selectedLanguage = 'English';
-  UserProfile? _userProfile;
+  late final SettingsViewModel _vm;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserProfile();
-  }
-
-  Future<void> _fetchUserProfile() async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) return;
-    try {
-      final data = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-      if (mounted && data != null) {
-        setState(() {
-          _userProfile = UserProfile.fromJson(data);
-        });
-      }
-    } catch (_) {}
-  }
-
-  String get _displayName {
-    if (_userProfile?.name.isNotEmpty == true) return _userProfile!.name;
-    final user = JomnesDB.auth.currentUser;
-    return user?.userMetadata?['full_name'] ??
-        user?.userMetadata?['name'] ??
-        user?.email?.split('@').first ??
-        'Student';
-  }
-
-  String get _displayEmail {
-    if (_userProfile?.email.isNotEmpty == true) return _userProfile!.email;
-    return JomnesDB.auth.currentUser?.email ?? '';
-  }
-
-  String get _displayRole {
-    if (_userProfile?.role.isNotEmpty == true) return _userProfile!.role;
-    return 'Student';
-  }
-
-  String? get _avatarUrl {
-    if (_userProfile?.profileImage.isNotEmpty == true) return _userProfile!.profileImage;
-    final user = JomnesDB.auth.currentUser;
-    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
-    return pic is String && pic.isNotEmpty ? pic : null;
+    _vm = context.read<SettingsViewModel>();
   }
 
   void _onNavTap(int i) {
@@ -83,6 +40,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<SettingsViewModel>();
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: Column(
@@ -95,9 +53,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Row(
                 children: [
                   UserAvatarHeader(
-                    name: _displayName,
-                    role: _displayRole,
-                    avatarUrl: _avatarUrl,
+                    name: _vm.displayName,
+                    role: _vm.displayRole,
+                    avatarUrl: _vm.avatarUrl,
                   ),
                   const Spacer(),
                   IconButton(
@@ -157,7 +115,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             title: 'Edit Profile',
                             onTap: () async {
                               await context.push('/edit-profile');
-                              _fetchUserProfile();
+                              _vm.loadUserProfile();
                             },
                           ),
                           _SettingsTile(
@@ -304,8 +262,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileCard(BuildContext context) {
-    final name = _displayName;
-    final avatar = _avatarUrl;
+    final name = _vm.displayName;
+    final avatar = _vm.avatarUrl;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -332,7 +290,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             borderRadius: BorderRadius.circular(20),
             onTap: () async {
               await context.push('/edit-profile');
-              _fetchUserProfile();
+              _vm.loadUserProfile();
             },
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -366,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       children: [
                         Text(name,
                             style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                        Text(_displayEmail,
+                        Text(_vm.displayEmail,
                             style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
                         const SizedBox(height: 6),
                         Container(
@@ -375,7 +333,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             color: Colors.white24,
                             borderRadius: BorderRadius.circular(20),
                           ),
-                          child: Text(_displayRole,
+                          child: Text(_vm.displayRole,
                               style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                         ),
                       ],
@@ -490,7 +448,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             onPressed: () async {
               Navigator.pop(context);
               try {
-                await AuthService().signOut();
+                await _vm.signOut();
               } catch (_) {}
               if (context.mounted) {
                 context.go('/');

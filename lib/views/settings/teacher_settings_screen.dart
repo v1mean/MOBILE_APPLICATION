@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../theme/app_colors.dart';
 import '../../widgets/teacher_bottom_nav_bar.dart';
 import '../../widgets/user_avatar_header.dart';
-import '../../main.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/settings/teacher_settings_view_model.dart';
 
 class TeacherSettingsScreen extends StatefulWidget {
   const TeacherSettingsScreen({super.key});
@@ -20,47 +21,12 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
   bool _darkMode = false;
   String _selectedLanguage = 'English';
 
-  String _name = 'Teacher';
-  String _email = '';
-  String _phone = '';
-  final String _subject = 'General';
-  String _role = 'Teacher';
-  String? _avatarUrl;
+  late final TeacherSettingsViewModel _vm;
 
   @override
   void initState() {
     super.initState();
-    _fetchProfile();
-  }
-
-  Future<void> _fetchProfile() async {
-    try {
-      final session = JomnesDB.auth.currentSession;
-      if (session == null) return;
-      
-      // We query the Users table because it contains the phone number.
-      final data = await JomnesDB.from('Users').select('name, email, phone, profile_image, role').eq('user_id', session.user.id).maybeSingle();
-      if (data != null && mounted) {
-        setState(() {
-          _name = data['name'] ?? 'Teacher';
-          _email = data['email'] ?? '';
-          _phone = data['phone'] ?? '';
-          final rawRole = (data['role'] as String?)?.toLowerCase();
-          if (rawRole == 'mentor') {
-            _role = 'Teacher / Mentor';
-          } else if (rawRole == 'tutor') {
-            _role = 'Tutor';
-          } else if (rawRole == 'lecturer') {
-            _role = 'Lecturer';
-          } else {
-            // When in the Teacher portal, always show Teacher (even if logged in with same gmail registered as student)
-            _role = 'Teacher';
-          }
-          _avatarUrl = data['profile_image'];
-          if (_avatarUrl != null && _avatarUrl!.isEmpty) _avatarUrl = null;
-        });
-      }
-    } catch (_) {}
+    _vm = context.read<TeacherSettingsViewModel>();
   }
 
   void _showLanguagePicker() {
@@ -97,7 +63,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
 
   void _handleLogout() async {
     try {
-      await JomnesDB.auth.signOut();
+      await _vm.signOut();
       if (mounted) context.go('/login');
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error logging out: $e')));
@@ -163,7 +129,8 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final initial = _name.isNotEmpty ? _name[0].toUpperCase() : 'T';
+    context.watch<TeacherSettingsViewModel>();
+    final initial = _vm.name.isNotEmpty ? _vm.name[0].toUpperCase() : 'T';
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: Column(
@@ -176,9 +143,9 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
               child: Row(
                 children: [
                   UserAvatarHeader(
-                    name: _name,
-                    role: _role,
-                    avatarUrl: _avatarUrl,
+                    name: _vm.name,
+                    role: _vm.role,
+                    avatarUrl: _vm.avatarUrl,
                   ),
                 ],
               ),
@@ -228,14 +195,14 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           title: 'Edit Profile',
                           onTap: () async {
                             await context.push('/edit-profile');
-                            _fetchProfile();
+                            _vm.loadProfile();
                           },
                         ),
                         _SettingsTile(
                           icon: Icons.phone_outlined,
                           iconColor: AppColors.successGreen,
                           title: 'Phone Number',
-                          subtitle: _phone,
+                          subtitle: _vm.phone,
                           onTap: () {},
                         ),
                         _SettingsTile(
@@ -267,7 +234,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                           icon: Icons.menu_book_rounded,
                           iconColor: const Color(0xFFEC4899),
                           title: 'Subject',
-                          subtitle: _subject,
+                          subtitle: _vm.subject,
                           onTap: () {},
                         ),
                         _SettingsTile(
@@ -438,7 +405,7 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
             borderRadius: BorderRadius.circular(20),
             onTap: () async {
               await context.push('/edit-profile');
-              _fetchProfile();
+              _vm.loadProfile();
             },
             child: Padding(
               padding: const EdgeInsets.all(18),
@@ -448,8 +415,8 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                     child: Container(
                       width: 60, height: 60,
                       color: Colors.white24,
-                      child: _avatarUrl != null
-                        ? Image.network(_avatarUrl!, fit: BoxFit.cover,
+                      child: _vm.avatarUrl != null
+                        ? Image.network(_vm.avatarUrl!, fit: BoxFit.cover,
                             errorBuilder: (ctx, e, st) => CircleAvatar(
                               backgroundColor: AppColors.pastelPink,
                               child: Text(initial,
@@ -467,13 +434,13 @@ class _TeacherSettingsScreenState extends State<TeacherSettingsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_name, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
-                        Text(_email, style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
+                        Text(_vm.name, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: Colors.white)),
+                        Text(_vm.email, style: GoogleFonts.inter(fontSize: 13, color: Colors.white70)),
                         const SizedBox(height: 6),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                           decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(20)),
-                          child: Text(_role, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
+                          child: Text(_vm.role, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white)),
                         ),
                       ],
                     ),

@@ -3,9 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../main.dart';
-import '../../models/user_profile.dart';
-import '../../services/api_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/settings/edit_profile_view_model.dart';
 import '../../services/permission_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
@@ -24,11 +23,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _roleController = TextEditingController();
   final _emailController = TextEditingController();
 
-  String? _avatarUrl;
-  bool _isLoading = false;
-  bool _isFetching = true;
-  bool _isUploadingAvatar = false;
-  UserProfile? _profile;
+  late final EditProfileViewModel _vm;
 
   // Preset avatar URLs for selection
   static const List<String> _avatarPresets = [
@@ -43,6 +38,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _vm = context.read<EditProfileViewModel>();
     _loadProfile();
   }
 
@@ -57,57 +53,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _loadProfile() async {
-    final session = JomnesDB.auth.currentSession;
-    final currentUser = JomnesDB.auth.currentUser;
+    final form = await _vm.loadProfile();
+    if (!mounted || form == null) return;
 
-    if (session == null) {
-      if (mounted) setState(() => _isFetching = false);
-      return;
-    }
-
-    _emailController.text = currentUser?.email ?? '';
-
-    final metaName = currentUser?.userMetadata?['full_name'] ??
-        currentUser?.userMetadata?['name'] ??
-        currentUser?.email?.split('@').first ??
-        'Student';
-    final metaAvatar = currentUser?.userMetadata?['avatar_url'] ??
-        currentUser?.userMetadata?['picture'];
-
-    try {
-      final data = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-      if (mounted && data != null) {
-        _profile = UserProfile.fromJson(data);
-        _nameController.text = _profile!.name.isNotEmpty ? _profile!.name : metaName;
-        _phoneController.text = _profile!.phone;
-        _locationController.text = _profile!.location;
-        _roleController.text = _profile!.role.isNotEmpty ? _profile!.role : 'Student';
-        _avatarUrl = _profile!.profileImage.isNotEmpty
-            ? _profile!.profileImage
-            : (metaAvatar is String ? metaAvatar : null);
-      } else if (mounted) {
-        _nameController.text = metaName;
-        _roleController.text = 'Student';
-        if (metaAvatar is String) _avatarUrl = metaAvatar;
-      }
-    } catch (_) {
-      if (mounted) {
-        _nameController.text = metaName;
-        _roleController.text = 'Student';
-        if (metaAvatar is String) _avatarUrl = metaAvatar;
-      }
-    }
-
-    if (mounted) setState(() => _isFetching = false);
+    _emailController.text = form.email;
+    _nameController.text = form.name;
+    _roleController.text = form.role;
+    if (form.phone != null) _phoneController.text = form.phone!;
+    if (form.location != null) _locationController.text = form.location!;
   }
 
   Future<void> _saveProfile() async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) return;
+    if (!_vm.isSignedIn) return;
 
     final name = _nameController.text.trim();
     if (name.isEmpty) {
@@ -121,65 +78,44 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-      final result = await ApiService.updateProfile(
-        accessToken: session.accessToken,
-        name: name,
-        phone: _phoneController.text.trim(),
-        location: _locationController.text.trim(),
-        role: _roleController.text.trim().isNotEmpty
-            ? _roleController.text.trim()
-            : 'Student',
-        profileImage: _avatarUrl,
+    final result = await _vm.saveProfile(
+      name: name,
+      phone: _phoneController.text.trim(),
+      location: _locationController.text.trim(),
+      role: _roleController.text.trim(),
+    );
+    if (!mounted) return;
+
+    if (result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Text('Profile updated successfully!',
+                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          backgroundColor: AppColors.successGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
-
-      if (!mounted) return;
-
-      if (result['success'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Text('Profile updated successfully!',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: AppColors.successGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        context.pop(true);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Failed to update profile.'),
-            backgroundColor: AppColors.liveRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update: $e'),
-            backgroundColor: AppColors.liveRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      context.pop(true);
+    } else if (result.message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message!),
+          backgroundColor: AppColors.liveRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   Future<void> _pickFromGallery(BuildContext sheetContext) async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) return;
+    if (!_vm.isSignedIn) return;
 
     // Close the bottom sheet first — must happen before the OS dialog
     Navigator.pop(sheetContext);
@@ -197,52 +133,36 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
     if (picked == null || !mounted) return;
 
-    setState(() => _isUploadingAvatar = true);
-    try {
-      final result = await ApiService.uploadAvatar(picked.path, session.accessToken);
-      if (result['success'] == true && mounted) {
-        final timestamp = DateTime.now().millisecondsSinceEpoch;
-        final newUrl = '${result['avatarUrl']}?t=$timestamp';
-        setState(() => _avatarUrl = newUrl);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(children: [
-              const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-              const SizedBox(width: 10),
-              Text('Photo uploaded!',
-                  style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-            ]),
-            backgroundColor: AppColors.successGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Upload failed. Try again.'),
-            backgroundColor: AppColors.liveRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Upload error: $e'),
-            backgroundColor: AppColors.liveRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isUploadingAvatar = false);
+    final result = await _vm.uploadAvatar(picked.path);
+    if (!mounted) return;
+
+    if (result.success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Text('Photo uploaded!',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ]),
+          backgroundColor: AppColors.successGreen,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
+    } else if (result.message != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.message!),
+          backgroundColor: AppColors.liveRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   void _showAvatarPicker() {
-    final urlController = TextEditingController(text: _avatarUrl ?? '');
+    final urlController = TextEditingController(text: _vm.avatarUrl ?? '');
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -288,10 +208,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (_, i) {
                     final url = _avatarPresets[i];
-                    final isSelected = _avatarUrl == url;
+                    final isSelected = _vm.avatarUrl == url;
                     return GestureDetector(
                       onTap: () {
-                        setState(() => _avatarUrl = url);
+                        _vm.selectAvatar(url);
                         Navigator.pop(ctx);
                       },
                       child: Container(
@@ -376,7 +296,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   onPressed: () {
                     final trimmed = urlController.text.trim();
                     if (trimmed.isNotEmpty) {
-                      setState(() => _avatarUrl = trimmed);
+                      _vm.selectAvatar(trimmed);
                     }
                     Navigator.pop(ctx);
                   },
@@ -400,6 +320,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<EditProfileViewModel>();
     final name = _nameController.text;
     final initial = name.isNotEmpty ? name[0].toUpperCase() : 'U';
 
@@ -458,7 +379,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   topRight: Radius.circular(32),
                 ),
               ),
-              child: _isFetching
+              child: _vm.isFetching
                   ? const Center(child: CircularProgressIndicator(color: AppColors.accentBlue))
                   : SingleChildScrollView(
                       padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
@@ -507,7 +428,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                         child: ClipOval(
                                           child: Container(
                                             color: AppColors.pastelPink,
-                                            child: _isUploadingAvatar
+                                            child: _vm.isUploadingAvatar
                                                 ? const Center(
                                                     child: SizedBox(
                                                       width: 36,
@@ -517,9 +438,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                                           color: AppColors.skyBlueAccent),
                                                     ),
                                                   )
-                                                : _avatarUrl != null && _avatarUrl!.isNotEmpty
+                                                : _vm.avatarUrl != null && _vm.avatarUrl!.isNotEmpty
                                                 ? Image.network(
-                                                    _avatarUrl!,
+                                                    _vm.avatarUrl!,
                                                     fit: BoxFit.cover,
                                                     errorBuilder: (_, _, _) => Center(
                                                       child: Text(
@@ -673,7 +594,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             width: double.infinity,
                             height: 56,
                             child: ElevatedButton(
-                              onPressed: _isLoading ? null : _saveProfile,
+                              onPressed: _vm.isBusy ? null : _saveProfile,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.accentBlue,
                                 foregroundColor: Colors.white,
@@ -681,7 +602,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 shadowColor: AppColors.accentBlue.withAlpha(120),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                               ),
-                              child: _isLoading
+                              child: _vm.isBusy
                                   ? const SizedBox(
                                       width: 22,
                                       height: 22,

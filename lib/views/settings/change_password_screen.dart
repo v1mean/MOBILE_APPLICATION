@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../../services/auth_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/settings/change_password_view_model.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_text_styles.dart';
 
@@ -21,8 +22,6 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
   bool _obscureCurrent = true;
   bool _obscureNew = true;
   bool _obscureConfirm = true;
-  bool _isLoading = false;
-  final _authService = AuthService();
 
   @override
   void dispose() {
@@ -81,44 +80,43 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-      await _authService.updatePassword(newPass);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-                const SizedBox(width: 10),
-                Text('Password changed successfully!',
-                    style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
-              ],
-            ),
-            backgroundColor: AppColors.successGreen,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        );
-        context.pop();
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: $e'),
-            backgroundColor: AppColors.liveRed,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+    final error = await context.read<ChangePasswordViewModel>().changePassword(
+      newPass,
+    );
+    if (!mounted) return;
+
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error),
+          backgroundColor: AppColors.liveRed,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Text('Password changed successfully!',
+                style: GoogleFonts.inter(fontWeight: FontWeight.w600)),
+          ],
+        ),
+        backgroundColor: AppColors.successGreen,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+    context.pop();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isBusy = context.watch<ChangePasswordViewModel>().isBusy;
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: Column(
@@ -329,7 +327,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _changePassword,
+                        onPressed: isBusy ? null : _changePassword,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.accentBlue,
                           foregroundColor: Colors.white,
@@ -337,7 +335,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                           shadowColor: AppColors.accentBlue.withAlpha(120),
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                         ),
-                        child: _isLoading
+                        child: isBusy
                             ? const SizedBox(
                                 width: 22,
                                 height: 22,

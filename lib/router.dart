@@ -22,6 +22,10 @@ import 'viewmodels/auth/forgot_password_view_model.dart';
 import 'viewmodels/auth/login_view_model.dart';
 import 'viewmodels/auth/register_view_model.dart';
 import 'viewmodels/auth/reset_password_view_model.dart';
+import 'viewmodels/settings/change_password_view_model.dart';
+import 'viewmodels/settings/edit_profile_view_model.dart';
+import 'viewmodels/settings/settings_view_model.dart';
+import 'viewmodels/settings/teacher_settings_view_model.dart';
 import 'viewmodels/student/course_listing_view_model.dart';
 import 'viewmodels/student/home_view_model.dart';
 import 'viewmodels/student/mentor_profile_view_model.dart';
@@ -261,7 +265,19 @@ final GoRouter router = GoRouter(
         ),
       ),
     ),
-    GoRoute(path: '/teacher-settings', pageBuilder: (c, s) => _instant(s, const TeacherSettingsScreen())),
+    GoRoute(
+      path: '/teacher-settings',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => TeacherSettingsViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+          )..loadProfile(),
+          const TeacherSettingsScreen(),
+        ),
+      ),
+    ),
     GoRoute(path: '/teacher-notifications', pageBuilder: (c, s) => _instant(s, const TeacherNotificationsScreen())),
     GoRoute(
       path: '/login',
@@ -370,9 +386,44 @@ final GoRouter router = GoRouter(
     ),
     GoRoute(path: '/notifications', pageBuilder: (c, s) => _instant(s, const NotificationsScreen())),
     GoRoute(path: '/profile', redirect: (c, s) => '/settings'),
-    GoRoute(path: '/settings', pageBuilder: (c, s) => _instant(s, const SettingsScreen())),
-    GoRoute(path: '/edit-profile', pageBuilder: (c, s) => _instant(s, const EditProfileScreen())),
-    GoRoute(path: '/change-password', pageBuilder: (c, s) => _instant(s, const ChangePasswordScreen())),
+    GoRoute(
+      path: '/settings',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => SettingsViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+          )..loadUserProfile(),
+          const SettingsScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/edit-profile',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => EditProfileViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+          ),
+          const EditProfileScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/change-password',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => ChangePasswordViewModel(
+            authRepository: c.read<AuthRepository>(),
+          ),
+          const ChangePasswordScreen(),
+        ),
+      ),
+    ),
     GoRoute(path: '/privacy-security', pageBuilder: (c, s) => _instant(s, const PrivacySecurityScreen())),
     GoRoute(path: '/payment-methods', pageBuilder: (c, s) => _instant(s, const PaymentMethodsScreen())),
     GoRoute(
