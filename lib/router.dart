@@ -8,6 +8,8 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
+import 'services/guest_mode.dart';
+export 'services/guest_mode.dart';
 import 'views/auth/splash_screen.dart';
 import 'views/auth/login_screen.dart';
 import 'views/auth/register_screen.dart';
@@ -89,25 +91,6 @@ class GoRouterRefreshStream extends ChangeNotifier {
     super.dispose();
   }
 }
-
-/// A ChangeNotifier that tracks guest mode so GoRouter re-evaluates redirects.
-class GuestModeNotifier extends ChangeNotifier {
-  bool _isGuest = false;
-  bool get isGuest => _isGuest;
-
-  void setGuest(bool value) {
-    if (_isGuest != value) {
-      _isGuest = value;
-      notifyListeners();
-    }
-  }
-}
-
-final guestModeNotifier = GuestModeNotifier();
-
-// Keep a top-level getter for convenience across the app
-bool get isGuestMode => guestModeNotifier.isGuest;
-set isGuestMode(bool value) => guestModeNotifier.setGuest(value);
 
 final _authRefresh = GoRouterRefreshStream(JomnesDB.auth.onAuthStateChange);
 

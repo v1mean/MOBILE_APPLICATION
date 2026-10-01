@@ -5,6 +5,8 @@ import 'package:mobile_application/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_application/services/notification_service.dart';
+import 'package:provider/provider.dart';
+import 'app_providers.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -52,11 +54,14 @@ class JomnesApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Jomnes',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
-      routerConfig: router,
+    return MultiProvider(
+      providers: buildAppProviders(),
+      child: MaterialApp.router(
+        title: 'Jomnes',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.theme,
+        routerConfig: router,
+      ),
     );
   }
 }
