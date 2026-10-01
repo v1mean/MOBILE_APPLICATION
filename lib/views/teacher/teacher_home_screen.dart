@@ -1,0 +1,602 @@
+import 'package:flutter/material.dart';
+import '../../widgets/user_avatar_header.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../../widgets/teacher_bottom_nav_bar.dart';
+import 'package:provider/provider.dart';
+import '../../models/teacher_course.dart';
+import '../../viewmodels/teacher/teacher_home_view_model.dart';
+import '../../viewmodels/teacher/teacher_notifications_view_model.dart';
+import '../../widgets/notification_bell.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_text_styles.dart';
+
+class _ScheduleItem {
+  final String name;
+  final String location;
+  final String time;
+  final Color color;
+  _ScheduleItem(this.name, this.location, this.time, this.color);
+}
+
+class TeacherHomeScreen extends StatefulWidget {
+  const TeacherHomeScreen({super.key});
+
+  @override
+  State<TeacherHomeScreen> createState() => _TeacherHomeScreenState();
+}
+
+class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
+  late final TeacherHomeViewModel _vm;
+
+  static final _schedule = [
+    _ScheduleItem('Socheatre', 'Chroy Chongva', '10am - 11am', AppColors.purpleBgLight),
+    _ScheduleItem('Srey Pich', 'Preak Leab', '8am - 9am', const Color(0xFFE0F2FE)),
+    _ScheduleItem('Bros Sok', 'Orussey', '9am - 10am', AppColors.successBgLight),
+  ];
+
+  void _showCourseDetailModal(BuildContext context, TeacherCourse course) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            if (course.thumbnailBytes != null) ...[
+              Container(
+                height: 140,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  image: DecorationImage(
+                    image: MemoryImage(course.thumbnailBytes!),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.accentBlue.withAlpha(20),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          course.category,
+                          style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: AppColors.accentBlue),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        course.title.replaceAll('\n', ' '),
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withAlpha(30),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${course.rating}',
+                        style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              course.description,
+              style: GoogleFonts.inter(fontSize: 13, color: AppColors.slateTextDark, height: 1.4),
+            ),
+            const SizedBox(height: 16),
+            if (course.materialName != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.picture_as_pdf, color: Colors.red, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.materialName!,
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (course.materialSize != null)
+                            Text(
+                              course.materialSize!,
+                              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Icon(Icons.download_rounded, size: 18, color: Colors.black),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
+            if (course.videoName != null) ...[
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceMuted,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.play_circle_fill, color: Colors.blue, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            course.videoName!,
+                            style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (course.videoDuration != null)
+                            Text(
+                              course.videoDuration!,
+                              style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const Text('Watch', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.blue)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _vm.deleteCourse(course.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Course deleted.')),
+                      );
+                    },
+                    icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                    label: Text(
+                      'Delete',
+                      style: GoogleFonts.inter(color: Colors.red, fontWeight: FontWeight.w600),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: const BorderSide(color: Colors.redAccent),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      elevation: 0,
+                    ),
+                    child: Text('Close', style: GoogleFonts.inter(fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = context.read<TeacherHomeViewModel>();
+    context.read<TeacherNotificationsViewModel>().init();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    context.watch<TeacherHomeViewModel>();
+    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle.dark);
+    return Scaffold(
+      backgroundColor: AppColors.surfaceSoft,
+      body: Column(
+        children: [
+          // ── Dark Top Header ──
+          Container(
+            color: AppColors.darkBg,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+                child: Row(
+                  children: [
+                    UserAvatarHeader(
+                      name: _vm.userName,
+                      role: 'Teacher',
+                      avatarUrl: _vm.avatarUrl,
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: AppColors.darkCard,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.white10),
+                      ),
+                      child: NotificationBell(
+                        color: Colors.white70,
+                        size: 22,
+                        unreadCount: context
+                            .watch<TeacherNotificationsViewModel>()
+                            .unreadCount,
+                        onTap: () => context.push('/teacher-notifications'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Scrollable Body ──
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Today Schedule
+                  Text(
+                    'Today Schedule',
+                    style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.navyText),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [BoxShadow(color: Color(0x08000000), blurRadius: 12, offset: Offset(0, 4))],
+                    ),
+                    child: Column(
+                      children: [
+                        ..._schedule.map((s) => _ScheduleRow(item: s)),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () => context.go('/teacher-schedules'),
+                              child: Text(
+                                'See more',
+                                style: GoogleFonts.inter(fontSize: 13, color: AppColors.accentBlue, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Latest Courses Section Header with "+ Add Course" (Requirement 1)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Your Latest Courses',
+                        style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.navyText),
+                      ),
+                      GestureDetector(
+                        onTap: () => context.push('/teacher-upload'),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.add_rounded, color: Colors.white, size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Add Course',
+                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w700, color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  if (_vm.isLoadingCourses)
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20.0),
+                        child: CircularProgressIndicator(color: AppColors.galaxyPurple),
+                      ),
+                    )
+                  else if (_vm.courses.isEmpty)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(20.0),
+                        child: Text('No courses uploaded yet.\nClick + to upload one!',
+                            textAlign: TextAlign.center,
+                            style: GoogleFonts.inter(color: Colors.grey, fontSize: 14)),
+                      ),
+                    )
+                  else
+                    ..._vm.courses.map((c) => Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _CourseCard(
+                        item: c,
+                        onTap: () => _showCourseDetailModal(context, c),
+                      ),
+                    )),
+
+                  Builder(
+                    builder: (context) {
+                      final courses = _vm.sampleCourses;
+                      return Column(
+                        children: [
+                          ...courses.map((c) => Padding(
+                                padding: const EdgeInsets.only(bottom: 14),
+                                child: _CourseCard(
+                                  item: c,
+                                  onTap: () => _showCourseDetailModal(context, c),
+                                ),
+                              )),
+                          // Option to create/add other course (Requirement 1)
+                          GestureDetector(
+                            onTap: () => context.push('/teacher-upload'),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(vertical: 18),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: const Color(0xFFCBD5E1),
+                                  style: BorderStyle.solid,
+                                  width: 1.2,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.surfaceMuted,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.add_rounded, size: 18, color: Colors.black),
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Text(
+                                    'Create or Add Another Course',
+                                    style: GoogleFonts.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.slateNavy,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          await context.push('/teacher-upload');
+          _vm.loadCourses();
+        },
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 4,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.add_rounded, size: 28),
+      ),
+      bottomNavigationBar: const TeacherBottomNavBar(currentTab: TeacherNavTab.course),
+    );
+  }
+}
+
+class _ScheduleRow extends StatelessWidget {
+  final _ScheduleItem item;
+  const _ScheduleRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: item.color,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: Colors.white,
+            child: Icon(Icons.person_outline, color: Colors.grey[600], size: 20),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name, style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.navyText)),
+                Text(item.location, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+          Text(item.time, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.borderDark)),
+        ],
+      ),
+    );
+  }
+}
+
+class _CourseCard extends StatelessWidget {
+  final TeacherCourse item;
+  final VoidCallback onTap;
+  const _CourseCard({required this.item, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: item.color,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: const [
+            BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (item.thumbnailBytes != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.memory(
+                  item.thumbnailBytes!,
+                  height: 110,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (item.category.isNotEmpty) ...[
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(200),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            item.category,
+                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.slateNavy),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                      ],
+                      Text(
+                        item.title,
+                        style: AppTextStyles.cardLabelBold,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.edit_outlined, size: 18, color: Colors.grey[700]),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              item.description,
+              style: GoogleFonts.inter(fontSize: 12, color: AppColors.slateTextDark),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text(
+                  '${item.rating} rating',
+                  style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.navyText),
+                ),
+                const Spacer(),
+                Text(
+                  item.timeAgo,
+                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+

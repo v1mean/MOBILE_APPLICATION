@@ -35,6 +35,25 @@ export async function checkCheckoutSession({ sessionId, studentId, tutorId }) {
   };
 }
 
+// The payment-sheet path: the id of this student's succeeded payment for the
+// tutor that no booking has claimed yet, or null. Looks back two hours.
+export async function findUnusedPayment({ studentId, tutorId }) {
+  const since = Math.floor(Date.now() / 1000) - 2 * 60 * 60;
+  const intents = await stripe.paymentIntents.list({
+    limit: 100,
+    created: { gte: since },
+  });
+
+  const match = intents.data.find(
+    (intent) =>
+      intent.status === "succeeded" &&
+      intent.metadata?.student_id === studentId &&
+      intent.metadata?.tutor_id === tutorId &&
+      !intent.metadata?.booking_id
+  );
+  return match?.id ?? null;
+}
+
 export async function markCheckoutSessionUsed(paymentIntentId, bookingId) {
   await stripe.paymentIntents.update(paymentIntentId, {
     metadata: { booking_id: String(bookingId) },

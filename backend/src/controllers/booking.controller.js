@@ -2,8 +2,33 @@ import { supabaseAdmin } from "../config/supabase.js";
 import { createNotification } from "../services/notification.service.js";
 import {
   checkCheckoutSession,
+  findUnusedPayment,
   markCheckoutSessionUsed,
 } from "../services/payment.service.js";
+
+const amount = (value) => {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? number : 0;
+};
+
+// A booking is one hour at the tutor's stored rate, the same amount the
+// payment endpoints charge. The client's figures are used only when the tutor
+// has no rate on record.
+async function bookingPrice(tutorId, clientPrice) {
+  const { data: tutorProfile } = await supabaseAdmin
+    .from('tutor_profiles')
+    .select('hourly_rate')
+    .eq('tutor_id', tutorId)
+    .maybeSingle();
+
+  const rate = amount(tutorProfile?.hourly_rate);
+  if (rate > 0) return { hourlyRate: rate, totalPrice: rate };
+
+  return {
+    hourlyRate: amount(clientPrice.hourly_rate),
+    totalPrice: amount(clientPrice.total_price),
+  };
+}
 
 // ── POST /api/bookings/create ──────────────────────────────────────────────
 export async function createBooking(req, res) {
@@ -11,8 +36,12 @@ export async function createBooking(req, res) {
     const studentId = req.user.id;
     const { tutor_id, start_time, end_time, hourly_rate, total_price, course_id, checkout_session_id } = req.body;
 
-    if (!tutor_id) {
+    if (!tutor_id || typeof tutor_id !== "string") {
       return res.status(400).json({ success: false, message: "Missing tutor_id" });
+    }
+
+    if (tutor_id === studentId) {
+      return res.status(400).json({ success: false, message: "You cannot book yourself." });
     }
 
     // Web bookings pay through Stripe Checkout and send the session id here.
@@ -27,7 +56,21 @@ export async function createBooking(req, res) {
         return res.status(402).json({ success: false, message: payment.reason });
       }
       checkoutPaymentIntentId = payment.paymentIntentId;
+    } else if (process.env.REQUIRE_PAYMENT_PROOF === "true") {
+      // Mobile bookings pay through the payment sheet and send no proof, so
+      // without this check a booking can be created without paying. Off by
+      // default: turn it on only after a test-card booking has been verified.
+      checkoutPaymentIntentId = await findUnusedPayment({ studentId, tutorId: tutor_id });
+      if (!checkoutPaymentIntentId) {
+        return res.status(402).json({
+          success: false,
+          message: "No completed payment was found for this booking.",
+        });
+      }
     }
+
+    // The price recorded is the tutor's own rate, not a figure from the client.
+    const price = await bookingPrice(tutor_id, { hourly_rate, total_price });
 
     // Check if the student already booked this exact tutor and time
     const bDate = req.body.booking_date || start_time?.split('T')[0] || new Date().toISOString().split('T')[0];
@@ -57,8 +100,8 @@ export async function createBooking(req, res) {
         course_id: course_id || null,
         start_time: start_time || new Date().toISOString(),
         end_time: end_time || new Date(Date.now() + 3600000).toISOString(),
-        hourly_rate: hourly_rate || 0,
-        total_price: total_price || 0,
+        hourly_rate: price.hourlyRate,
+        total_price: price.totalPrice,
         status: 'pending',
         booking_date: req.body.booking_date || start_time?.split('T')[0] || new Date().toISOString().split('T')[0],
         time_slot: req.body.time_slot || null,

@@ -1,5 +1,6 @@
-import { registerUser, loginUser, forgotPassword, checkUserExists, resetPassword } from "../services/auth.service.js";
-import { supabase, supabaseAdmin } from "../config/supabase.js";
+import { registerUser, loginUser, getAccountRole, forgotPassword, checkUserExists, setUserPassword } from "../services/auth.service.js";
+import { roleMismatchNotice } from "../services/role.service.js";
+import { supabaseAdmin } from "../config/supabase.js";
 
 export async function register(req, res) {
   try {
@@ -64,7 +65,7 @@ export async function register(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -86,9 +87,14 @@ export async function login(req, res) {
       password,
     });
 
+    // The app shows this message after login, so a teacher who used the
+    // student screen (or the reverse) is told why the other view opened.
+    const accountRole = await getAccountRole(result.user.id);
+    const notice = roleMismatchNotice(role, accountRole);
+
     return res.status(200).json({
       success: true,
-      message: "Login Successful",
+      message: notice ?? "Login Successful",
       user: result.user,
       session: result.session,
     });
@@ -157,31 +163,16 @@ export async function updatePasswordController(req, res) {
       });
     }
 
-    if (newPassword.length < 8) {
+    if (typeof newPassword !== "string" || newPassword.length < 8) {
       return res.status(400).json({
         success: false,
         message: "Password must be at least 8 characters.",
       });
     }
 
-    // Ensure we are using the user's current session provided via token
-    const authHeader = req.headers.authorization;
-    const accessToken = authHeader && authHeader.split(" ")[1];
-
-    if (accessToken) {
-      // In a stateless backend, we must set the session first if using the global client
-      // or we can use the admin client. But as requested, we use auth.updateUser:
-      await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: "", 
-      });
-    }
-
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    
-    if (error) {
-      throw new Error(error.message);
-    }
+    // requireAuth has already verified the token, so req.user is the account
+    // that asked for the change.
+    await setUserPassword(req.user.id, newPassword);
 
     return res.status(200).json({
       success: true,

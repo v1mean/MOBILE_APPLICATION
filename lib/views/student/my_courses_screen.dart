@@ -1,0 +1,346 @@
+import 'package:flutter/material.dart';
+import '../../widgets/user_avatar_header.dart';
+import '../../widgets/notification_bell.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
+import 'package:provider/provider.dart';
+import '../../models/mentor.dart';
+import '../../widgets/bottom_nav_bar.dart';
+import '../../widgets/course_card.dart';
+import '../../theme/app_colors.dart';
+import '../../viewmodels/student/my_courses_view_model.dart';
+
+class MyCoursesScreen extends StatefulWidget {
+  const MyCoursesScreen({super.key});
+
+  @override
+  State<MyCoursesScreen> createState() => _MyCoursesScreenState();
+}
+
+class _MyCoursesScreenState extends State<MyCoursesScreen> {
+  int _navIndex = 2;
+  late final MyCoursesViewModel _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = context.read<MyCoursesViewModel>();
+  }
+
+  void _onNavTap(int i) {
+    if (i == _navIndex) return;
+    setState(() => _navIndex = i);
+    switch (i) {
+      case 0:
+        context.go('/home');
+        break;
+      case 1:
+        context.go('/search');
+        break;
+      case 3:
+        context.go('/settings');
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _showRatingSheet(BuildContext context, Course course) {
+    double rating = 5.0;
+    final TextEditingController commentController = TextEditingController();
+    bool isSubmitting = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setStateSB) {
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+            ),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Rate Lesson',
+                    style: GoogleFonts.inter(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    course.title,
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: Colors.grey.shade600,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(5, (index) {
+                      return IconButton(
+                        icon: Icon(
+                          index < rating ? Icons.star_rounded : Icons.star_border_rounded,
+                          color: Colors.amber,
+                          size: 40,
+                        ),
+                        onPressed: () {
+                          setStateSB(() => rating = index + 1.0);
+                        },
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 24),
+                  TextField(
+                    controller: commentController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Write a review (optional)...',
+                      hintStyle: GoogleFonts.inter(color: Colors.grey.shade400, fontSize: 14),
+                      filled: true,
+                      fillColor: const Color(0xFFF9FAFB),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.accentBlue,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              setStateSB(() => isSubmitting = true);
+                              try {
+                                final sent = await _vm.submitReview(
+                                  course: course,
+                                  rating: rating,
+                                  comment: commentController.text,
+                                );
+                                if (sent) {
+                                  if (mounted) {
+                                    Navigator.pop(ctx);
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Review submitted!'),
+                                        backgroundColor: Colors.green,
+                                      ),
+                                    );
+                                  }
+                                }
+                              } catch (e) {
+                                setStateSB(() => isSubmitting = false);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('Error: $e'),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+                              }
+                            },
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Text(
+                              'Submit Review',
+                              style: GoogleFonts.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    context.watch<MyCoursesViewModel>();
+    final name = _vm.displayName;
+    final avatar = _vm.avatarUrl;
+
+    return Scaffold(
+      backgroundColor: AppColors.darkBg,
+      body: Column(
+        children: [
+          // Dark Top Header
+          SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+              child: Row(
+                children: [
+                  UserAvatarHeader(
+                    name: name,
+                    role: _vm.displayRole,
+                    avatarUrl: avatar,
+                    onTap: () => context.go('/settings'),
+                  ),
+                  const Spacer(),
+                  const NotificationBell(),
+                ],
+              ),
+            ),
+          ),
+          // White Rounded Content Body
+          Expanded(
+            child: Container(
+              decoration: const BoxDecoration(
+                color: AppColors.pageBg,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(32),
+                  topRight: Radius.circular(32),
+                ),
+                child: RefreshIndicator(
+                  color: AppColors.accentBlue,
+                  onRefresh: _vm.refresh,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.only(bottom: 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 22),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Text(
+                            'My Courses',
+                            style: GoogleFonts.inter(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        FutureBuilder<List<Course>>(
+                          future: _vm.coursesFuture,
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: Padding(
+                                  padding: EdgeInsets.all(20.0),
+                                  child: CircularProgressIndicator(
+                                    color: AppColors.accentBlue,
+                                  ),
+                                ),
+                              );
+                            }
+                            if (snapshot.hasError) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                ),
+                                child: Text(
+                                  'Error loading courses',
+                                  style: GoogleFonts.inter(color: Colors.red),
+                                ),
+                              );
+                            }
+                            final courses = snapshot.data ?? [];
+                            if (courses.isEmpty) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 40,
+                                ),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      const Icon(
+                                        Icons.menu_book,
+                                        size: 64,
+                                        color: Colors.grey,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        'No courses enrolled',
+                                        style: GoogleFonts.inter(
+                                          color: Colors.grey,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+                            return Column(
+                              children: courses
+                                  .map((c) => CourseCard(
+                                        course: c,
+                                        onRateLesson: () => _showRatingSheet(context, c),
+                                      ))
+                                  .toList(),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: _navIndex,
+        onTap: _onNavTap,
+      ),
+    );
+  }
+}
+

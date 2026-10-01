@@ -35,12 +35,30 @@ const clientOptions = {
   realtime: { transport: ws },
 };
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, clientOptions);
+const statelessAuth = {
+  autoRefreshToken: false,
+  persistSession: false,
+};
+
+// Shared by every request, so it must never hold one user's session. Use it
+// only for calls that take the token explicitly (auth.getUser(token)) or need
+// no session at all.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  ...clientOptions,
+  auth: statelessAuth,
+});
+
+// A client for one sign-in or sign-up. Those calls store the new session on
+// the client that made them, which on the shared client would leak one user's
+// session into the next request.
+export function createAuthClient() {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    ...clientOptions,
+    auth: statelessAuth,
+  });
+}
 
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey, {
   ...clientOptions,
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false,
-  },
+  auth: statelessAuth,
 });

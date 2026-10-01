@@ -1,24 +1,25 @@
-import 'services/student_notification_service.dart';
+import 'repositories/student_notification_repository.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:mobile_application/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mobile_application/services/notification_service.dart';
+import 'package:provider/provider.dart';
+import 'app_providers.dart';
+import 'config/app_config.dart';
 import 'router.dart';
 import 'theme/app_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_stripe/flutter_stripe.dart';
 
-// Handy shortcut you'll use everywhere in the app
-final JomnesDB = Supabase.instance.client;
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.initialize();
-  await StudentNotificationService.init();
+  final studentNotifications = StudentNotificationRepository();
+  await studentNotifications.init();
 
-  Stripe.publishableKey = 'pk_test_51UJ6f2B0wqWK1qEi3bVUPVjkVgMHvDSNYX5uPE5upF8jspWGXdpWMrxK5HTuoUkgrlqT1p2YlBzm1U2qUxD6dCnV003xsA7fWa';
+  Stripe.publishableKey = AppConfig.stripePublishableKey;
 
 
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
@@ -28,13 +29,13 @@ Future<void> main() async {
   ));
 
   await Supabase.initialize(
-    url: 'https://lfmllyuecleqnympfnqm.supabase.co',
-    publishableKey: 'sb_publishable_90gMuHhur1aCcOiYH0Qr_g_B6d_tqrz',
+    url: AppConfig.supabaseUrl,
+    publishableKey: AppConfig.supabasePublishableKey,
   );
 
   if (kIsWeb) {
     await FacebookAuth.i.webAndDesktopInitialize(
-      appId: '2172302643350758',
+      appId: AppConfig.facebookAppId,
       cookie: true,
       xfbml: true,
       version: 'v18.0',
@@ -44,19 +45,27 @@ Future<void> main() async {
   setupDeepLinkListener();
 
   AuthService().printDeployKeyHash();
-  runApp(const JomnesApp());
+  runApp(JomnesApp(studentNotifications: studentNotifications));
 }
 
 class JomnesApp extends StatelessWidget {
-  const JomnesApp({super.key});
+  const JomnesApp({super.key, this.studentNotifications});
+
+  /// Already-loaded notification store from main(); when omitted (tests) a
+  /// new one is created.
+  final StudentNotificationRepository? studentNotifications;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp.router(
-      title: 'Jomnes',
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.theme,
-      routerConfig: router,
+    return MultiProvider(
+      providers: buildAppProviders(studentNotifications: studentNotifications),
+      child: MaterialApp.router(
+        title: 'Jomnes',
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.theme,
+        scaffoldMessengerKey: scaffoldMessengerKey,
+        routerConfig: router,
+      ),
     );
   }
 }

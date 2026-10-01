@@ -24,22 +24,29 @@ Jomnes is a cross-platform Flutter application that connects students with subje
 ```text
 MOBILE_APPLICATION/
 ├── lib/
-│   ├── constants/        # Static data (course categories, mock data used as fallback)
-│   ├── models/            # Mentor, user profile, and notification models
-│   ├── screens/           # Student and teacher screens (auth, home, courses, settings, etc.)
-│   ├── services/          # API client, auth, payments, notifications, file picking
-│   ├── theme/             # Colors, text styles, and ThemeData
+│   ├── views/             # Screens (auth, student, teacher, settings): UI only
+│   ├── viewmodels/        # One view model per screen: state and actions
+│   ├── repositories/      # All Supabase and backend access
+│   ├── services/          # API client, auth, notifications, file picking
+│   ├── models/            # Mentor, user profile, course and notification models
 │   ├── widgets/           # Shared and reusable UI components
-│   ├── main.dart          # App entry point, Supabase/Stripe initialization
-│   └── router.dart        # GoRouter configuration, auth/role-based redirects
+│   ├── config/            # AppConfig: environment values (API URL, public keys)
+│   ├── constants/         # Static data (course categories, mock data used as fallback)
+│   ├── theme/             # Colors, text styles, and ThemeData
+│   ├── app_providers.dart # App-wide providers
+│   ├── route_guard.dart   # Which pages need a signed-in account
+│   ├── router.dart        # GoRouter configuration; creates each screen's view model
+│   └── main.dart          # App entry point, Supabase/Stripe initialization
+├── test/                  # View model, repository, route guard and architecture tests
 ├── backend/
 │   └── src/
 │       ├── controllers/   # Auth, booking, course, payment, review, user logic
 │       ├── routes/        # Express route definitions
 │       ├── middleware/    # Auth middleware
-│       ├── services/      # Auth service helpers
+│       ├── services/      # Auth, role, payment and notification helpers
 │       ├── config/        # Supabase client configuration
 │       └── app.js, server.js
+│   └── test/              # API tests that run against a fake Supabase
 ├── docs/                  # Architecture notes, project state, and backend integration plan
 ├── assets/                # Images used by the app
 └── pubspec.yaml           # Flutter project configuration
@@ -78,9 +85,9 @@ Copy the example environment file and fill in your own Supabase and Stripe value
 cp .env.example .env
 ```
 
-The backend (`backend/src/server.js`) loads this `.env` file from the project root. Required variables include `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `PORT`, and `CORS_ORIGINS`.
+The backend (`backend/src/server.js`) loads this `.env` file from the project root. Required variables include `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` / `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, `PORT`, and `CORS_ORIGINS`.
 
-Note: the Flutter app itself does not read `.env` — its Supabase URL/key and Stripe publishable key are currently set directly in `lib/main.dart`. Update them there if you point the app at a different Supabase project.
+Note: the Flutter app itself does not read `.env`. Its API address, Supabase URL/key and Stripe publishable key are defined in `lib/config/app_config.dart`, and each can be overridden at build time, for example `flutter run --dart-define=API_BASE_URL=https://example.com/api`. Only public keys go in that file; secret keys belong in the backend's `.env`.
 
 ### 3. Run the backend
 
@@ -112,9 +119,11 @@ Useful commands:
 | `flutter clean` | Clear the build cache |
 | `flutter build apk` | Build a release APK |
 | `flutter analyze` | Run static analysis |
+| `flutter test` | Run the app's tests (view models, repositories, route guard, layering rules) |
+| `cd backend && npm test` | Run the backend API tests against a fake Supabase |
 
 ## Additional Documentation
 
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - routing and widget architecture notes
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - the MVVM layering, routing and design system
 - [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) - current status of screens and features
 - [docs/BACKEND_INTEGRATION_PLAN.md](docs/BACKEND_INTEGRATION_PLAN.md) - Supabase schema and integration notes

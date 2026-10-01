@@ -7,6 +7,13 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB max
 });
 
+// Course files go to a public bucket. These types can run in a browser or on
+// a device, so they are never stored there.
+const BLOCKED_EXTENSIONS = new Set([
+  '.html', '.htm', '.xhtml', '.svg', '.js', '.mjs', '.php',
+  '.exe', '.msi', '.bat', '.cmd', '.com', '.scr', '.sh', '.apk', '.jar',
+]);
+
 export const uploadCourseMiddleware = upload.fields([
   { name: 'thumbnail', maxCount: 1 },
   { name: 'material', maxCount: 1 },
@@ -40,9 +47,16 @@ export async function uploadCourse(req, res) {
     const uploadedUrls = {};
 
     for (const field of ['thumbnail', 'material', 'video']) {
+      const file = files[field]?.[0];
+      if (file && BLOCKED_EXTENSIONS.has(path.extname(file.originalname).toLowerCase())) {
+        return res.status(400).json({ success: false, message: "This file type is not allowed." });
+      }
+    }
+
+    for (const field of ['thumbnail', 'material', 'video']) {
       if (files[field] && files[field].length > 0) {
         const file = files[field][0];
-        const ext = path.extname(file.originalname);
+        const ext = path.extname(file.originalname).toLowerCase();
         const fileName = `${user.id}_${Date.now()}_${field}${ext}`;
         
         const { error } = await supabaseAdmin.storage

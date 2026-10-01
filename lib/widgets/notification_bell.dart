@@ -1,30 +1,33 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../services/student_notification_service.dart';
+import 'package:provider/provider.dart';
+import '../viewmodels/student/student_notifications_view_model.dart';
 import '../theme/app_colors.dart';
 
 class NotificationBell extends StatelessWidget {
   final Color color;
   final double size;
   final VoidCallback? onTap;
-  final ValueListenable<int>? unreadCountListenable;
+
+  /// Unread count for the badge. Leave null to show the student's own
+  /// notifications.
+  final int? unreadCount;
 
   const NotificationBell({
     super.key,
     this.color = Colors.white,
     this.size = 26,
     this.onTap,
-    this.unreadCountListenable,
+    this.unreadCount,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int>(
-      valueListenable:
-          unreadCountListenable ??
-          StudentNotificationService.unreadCountNotifier,
-      builder: (context, unreadCount, _) {
+    final unreadCount =
+        this.unreadCount ??
+        context.watch<StudentNotificationsViewModel>().unreadCount;
+    return Builder(
+      builder: (context) {
         return IconButton(
           onPressed: onTap ?? () => context.push('/notifications'),
           splashRadius: 24,
