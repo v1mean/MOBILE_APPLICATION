@@ -106,6 +106,27 @@ export async function loginUser({
   };
 }
 
+// The role the app routes on after login (`profiles.role`). Returns null when
+// it cannot be read, so a failed lookup never blocks a login.
+export async function getAccountRole(userId) {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Could not read account role:", error.message);
+      return null;
+    }
+    return data?.role ?? null;
+  } catch (err) {
+    console.warn("Could not read account role catch:", err.message);
+    return null;
+  }
+}
+
 export async function forgotPassword(email) {
   const { error } =
     await supabase.auth.resetPasswordForEmail(email, {
