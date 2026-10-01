@@ -11,13 +11,25 @@ export async function createReview(req, res) {
       return res.status(400).json({ success: false, message: "Missing mentor_id or rating" });
     }
 
+    // The rating feeds the mentor's average, so it has to be a real star value.
+    const stars = Number(rating);
+    if (!Number.isFinite(stars) || stars <= 0 || stars > 5) {
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5." });
+    }
+
+    if (mentor_id === studentId) {
+      return res.status(400).json({ success: false, message: "You cannot review yourself." });
+    }
+
+    const text = typeof comment === "string" ? comment.trim().slice(0, 2000) : "";
+
     const { data: review, error } = await supabaseAdmin
       .from('reviews')
       .insert({
         student_id: studentId,
         tutor_id: mentor_id,
-        rating: rating,
-        comment: comment || null,
+        rating: stars,
+        comment: text || null,
       })
       .select()
       .single();
@@ -42,7 +54,7 @@ export async function createReview(req, res) {
         userId: mentor_id,
         type: 'review_new',
         title: 'New review received',
-        body: `${studentProfile?.full_name || 'A student'} left you a ${rating}-star review.`,
+        body: `${studentProfile?.full_name || 'A student'} left you a ${stars}-star review.`,
         data: { review_id: review.id },
       });
     } catch (notifyErr) {

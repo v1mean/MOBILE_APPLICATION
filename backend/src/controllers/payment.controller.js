@@ -47,6 +47,8 @@ export async function createPaymentIntent(req, res) {
       automatic_payment_methods: {
         enabled: true,
       },
+      // Lets a booking be matched to the payment that paid for it.
+      metadata: { tutor_id: String(tutor_id), student_id: req.user.id },
     });
 
     return res.status(200).json({

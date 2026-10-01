@@ -1,4 +1,6 @@
 import { supabaseAdmin } from "../config/supabase.js";
+import { getAccountKind } from "../services/auth.service.js";
+import { isMentorListingWord, safeHeadline } from "../services/role.service.js";
 import multer from "multer";
 import path from "path";
 
@@ -12,7 +14,9 @@ const upload = multer({
     if (allowed.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed."));
+      const error = new Error("Only image files are allowed.");
+      error.status = 400;
+      cb(error);
     }
   },
 });
@@ -26,23 +30,37 @@ export async function updateProfile(req, res) {
     const user = req.user;
     const { name, phone, location, role, profileImage } = req.body;
 
-    if (!name || !name.trim()) {
+    if (typeof name !== "string" || !name.trim()) {
       return res
         .status(400)
         .json({ success: false, message: "Full name cannot be empty." });
     }
 
+    const text = (value, max) =>
+      typeof value === "string" ? value.trim().slice(0, max) : "";
+
+    const { data: existing } = await supabaseAdmin
+      .from("Users")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const payload = {
       user_id: user.id,
-      name: name.trim(),
-      phone: (phone ?? "").trim(),
-      location: (location ?? "").trim(),
-      role: (role ?? "Student").trim() || "Student",
+      name: text(name, 100),
+      phone: text(phone, 30),
+      location: text(location, 100),
+      role: safeHeadline(role, {
+        isTeacher: (await getAccountKind(user)) === "teacher",
+        alreadyListed: isMentorListingWord(existing?.role),
+      }),
       email: user.email ?? "",
     };
 
-    if (profileImage && profileImage.trim()) {
-      payload.profile_image = profileImage.trim();
+    // Only a web address is stored as the profile picture.
+    const image = text(profileImage, 1000);
+    if (/^https?:\/\//i.test(image)) {
+      payload.profile_image = image;
     }
 
     const { error } = await supabaseAdmin

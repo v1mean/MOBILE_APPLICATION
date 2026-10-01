@@ -1,4 +1,5 @@
 import { supabase } from "../config/supabase.js";
+import { getAccountKind } from "../services/auth.service.js";
 
 export async function requireAuth(req, res, next) {
   try {
@@ -43,6 +44,19 @@ export async function requireAuth(req, res, next) {
       message: "Authentication failed.",
     });
   }
+}
+
+// For teacher-only actions. Turns away accounts on record as students; an
+// account with no role on record is let through so older accounts keep working.
+export async function requireTeacher(req, res, next) {
+  if ((await getAccountKind(req.user)) === "student") {
+    return res.status(403).json({
+      success: false,
+      message: "Only teacher accounts can do this.",
+    });
+  }
+
+  next();
 }
 
 export function requireRole(requiredRole) {

@@ -1,4 +1,5 @@
-import { supabase, supabaseAdmin } from "../config/supabase.js";
+import { supabase, supabaseAdmin, createAuthClient } from "../config/supabase.js";
+import { accountKind } from "./role.service.js";
 
 export async function registerUser({
   email,
@@ -6,7 +7,7 @@ export async function registerUser({
   fullName,
   role = "student",
 }) {
-  const { data, error } = await supabase.auth.signUp({
+  const { data, error } = await createAuthClient().auth.signUp({
     email,
     password,
     options: {
@@ -91,7 +92,7 @@ export async function loginUser({
   password,
 }) {
   const { data, error } =
-    await supabase.auth.signInWithPassword({
+    await createAuthClient().auth.signInWithPassword({
       email,
       password,
     });
@@ -127,6 +128,11 @@ export async function getAccountRole(userId) {
   }
 }
 
+// "teacher", "student", or null when no role is recorded for the account.
+export async function getAccountKind(user) {
+  return accountKind([await getAccountRole(user.id), user.app_metadata?.role]);
+}
+
 export async function forgotPassword(email) {
   const { error } =
     await supabase.auth.resetPasswordForEmail(email, {
@@ -138,37 +144,40 @@ export async function forgotPassword(email) {
   }
 }
 
+// True/false when the answer is known, null when it could not be checked.
 export async function checkUserExists(email) {
   try {
-    const { data, error } = await supabaseAdmin.auth.admin.listUsers();
-    if (error) {
-      console.warn("Could not list users with admin client:", error.message);
-      return null;
+    const target = String(email).toLowerCase();
+    const perPage = 1000;
+
+    // listUsers returns one page at a time (50 by default), so an account
+    // past the first page would be reported as missing. Walk every page.
+    for (let page = 1; page <= 100; page++) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      if (error) {
+        console.warn("Could not list users with admin client:", error.message);
+        return null;
+      }
+
+      const users = data?.users ?? [];
+      if (users.some((u) => u.email?.toLowerCase() === target)) return true;
+      if (users.length < perPage) return false;
     }
-    const userExists = data?.users?.some(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
-    return userExists ?? false;
+    return null;
   } catch (err) {
     console.warn("checkUserExists exception:", err.message);
     return null;
   }
 }
 
-export async function resetPassword(newPassword, accessToken) {
-  
-  if (accessToken) {
-    const { data: { user }, error: userError } = await supabase.auth.getUser(accessToken);
-    if (userError) throw new Error(userError.message);
-    
-    // We can use admin api since we have the user id, which avoids polluting the global client
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password: newPassword });
-    if (error) throw new Error(error.message);
-  } else {
-    // If we rely on a session already being set (e.g., if the user logged in directly in node)
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    if (error) {
-      throw new Error(error.message);
-    }
-  }
+// Sets the password of the account the request was authenticated as. Takes
+// the user id from the verified token rather than from any shared session.
+export async function setUserPassword(userId, newPassword) {
+  const { error } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+    password: newPassword,
+  });
+  if (error) throw new Error(error.message);
 }
