@@ -1,60 +1,88 @@
 # 🏗️ Jomnes — Architecture & Technical Specifications
 
-## 1. Architectural Overview
+## 1. Architectural Overview: MVVM
 
-The Jomnes mobile application follows a modular, feature-oriented Flutter structure designed for high maintainability, declarative navigation, and smooth user interactions.
+The Flutter app uses one pattern throughout, **MVVM** (Model, View, ViewModel), with a repository layer underneath. Every screen follows it.
 
 ```text
 lib/
-├── data/          # Mock data sets and local repositories
-├── models/        # Plain Old Dart Objects (PODO) for domain entities
-├── screens/       # Top-level screen widgets mapped directly to routes
-├── theme/         # Design tokens, color palettes, and global ThemeData
-├── widgets/       # Modular, reusable presentation widgets
-├── main.dart      # Application bootstrapper and SystemUI configuration
-└── router.dart    # Declarative GoRouter routing definitions
+├── views/              # Screens: layout and user input only
+│   ├── auth/  student/  teacher/  settings/
+├── viewmodels/         # One ChangeNotifier per screen: its state and its actions
+│   ├── auth/  student/  teacher/  settings/
+├── repositories/       # Every Supabase query and backend call
+├── services/           # The clients repositories use (HTTP API, auth, notifications, file picker)
+├── models/             # Plain data classes
+├── widgets/            # Presentation widgets shared by several screens
+├── config/             # AppConfig: values that differ between environments
+├── constants/  theme/  # Static data and design tokens
+├── app_providers.dart  # App-wide providers (repositories, notification view models)
+├── route_guard.dart    # Which pages need a signed-in account
+├── router.dart         # Routes; creates each screen's view model
+└── main.dart           # Start-up: Supabase, Stripe, notifications
 ```
+
+### Direction of dependencies
+
+```text
+views / widgets  →  view models  →  repositories  →  services
+```
+
+- A **view** reads state with `context.watch<XViewModel>()` and calls methods on the view model. It never talks to Supabase or the backend.
+- A **view model** extends `BaseViewModel` (a `ChangeNotifier`), holds the screen's state, and gets its data from repositories passed to its constructor. It does not import views or widgets.
+- A **repository** is the only place that queries Supabase or calls the backend API.
+- **Models** are passed between all layers.
+
+`test/architecture_test.dart` enforces these rules: it fails if a view or widget imports Supabase, `http`, a repository or a service, or if a view model reaches past the repositories.
+
+### How the pieces are wired
+
+- `app_providers.dart` provides every repository once, above the router.
+- `router.dart` is the composition root. Each route wraps its screen in a `ChangeNotifierProvider` that builds the view model from those repositories, so a view model lives exactly as long as its page.
+- The two notification view models are app-wide because the bell appears on several screens.
+
+### Adding a screen
+
+1. Put any new data access in a repository (`lib/repositories/`).
+2. Create the view model in `lib/viewmodels/<area>/`, taking its repositories as constructor parameters.
+3. Create the view in `lib/views/<area>/`.
+4. Register the route in `router.dart` with `_screen(...)`.
+5. Add a view model test in `test/viewmodels/` using the fakes in `test/helpers/fakes.dart`.
+
+### Configuration
+
+Service addresses and public keys live in `lib/config/app_config.dart` and can be overridden at build time:
+
+```bash
+flutter build apk --dart-define=API_BASE_URL=https://example.com/api
+```
+
+Only public identifiers belong there (Supabase URL and publishable key, Stripe publishable key, Facebook app id). Secret keys stay in the backend's environment.
 
 ---
 
-## 2. Declarative Routing Architecture (`router.dart`)
+## 2. Routing (`router.dart`, `route_guard.dart`)
 
-The app leverages **`go_router` (v14.6.3)** to manage deep-linkable URLs and screen transitions:
+The app uses **`go_router`**. Pages change without a transition animation (`_instant`), which keeps tab switches immediate.
 
-### Custom Slide & Fade Transition
-All routes utilize a unified ease-out cubic slide transition:
-```dart
-CustomTransitionPage<void> _slide(GoRouterState state, Widget child) {
-  return CustomTransitionPage<void>(
-    key: state.pageKey,
-    child: child,
-    transitionDuration: const Duration(milliseconds: 280),
-    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-      return SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(1.0, 0.0),
-          end: Offset.zero,
-        ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic)),
-        child: FadeTransition(opacity: animation, child: child),
-      );
-    },
-  );
-}
-```
+`guardRoute()` in `route_guard.dart` decides where a navigation may go:
 
-### Route Registry
+| Visitor | Can open |
+| :--- | :--- |
+| Not signed in | Splash, role selection, login, register and password reset screens |
+| Guest | The student side (home, search, courses, mentor profiles, settings) |
+| Signed in | Everything; the teacher area needs a signed-in account, never guest mode |
 
-| Path | Screen Widget | Description |
-| :--- | :--- | :--- |
-| `/` | `SplashScreen` | App entry point and onboarding animation |
-| `/login` | `LoginScreen` | User authentication & social OAuth links |
-| `/register` | `RegisterScreen` | New student account registration |
-| `/home` | `HomeScreen` | Featured courses & top mentors dashboard |
-| `/search` | `SearchScreen` | Category chips & mentor keyword search |
-| `/courses` | `MyCoursesScreen` | Course progress and live course alerts |
-| `/profile` | `UserProfileScreen` | Student profile stats and achievements |
-| `/settings` | `SettingsScreen` | App preferences, themes, security & logout |
-| `/mentor/:id` | `MentorProfileScreen` | Dynamic mentor profile matching route parameter |
+A signed-in user who opens the login or register screen is sent to their home. Which home a login opens (student or teacher) follows the account's stored role, not the screen that was used.
+
+### Route groups
+
+| Paths | Area |
+| :--- | :--- |
+| `/`, `/role-select`, `/login`, `/register`, `/forgot-password`, `/reset-password` | Sign-in |
+| `/home`, `/search`, `/courses`, `/notifications`, `/mentor/:id`, `/course-listing/:subject` | Student |
+| `/teacher-home`, `/teacher-students`, `/teacher-pc-request`, `/teacher-schedules`, `/teacher-upload`, `/teacher-settings`, `/teacher-notifications` | Teacher |
+| `/settings`, `/edit-profile`, `/change-password`, `/privacy-security`, `/payment-methods` | Settings |
 
 ---
 
