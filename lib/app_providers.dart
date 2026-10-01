@@ -5,15 +5,20 @@ import 'repositories/booking_repository.dart';
 import 'repositories/course_repository.dart';
 import 'repositories/mentor_repository.dart';
 import 'repositories/payment_repository.dart';
+import 'repositories/student_notification_repository.dart';
 import 'repositories/user_repository.dart';
+import 'viewmodels/student/student_notifications_view_model.dart';
 
 /// App-wide dependencies, placed above the router so every screen and every
 /// view model can reach them.
 ///
 /// Repositories are the only layer that talks to Supabase or the backend.
 /// View models receive the repositories they need when the router creates
-/// them (see router.dart).
-List<SingleChildWidget> buildAppProviders() {
+/// them (see router.dart). The notification view model is created here
+/// instead because the bell that shows it appears on several screens.
+List<SingleChildWidget> buildAppProviders({
+  StudentNotificationRepository? studentNotifications,
+}) {
   return [
     Provider<AuthRepository>(create: (_) => AuthRepository()),
     Provider<UserRepository>(create: (_) => UserRepository()),
@@ -21,5 +26,18 @@ List<SingleChildWidget> buildAppProviders() {
     Provider<CourseRepository>(create: (_) => CourseRepository()),
     Provider<BookingRepository>(create: (_) => BookingRepository()),
     Provider<PaymentRepository>(create: (_) => PaymentRepository()),
+    if (studentNotifications != null)
+      ChangeNotifierProvider<StudentNotificationRepository>.value(
+        value: studentNotifications,
+      )
+    else
+      ChangeNotifierProvider<StudentNotificationRepository>(
+        create: (_) => StudentNotificationRepository()..init(),
+      ),
+    ChangeNotifierProvider<StudentNotificationsViewModel>(
+      create: (context) => StudentNotificationsViewModel(
+        repository: context.read<StudentNotificationRepository>(),
+      ),
+    ),
   ];
 }

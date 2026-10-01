@@ -1,4 +1,4 @@
-import 'services/student_notification_service.dart';
+import 'repositories/student_notification_repository.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_facebook_auth/flutter_facebook_auth.dart';
 import 'package:mobile_application/services/auth_service.dart';
@@ -18,7 +18,8 @@ final JomnesDB = Supabase.instance.client;
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await NotificationService.initialize();
-  await StudentNotificationService.init();
+  final studentNotifications = StudentNotificationRepository();
+  await studentNotifications.init();
 
   Stripe.publishableKey = 'pk_test_51UJ6f2B0wqWK1qEi3bVUPVjkVgMHvDSNYX5uPE5upF8jspWGXdpWMrxK5HTuoUkgrlqT1p2YlBzm1U2qUxD6dCnV003xsA7fWa';
 
@@ -46,16 +47,20 @@ Future<void> main() async {
   setupDeepLinkListener();
 
   AuthService().printDeployKeyHash();
-  runApp(const JomnesApp());
+  runApp(JomnesApp(studentNotifications: studentNotifications));
 }
 
 class JomnesApp extends StatelessWidget {
-  const JomnesApp({super.key});
+  const JomnesApp({super.key, this.studentNotifications});
+
+  /// Already-loaded notification store from main(); when omitted (tests) a
+  /// new one is created.
+  final StudentNotificationRepository? studentNotifications;
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: buildAppProviders(),
+      providers: buildAppProviders(studentNotifications: studentNotifications),
       child: MaterialApp.router(
         title: 'Jomnes',
         debugShowCheckedModeBanner: false,

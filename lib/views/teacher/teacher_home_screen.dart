@@ -356,12 +356,15 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
-                      child: NotificationBell(
-                        color: Colors.white70,
-                        size: 22,
-                        unreadCountListenable:
+                      child: ValueListenableBuilder<int>(
+                        valueListenable:
                             TeacherNotificationService.unreadCountNotifier,
-                        onTap: () => context.push('/teacher-notifications'),
+                        builder: (context, unreadCount, _) => NotificationBell(
+                          color: Colors.white70,
+                          size: 22,
+                          unreadCount: unreadCount,
+                          onTap: () => context.push('/teacher-notifications'),
+                        ),
                       ),
                     ),
                   ],

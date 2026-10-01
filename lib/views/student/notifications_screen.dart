@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../models/app_notification.dart';
-import '../../services/student_notification_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/student/student_notifications_view_model.dart';
 import '../../theme/app_colors.dart';
 
 class NotificationsScreen extends StatefulWidget {
@@ -25,10 +26,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             _buildAppBar(context),
             _buildFilterChips(),
             Expanded(
-              child: ValueListenableBuilder<List<AppNotification>>(
-                valueListenable:
-                    StudentNotificationService.notificationsNotifier,
-                builder: (context, notifications, _) {
+              child: Builder(
+                builder: (context) {
+                  final notifications = context
+                      .watch<StudentNotificationsViewModel>()
+                      .notifications;
                   final filtered = _filterNotifications(notifications);
 
                   if (filtered.isEmpty) {
@@ -111,10 +113,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                 ),
                 const SizedBox(width: 8),
-                ValueListenableBuilder<int>(
-                  valueListenable:
-                      StudentNotificationService.unreadCountNotifier,
-                  builder: (context, count, _) {
+                Builder(
+                  builder: (context) {
+                    final count = context
+                        .watch<StudentNotificationsViewModel>()
+                        .unreadCount;
                     if (count == 0) return const SizedBox.shrink();
                     return Container(
                       padding: const EdgeInsets.symmetric(
@@ -145,7 +148,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           IconButton(
             tooltip: 'Mark all as read',
             onPressed: () {
-              StudentNotificationService.markAllAsRead();
+              context.read<StudentNotificationsViewModel>().markAllAsRead();
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
@@ -273,11 +276,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
       ),
       onDismissed: (_) {
-        StudentNotificationService.deleteNotification(item.id);
+        context.read<StudentNotificationsViewModel>().delete(item.id);
       },
       child: GestureDetector(
         onTap: () {
-          StudentNotificationService.markAsRead(item.id);
+          context.read<StudentNotificationsViewModel>().markAsRead(item.id);
           if (item.route != null && item.route!.isNotEmpty) {
             context.push(item.route!);
           }

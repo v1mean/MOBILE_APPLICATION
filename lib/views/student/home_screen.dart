@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../../router.dart';
-import '../../main.dart';
-import '../../models/user_profile.dart';
-import '../../models/mentor.dart';
-import '../../services/mentor_directory_service.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/student/home_view_model.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/mentor_card.dart';
 import '../../widgets/featured_course_card.dart';
 import '../../widgets/user_avatar_header.dart';
 import '../../widgets/notification_bell.dart';
 import '../../theme/app_colors.dart';
-import '../../constants/course_categories.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,174 +19,18 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _navIndex = 0;
-  UserProfile? _userProfile;
-  bool _isLoadingProfile = true;
-  
-  List<Mentor> _popularMentors = [];
-  bool _isLoadingMentors = true;
-  
-  List<FeaturedCourse> _featuredCourses = [];
-  bool _isLoadingFeatured = true;
+  late final HomeViewModel _vm;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserProfile();
-    _fetchPopularMentors();
-    _fetchFeaturedCourses();
+    _vm = context.read<HomeViewModel>();
   }
 
   @override
   void reassemble() {
     super.reassemble();
-    _fetchUserProfile();
-    _fetchPopularMentors();
-    _fetchFeaturedCourses();
-  }
-
-  Future<void> _fetchPopularMentors() async {
-    final mentors = await MentorDirectoryService.fetchMentors();
-    if (mounted) {
-      setState(() {
-        _popularMentors = mentors;
-        _isLoadingMentors = false;
-      });
-    }
-  }
-
-
-  Future<void> _fetchFeaturedCourses() async {
-    try {
-      List<FeaturedCourse> dbCourses = [];
-      try {
-        final data = await JomnesDB.from('courses')
-            .select('*, Users(name)')
-            .eq('is_featured', true)
-            .order('id', ascending: false);
-        dbCourses = data.map((e) => FeaturedCourse.fromJson(e)).toList();
-      } catch (err) {
-        debugPrint('Error fetching db courses: $err');
-      }
-
-      // Map any uploaded course from DB by subject/category
-      final coursesBySubject = <String, FeaturedCourse>{};
-      for (final c in dbCourses) {
-        final key = c.subject.trim().toLowerCase();
-        if (key.isNotEmpty && !coursesBySubject.containsKey(key)) {
-          coursesBySubject[key] = c;
-        }
-      }
-
-      // Display ALL standard featured course categories even if there are no mentors yet
-      final allFeatured = <FeaturedCourse>[];
-      final addedKeys = <String>{};
-
-      for (final cat in kCourseCategories) {
-        final key = cat.trim().toLowerCase();
-        if (coursesBySubject.containsKey(key)) {
-          allFeatured.add(coursesBySubject[key]!);
-        } else {
-          final theme = getCategoryTheme(cat);
-          allFeatured.add(
-            FeaturedCourse(
-              id: -1,
-              mentorName: 'Expert Mentor',
-              subject: cat,
-              cardColor: theme.cardColorKey,
-              imageUrl: '',
-            ),
-          );
-        }
-        addedKeys.add(key);
-      }
-
-      // Also include any other unique categories from the database not in kCourseCategories
-      for (final c in dbCourses) {
-        final key = c.subject.trim().toLowerCase();
-        if (key.isNotEmpty && addedKeys.add(key)) {
-          allFeatured.add(c);
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _featuredCourses = allFeatured;
-          _isLoadingFeatured = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        final fallback = kCourseCategories.map((cat) {
-          final theme = getCategoryTheme(cat);
-          return FeaturedCourse(
-            id: -1,
-            mentorName: 'Expert Mentor',
-            subject: cat,
-            cardColor: theme.cardColorKey,
-            imageUrl: '',
-          );
-        }).toList();
-
-        setState(() {
-          _featuredCourses = fallback;
-          _isLoadingFeatured = false;
-        });
-      }
-    }
-  }
-
-  Future<void> _fetchUserProfile() async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) {
-      if (mounted) setState(() => _isLoadingProfile = false);
-      return;
-    }
-
-    try {
-      final data = await JomnesDB.from('Users')
-          .select()
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-      if (mounted) {
-        setState(() {
-          if (data != null) {
-            _userProfile = UserProfile.fromJson(data);
-          }
-          _isLoadingProfile = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoadingProfile = false);
-      }
-    }
-  }
-
-  String get _displayName {
-    if (_userProfile?.name != null && _userProfile!.name.isNotEmpty) {
-      return _userProfile!.name;
-    }
-    final user = JomnesDB.auth.currentUser;
-    final metaName = user?.userMetadata?['full_name'] ??
-        user?.userMetadata?['name'] ??
-        user?.email?.split('@').first;
-    if (metaName != null && metaName.toString().isNotEmpty) {
-      return metaName.toString();
-    }
-    return isGuestMode ? 'Guest' : (_isLoadingProfile ? 'Loading...' : 'Student');
-  }
-
-  String? get _displayAvatar {
-    if (_userProfile?.profileImage != null && _userProfile!.profileImage.isNotEmpty) {
-      return _userProfile!.profileImage;
-    }
-    final user = JomnesDB.auth.currentUser;
-    final dynamic pic = user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
-    final String? metaAvatar = pic is String ? pic : null;
-    if (metaAvatar != null && metaAvatar.isNotEmpty) {
-      return metaAvatar;
-    }
-    return null; // No avatar — show initial letter circle
+    _vm.load();
   }
 
   void _onNavTap(int i) {
@@ -213,6 +53,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    context.watch<HomeViewModel>();
     return Scaffold(
       backgroundColor: AppColors.darkBg,
       body: Column(
@@ -226,9 +67,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   // Current User Avatar & Info (clickable to Settings)
                   UserAvatarHeader(
-                    name: _displayName,
-                    role: _userProfile?.role ?? 'Student',
-                    avatarUrl: _displayAvatar,
+                    name: _vm.displayName,
+                    role: _vm.role,
+                    avatarUrl: _vm.displayAvatar,
                     onTap: () => context.go('/settings'),
                   ),
                   const Spacer(),
@@ -255,13 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 child: RefreshIndicator(
                   color: AppColors.accentBlue,
-                  onRefresh: () async {
-                    await Future.wait([
-                      _fetchUserProfile(),
-                      _fetchPopularMentors(),
-                      _fetchFeaturedCourses(),
-                    ]);
-                  },
+                  onRefresh: _vm.load,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 20),
@@ -373,12 +208,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 14),
                       // Featured Courses Horizontal List
-                      if (_isLoadingFeatured)
+                      if (_vm.isLoadingFeatured)
                         const Center(child: Padding(
                           padding: EdgeInsets.all(20.0),
                           child: CircularProgressIndicator(color: AppColors.accentBlue),
                         ))
-                      else if (_featuredCourses.isEmpty)
+                      else if (_vm.featuredCourses.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 18),
                           child: Text('No featured courses available yet.', style: GoogleFonts.inter(color: Colors.grey)),
@@ -389,12 +224,12 @@ class _HomeScreenState extends State<HomeScreen> {
                           child: ListView.builder(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _featuredCourses.length,
+                            itemCount: _vm.featuredCourses.length,
                             itemBuilder: (context, i) => FeaturedCourseCard(
-                              course: _featuredCourses[i],
+                              course: _vm.featuredCourses[i],
                               onTap: () {
                                 context.go(
-                                  '/course-listing/${Uri.encodeComponent(_featuredCourses[i].subject)}',
+                                  '/course-listing/${Uri.encodeComponent(_vm.featuredCourses[i].subject)}',
                                 );
                               },
                             ),
@@ -415,18 +250,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       const SizedBox(height: 10),
                       // Popular Mentors List
-                      if (_isLoadingMentors) 
+                      if (_vm.isLoadingMentors) 
                         const Center(child: Padding(
                           padding: EdgeInsets.all(20.0),
                           child: CircularProgressIndicator(color: AppColors.accentBlue),
                         ))
-                      else if (_popularMentors.isEmpty)
+                      else if (_vm.popularMentors.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 18),
                           child: Text('No mentors available yet.', style: GoogleFonts.inter(color: Colors.grey)),
                         )
                       else
-                        ..._popularMentors.map((m) => MentorCardWithButton(
+                        ..._vm.popularMentors.map((m) => MentorCardWithButton(
                           mentor: m,
                           onCheckOut: () => context.push('/mentor/${m.id}'),
                         )),

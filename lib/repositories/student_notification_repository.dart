@@ -1,20 +1,23 @@
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_notification.dart';
-import 'notification_service.dart';
+import '../services/notification_service.dart';
 
-class StudentNotificationService {
+/// The student's in-app notifications. They are kept on the device (not on
+/// the server), so this repository is the single source of truth for them
+/// and notifies listeners when they change.
+class StudentNotificationRepository extends ChangeNotifier {
   static const String _storageKey = 'jomnes_student_notifications_v1';
 
-  static final ValueNotifier<List<AppNotification>> notificationsNotifier =
-      ValueNotifier<List<AppNotification>>([]);
+  List<AppNotification> _notifications = [];
+  bool _initialized = false;
 
-  static final ValueNotifier<int> unreadCountNotifier = ValueNotifier<int>(0);
+  List<AppNotification> get notifications => _notifications;
 
-  static bool _initialized = false;
+  int get unreadCount => _notifications.where((n) => !n.isRead).length;
 
-  /// Initialize service, load saved notifications, or load default seed items.
-  static Future<void> init() async {
+  /// Loads saved notifications, or seeds the default ones on first run.
+  Future<void> init() async {
     if (_initialized) return;
     _initialized = true;
 
@@ -36,15 +39,16 @@ class StudentNotificationService {
 
         // Sort descending by timestamp
         list.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-        notificationsNotifier.value = list;
+        _notifications = list;
       } else {
         // Seed default initial notifications so student has a welcoming experience
         final now = DateTime.now();
-        final seedNotifications = [
+        _notifications = [
           AppNotification(
             id: 'seed_welcome',
             title: 'Welcome to Jomnes! 👋',
-            body: 'Discover top mentors and book one-on-one sessions in academic subjects, languages, and sports.',
+            body:
+                'Discover top mentors and book one-on-one sessions in academic subjects, languages, and sports.',
             timestamp: now.subtract(const Duration(hours: 1)),
             isRead: false,
             type: 'system',
@@ -53,7 +57,8 @@ class StudentNotificationService {
           AppNotification(
             id: 'seed_courses',
             title: 'Explore Featured Courses 🚀',
-            body: 'Check out newly added courses in Math, Chinese, English, and Football coaching.',
+            body:
+                'Check out newly added courses in Math, Chinese, English, and Football coaching.',
             timestamp: now.subtract(const Duration(hours: 3)),
             isRead: false,
             type: 'course',
@@ -62,40 +67,34 @@ class StudentNotificationService {
           AppNotification(
             id: 'seed_reminder',
             title: 'Learning Reminder 💡',
-            body: 'Consistency is key! Find a mentor who matches your schedule and boost your skills today.',
+            body:
+                'Consistency is key! Find a mentor who matches your schedule and boost your skills today.',
             timestamp: now.subtract(const Duration(days: 1)),
             isRead: true,
             type: 'reminder',
             route: '/search',
           ),
         ];
-        notificationsNotifier.value = seedNotifications;
         await _save();
       }
-      _updateUnreadCount();
+      notifyListeners();
     } catch (e) {
-      debugPrint('Error initializing StudentNotificationService: $e');
+      debugPrint('Error initializing StudentNotificationRepository: $e');
     }
   }
 
-  static void _updateUnreadCount() {
-    final count = notificationsNotifier.value.where((n) => !n.isRead).length;
-    unreadCountNotifier.value = count;
-  }
-
-  static Future<void> _save() async {
+  Future<void> _save() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final stringList =
-          notificationsNotifier.value.map((n) => n.toJson()).toList();
+      final stringList = _notifications.map((n) => n.toJson()).toList();
       await prefs.setStringList(_storageKey, stringList);
     } catch (e) {
       debugPrint('Error saving notifications: $e');
     }
   }
 
-  /// Add a new notification
-  static Future<void> addNotification({
+  /// Adds a notification to the list and shows it as a device notification.
+  Future<void> add({
     required String title,
     required String body,
     String type = 'system',
@@ -111,36 +110,35 @@ class StudentNotificationService {
       route: route,
     );
 
-    final current = List<AppNotification>.from(notificationsNotifier.value);
-    current.insert(0, notif);
-    notificationsNotifier.value = current;
-    _updateUnreadCount();
+    _notifications = [notif, ..._notifications];
+    notifyListeners();
     await _save();
 
     // Trigger local push notification alert if possible
     try {
-      await NotificationService.showInstantNotification(
-        title: title,
-        body: body,
-      );
+      await showDeviceNotification(title: title, body: body);
     } catch (_) {}
   }
 
-  /// Mark specific notification as read
-  static Future<void> markAsRead(String id) async {
-    final current = List<AppNotification>.from(notificationsNotifier.value);
+  /// Shows a notification in the device's notification tray.
+  Future<void> showDeviceNotification({
+    required String title,
+    required String body,
+  }) => NotificationService.showInstantNotification(title: title, body: body);
+
+  Future<void> markAsRead(String id) async {
+    final current = List<AppNotification>.from(_notifications);
     final idx = current.indexWhere((n) => n.id == id);
     if (idx != -1 && !current[idx].isRead) {
       current[idx].isRead = true;
-      notificationsNotifier.value = current;
-      _updateUnreadCount();
+      _notifications = current;
+      notifyListeners();
       await _save();
     }
   }
 
-  /// Mark all notifications as read
-  static Future<void> markAllAsRead() async {
-    final current = List<AppNotification>.from(notificationsNotifier.value);
+  Future<void> markAllAsRead() async {
+    final current = List<AppNotification>.from(_notifications);
     bool changed = false;
     for (var n in current) {
       if (!n.isRead) {
@@ -149,25 +147,17 @@ class StudentNotificationService {
       }
     }
     if (changed) {
-      notificationsNotifier.value = current;
-      _updateUnreadCount();
+      _notifications = current;
+      notifyListeners();
       await _save();
     }
   }
 
-  /// Delete a single notification
-  static Future<void> deleteNotification(String id) async {
-    final current = List<AppNotification>.from(notificationsNotifier.value);
+  Future<void> delete(String id) async {
+    final current = List<AppNotification>.from(_notifications);
     current.removeWhere((n) => n.id == id);
-    notificationsNotifier.value = current;
-    _updateUnreadCount();
-    await _save();
-  }
-
-  /// Clear all notifications
-  static Future<void> clearAll() async {
-    notificationsNotifier.value = [];
-    unreadCountNotifier.value = 0;
+    _notifications = current;
+    notifyListeners();
     await _save();
   }
 }

@@ -6,8 +6,8 @@ import '../../models/mentor.dart';
 import '../../widgets/mentor_card.dart';
 import '../../widgets/rich_course_card.dart';
 import '../../constants/course_categories.dart';
-import '../../constants/mock_data.dart';
-import '../../main.dart';
+import 'package:provider/provider.dart';
+import '../../viewmodels/student/course_listing_view_model.dart';
 
 class CourseListingScreen extends StatefulWidget {
   final String subject;
@@ -20,16 +20,12 @@ class CourseListingScreen extends StatefulWidget {
 
 class _CourseListingScreenState extends State<CourseListingScreen>
     with SingleTickerProviderStateMixin {
-  List<Mentor> _allMentors = [];
-  List<Map<String, dynamic>> _courses = [];
-  bool _isLoading = true;
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _fetchData();
   }
 
   @override
@@ -41,154 +37,15 @@ class _CourseListingScreenState extends State<CourseListingScreen>
   @override
   void reassemble() {
     super.reassemble();
-    _fetchData();
-  }
-
-  Future<void> _fetchData() async {
-    await Future.wait([_fetchMentors(), _fetchCourses()]);
-    if (mounted) setState(() => _isLoading = false);
-  }
-
-  Future<void> _fetchMentors() async {
-    try {
-      final usersData = await JomnesDB.from('Users')
-          .select()
-          .or('role.eq.mentor,role.eq.tutor');
-
-      final userList = usersData as List;
-      final userIds = userList.map((u) => u['user_id']).toList();
-
-      List<dynamic> profiles = [];
-      if (userIds.isNotEmpty) {
-        profiles = await JomnesDB.from('tutor_profiles')
-            .select()
-            .filter('user_id', 'in', userIds) as List;
-      }
-      final profileMap = {for (var p in profiles) p['user_id'].toString(): p};
-
-      final mentors = userList.map((u) {
-        final uid = u['user_id'].toString();
-        final p = profileMap[uid] ?? {};
-        final subject = (p['subject'] as String? ?? '').isNotEmpty
-            ? p['subject'] as String
-            : Mentor.inferMentorSubject(p['bio'], p['education']);
-
-        final avatar = (u['profile_image'] != null &&
-                u['profile_image'].toString().trim().isNotEmpty)
-            ? u['profile_image'].toString()
-            : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&fit=crop';
-
-        return Mentor(
-          id: uid,
-          name: u['name'] ?? 'Mentor',
-          subject: subject,
-          experience: '${p['experience_years'] ?? 5} years experience',
-          timeSlot: 'Flexible',
-          avatarUrl: avatar,
-          rating: (p['rating'] as num?)?.toDouble() ?? 4.9,
-          students: (p['total_students'] as num?)?.toInt() ?? 120,
-          classes: 50,
-          followers: 300,
-          bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 35.0,
-          bio: p['bio'] ?? 'Experienced mentor.',
-          courses: [],
-        );
-      }).toList();
-
-      // Combine real mentors from database with mock mentors across all subjects
-      final combinedMentors = <Mentor>[...mentors];
-      final seenIds = mentors.map((m) => m.id).toSet();
-      for (final mockM in kMockMentors) {
-        if (seenIds.add(mockM.id)) {
-          combinedMentors.add(mockM);
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _allMentors = combinedMentors;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _allMentors = kMockMentors;
-        });
-      }
-    }
-  }
-
-
-  Future<void> _fetchCourses() async {
-    try {
-      List<Map<String, dynamic>> dbCourses = [];
-      try {
-        final data = await JomnesDB.from('courses')
-            .select('*, Users(name)')
-            .order('id', ascending: true);
-        dbCourses = List<Map<String, dynamic>>.from(data);
-      } catch (_) {}
-
-      // Combine real uploaded courses from DB with mock courses
-      final combinedCourses = <Map<String, dynamic>>[...dbCourses];
-      final seenTitles = dbCourses.map((c) => (c['title'] ?? '').toString().toLowerCase().trim()).toSet();
-      for (final mc in getMockCoursesAsJson()) {
-        final title = (mc['title'] ?? '').toString().toLowerCase().trim();
-        if (seenTitles.add(title)) {
-          combinedCourses.add(mc);
-        }
-      }
-
-      if (mounted) {
-        setState(() {
-          _courses = combinedCourses;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _courses = getMockCoursesAsJson();
-        });
-      }
-    }
-  }
-
-  List<Mentor> get _filteredMentors {
-    final sub = widget.subject.toLowerCase().trim();
-    final list = _allMentors.where((m) {
-      final mSub = m.subject.toLowerCase().trim();
-      return mSub == sub ||
-          mSub.contains(sub) ||
-          sub.contains(mSub) ||
-          m.name.toLowerCase().contains(sub);
-    }).toList();
-
-    // If no exact match, show all mentors as recommendations
-    if (list.isEmpty) return _allMentors;
-    return list;
-  }
-
-  List<Map<String, dynamic>> get _filteredCourses {
-    final sub = widget.subject.toLowerCase().trim();
-
-    // Match by category column or title
-    final matched = _courses.where((c) {
-      final cat = (c['category'] as String? ?? '').toLowerCase().trim();
-      final title = (c['title'] as String? ?? '').toLowerCase().trim();
-      return cat == sub ||
-          cat.contains(sub) ||
-          sub.contains(cat) ||
-          title.contains(sub);
-    }).toList();
-
-    return matched;
+    context.read<CourseListingViewModel>().load();
   }
 
   @override
   Widget build(BuildContext context) {
+    final vm = context.watch<CourseListingViewModel>();
     final theme = getCategoryTheme(widget.subject);
-    final mentors = _filteredMentors;
-    final courses = _filteredCourses;
+    final mentors = vm.filteredMentors;
+    final courses = vm.filteredCourses;
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -353,7 +210,7 @@ class _CourseListingScreenState extends State<CourseListingScreen>
                   topLeft: Radius.circular(32),
                   topRight: Radius.circular(32),
                 ),
-                child: _isLoading
+                child: vm.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : TabBarView(
                         controller: _tabController,

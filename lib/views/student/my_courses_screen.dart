@@ -3,13 +3,12 @@ import '../../widgets/user_avatar_header.dart';
 import '../../widgets/notification_bell.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import '../../models/user_profile.dart';
+import 'package:provider/provider.dart';
 import '../../models/mentor.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../widgets/course_card.dart';
 import '../../theme/app_colors.dart';
-import '../../main.dart';
-import '../../services/api_service.dart';
+import '../../viewmodels/student/my_courses_view_model.dart';
 
 class MyCoursesScreen extends StatefulWidget {
   const MyCoursesScreen({super.key});
@@ -20,83 +19,12 @@ class MyCoursesScreen extends StatefulWidget {
 
 class _MyCoursesScreenState extends State<MyCoursesScreen> {
   int _navIndex = 2;
-  UserProfile? _userProfile;
-  late Future<List<Course>> _coursesFuture;
+  late final MyCoursesViewModel _vm;
 
   @override
   void initState() {
     super.initState();
-    _fetchUserProfile();
-    _coursesFuture = _fetchMyCourses();
-  }
-
-  Future<List<Course>> _fetchMyCourses() async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) return [];
-    try {
-      final data = await ApiService.fetchMyCourses(session.accessToken);
-      return data.map((e) => Course.fromJson(e)).toList();
-    } catch (e) {
-      return [];
-    }
-  }
-
-  Future<void> _fetchUserProfile() async {
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) {
-      return;
-    }
-
-    try {
-      final data = await JomnesDB.from(
-        'profiles',
-      ).select().eq('id', session.user.id).maybeSingle();
-      if (mounted) {
-        setState(() {
-          if (data != null) {
-            _userProfile = UserProfile(
-              userId: data['id'],
-              createdAt: data['created_at'] != null
-                  ? DateTime.tryParse(data['created_at']) ?? DateTime.now()
-                  : DateTime.now(),
-              name: data['full_name'] ?? '',
-              email: data['email'] ?? '',
-              phone: data['phone'] ?? '',
-              role: data['role'] ?? 'Student',
-              profileImage: data['avatar_url'] ?? '',
-              location: data['city'] ?? '',
-            );
-          }
-        });
-      }
-    } catch (_) {
-    }
-  }
-
-  String get _displayName {
-    if (_userProfile?.name != null && _userProfile!.name.isNotEmpty)
-      return _userProfile!.name;
-    final user = JomnesDB.auth.currentUser;
-    return user?.userMetadata?['full_name'] ??
-        user?.userMetadata?['name'] ??
-        user?.email?.split('@').first ??
-        'Student';
-  }
-
-  String get _displayRole {
-    if (_userProfile?.role != null && _userProfile!.role.isNotEmpty)
-      return _userProfile!.role;
-    return 'Student';
-  }
-
-  String? get _avatarUrl {
-    if (_userProfile?.profileImage != null &&
-        _userProfile!.profileImage.isNotEmpty)
-      return _userProfile!.profileImage;
-    final user = JomnesDB.auth.currentUser;
-    final dynamic pic =
-        user?.userMetadata?['avatar_url'] ?? user?.userMetadata?['picture'];
-    return pic is String && pic.isNotEmpty ? pic : null;
+    _vm = context.read<MyCoursesViewModel>();
   }
 
   void _onNavTap(int i) {
@@ -215,14 +143,12 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                           : () async {
                               setStateSB(() => isSubmitting = true);
                               try {
-                                final session = JomnesDB.auth.currentSession;
-                                if (session != null && course.tutorId != null) {
-                                  await ApiService.submitReview(
-                                    accessToken: session.accessToken,
-                                    mentorId: course.tutorId!,
-                                    rating: rating,
-                                    comment: commentController.text,
-                                  );
+                                final sent = await _vm.submitReview(
+                                  course: course,
+                                  rating: rating,
+                                  comment: commentController.text,
+                                );
+                                if (sent) {
                                   if (mounted) {
                                     Navigator.pop(ctx);
                                     ScaffoldMessenger.of(context).showSnackBar(
@@ -273,8 +199,9 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final name = _displayName;
-    final avatar = _avatarUrl;
+    context.watch<MyCoursesViewModel>();
+    final name = _vm.displayName;
+    final avatar = _vm.avatarUrl;
 
     return Scaffold(
       backgroundColor: AppColors.darkBg,
@@ -289,7 +216,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                 children: [
                   UserAvatarHeader(
                     name: name,
-                    role: _displayRole,
+                    role: _vm.displayRole,
                     avatarUrl: avatar,
                     onTap: () => context.go('/settings'),
                   ),
@@ -316,12 +243,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                 ),
                 child: RefreshIndicator(
                   color: AppColors.accentBlue,
-                  onRefresh: () async {
-                    setState(() {
-                      _coursesFuture = _fetchMyCourses();
-                    });
-                    await Future.wait([_fetchUserProfile(), _coursesFuture]);
-                  },
+                  onRefresh: _vm.refresh,
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.only(bottom: 24),
@@ -343,7 +265,7 @@ class _MyCoursesScreenState extends State<MyCoursesScreen> {
                         ),
                         const SizedBox(height: 14),
                         FutureBuilder<List<Course>>(
-                          future: _coursesFuture,
+                          future: _vm.coursesFuture,
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {

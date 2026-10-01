@@ -10,11 +10,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'main.dart';
 import 'package:provider/provider.dart';
 import 'repositories/auth_repository.dart';
+import 'repositories/booking_repository.dart';
+import 'repositories/course_repository.dart';
+import 'repositories/mentor_repository.dart';
+import 'repositories/payment_repository.dart';
+import 'repositories/student_notification_repository.dart';
+import 'repositories/user_repository.dart';
 import 'services/guest_mode.dart';
 import 'viewmodels/auth/forgot_password_view_model.dart';
 import 'viewmodels/auth/login_view_model.dart';
 import 'viewmodels/auth/register_view_model.dart';
 import 'viewmodels/auth/reset_password_view_model.dart';
+import 'viewmodels/student/course_listing_view_model.dart';
+import 'viewmodels/student/home_view_model.dart';
+import 'viewmodels/student/mentor_profile_view_model.dart';
+import 'viewmodels/student/my_courses_view_model.dart';
+import 'viewmodels/student/search_view_model.dart';
 export 'services/guest_mode.dart';
 import 'views/auth/splash_screen.dart';
 import 'views/auth/login_screen.dart';
@@ -241,9 +252,50 @@ final GoRouter router = GoRouter(
         );
       },
     ),
-    GoRoute(path: '/home', pageBuilder: (c, s) => _instant(s, const HomeScreen())),
-    GoRoute(path: '/search', pageBuilder: (c, s) => _instant(s, const SearchScreen())),
-    GoRoute(path: '/courses', pageBuilder: (c, s) => _instant(s, const MyCoursesScreen())),
+    GoRoute(
+      path: '/home',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => HomeViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            mentorRepository: c.read<MentorRepository>(),
+            courseRepository: c.read<CourseRepository>(),
+          )..load(),
+          const HomeScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/search',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => SearchViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            mentorRepository: c.read<MentorRepository>(),
+          )..load(),
+          const SearchScreen(),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: '/courses',
+      pageBuilder: (c, s) => _instant(
+        s,
+        _screen(
+          (c) => MyCoursesViewModel(
+            authRepository: c.read<AuthRepository>(),
+            userRepository: c.read<UserRepository>(),
+            courseRepository: c.read<CourseRepository>(),
+            mentorRepository: c.read<MentorRepository>(),
+          )..loadUserProfile(),
+          const MyCoursesScreen(),
+        ),
+      ),
+    ),
     GoRoute(path: '/notifications', pageBuilder: (c, s) => _instant(s, const NotificationsScreen())),
     GoRoute(path: '/profile', redirect: (c, s) => '/settings'),
     GoRoute(path: '/settings', pageBuilder: (c, s) => _instant(s, const SettingsScreen())),
@@ -255,11 +307,20 @@ final GoRouter router = GoRouter(
       path: '/mentor/:id',
       pageBuilder: (c, s) {
         final id = s.pathParameters['id']!;
+        final checkoutSessionId = s.uri.queryParameters['checkout_session_id'];
         return _instant(
           s,
-          MentorProfileScreen(
-            mentorId: id,
-            checkoutSessionId: s.uri.queryParameters['checkout_session_id'],
+          _screen(
+            (c) => MentorProfileViewModel(
+              mentorId: id,
+              checkoutSessionId: checkoutSessionId,
+              authRepository: c.read<AuthRepository>(),
+              mentorRepository: c.read<MentorRepository>(),
+              bookingRepository: c.read<BookingRepository>(),
+              paymentRepository: c.read<PaymentRepository>(),
+              notificationRepository: c.read<StudentNotificationRepository>(),
+            ),
+            const MentorProfileScreen(),
           ),
         );
       },
@@ -269,7 +330,7 @@ final GoRouter router = GoRouter(
       pageBuilder: (c, s) {
         final rawSubject = s.uri.queryParameters['subject'] ?? 'Courses';
         final subject = Uri.decodeComponent(rawSubject);
-        return _instant(s, CourseListingScreen(subject: subject));
+        return _instant(s, _courseListing(subject));
       },
     ),
     GoRoute(
@@ -277,11 +338,22 @@ final GoRouter router = GoRouter(
       pageBuilder: (c, s) {
         final rawSubject = s.pathParameters['subject'] ?? 'Courses';
         final subject = Uri.decodeComponent(rawSubject);
-        return _instant(s, CourseListingScreen(subject: subject));
+        return _instant(s, _courseListing(subject));
       },
     ),
   ],
 );
+
+Widget _courseListing(String subject) {
+  return _screen(
+    (c) => CourseListingViewModel(
+      subject: subject,
+      mentorRepository: c.read<MentorRepository>(),
+      courseRepository: c.read<CourseRepository>(),
+    )..load(),
+    CourseListingScreen(subject: subject),
+  );
+}
 
 /// Pairs a screen with the view model it listens to. The router is the one
 /// place that knows which repositories each view model needs; the view model

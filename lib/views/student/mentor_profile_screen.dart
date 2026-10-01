@@ -1,29 +1,13 @@
-import '../../constants/mock_data.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
-import 'package:add_2_calendar/add_2_calendar.dart';
-import '../../models/mentor.dart';
+import 'package:provider/provider.dart';
 import '../../widgets/course_card.dart';
-import '../../main.dart';
-import '../../services/api_service.dart';
-import '../../services/notification_service.dart';
-import '../../services/student_notification_service.dart';
-import '../../services/payment_service.dart';
+import '../../viewmodels/student/mentor_profile_view_model.dart';
 import '../../theme/app_colors.dart';
 
 class MentorProfileScreen extends StatefulWidget {
-  final String mentorId;
-
-  /// Set when the browser returns from Stripe Checkout (web payments only).
-  final String? checkoutSessionId;
-
-  const MentorProfileScreen({
-    super.key,
-    required this.mentorId,
-    this.checkoutSessionId,
-  });
+  const MentorProfileScreen({super.key});
 
   @override
   State<MentorProfileScreen> createState() => _MentorProfileScreenState();
@@ -32,12 +16,7 @@ class MentorProfileScreen extends StatefulWidget {
 class _MentorProfileScreenState extends State<MentorProfileScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool _following = false;
-  bool _isBooking = false;
-
-  Mentor? _mentor;
-  bool _isLoading = true;
-  List<Map<String, dynamic>> _reviews = [];
+  late final MentorProfileViewModel _vm;
 
   @override
   void initState() {
@@ -46,29 +25,15 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
     _tabController.addListener(() {
       if (mounted) setState(() {});
     });
-    _fetchMentor().then((_) => _resumeAfterWebCheckout());
-    _fetchReviews();
-  }
-
-  Future<void> _resumeAfterWebCheckout() async {
-    final sessionId = widget.checkoutSessionId;
-    if (sessionId == null || _mentor == null) return;
-
-    final usable = await PaymentService.isCheckoutSessionUsable(sessionId);
-    if (mounted && usable) {
-      _showBookingSheet();
-    }
-  }
-
-  Future<void> _fetchReviews() async {
-    try {
-      final reviews = await ApiService.fetchMentorReviews(widget.mentorId);
-      if (mounted) setState(() => _reviews = reviews);
-    } catch (_) {}
+    _vm = context.read<MentorProfileViewModel>();
+    _vm.load().then((resumeBooking) {
+      // Back from a paid Stripe Checkout: go straight to picking a slot.
+      if (resumeBooking && mounted) _showBookingSheet();
+    });
   }
 
   Future<void> _showBookingSheet() async {
-    if (_mentor == null) return;
+    if (_vm.mentor == null) return;
     DateTime? selectedDate;
     String? selectedTime;
     final timeSlots = [
@@ -163,7 +128,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                       onPressed:
                           (selectedDate != null &&
                               selectedTime != null &&
-                              !_isBooking)
+                              !_vm.isBooking)
                           ? () {
                               Navigator.pop(context);
                               _confirmBooking(selectedDate!, selectedTime!);
@@ -193,212 +158,52 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
   }
 
   Future<void> _handleInitialPayment() async {
-    setState(() => _isBooking = true);
+    final outcome = await _vm.startPayment();
+    if (!mounted) return;
 
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) {
-      context.go('/login');
-      return;
-    }
-
-    try {
-      if (kIsWeb) {
-        // Leaves the page for Stripe Checkout; the booking sheet opens when
-        // the browser comes back with a paid session.
-        final started = await PaymentService.startWebCheckout(_mentor!.id);
-        if (!started && mounted) {
-          setState(() => _isBooking = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error initializing payment.')),
-          );
-        }
-        return;
-      }
-
-      final paymentSuccess = await PaymentService.initPaymentSheet(_mentor!.id);
-
-      if (!paymentSuccess) {
-         if (mounted) {
-           setState(() => _isBooking = false);
-           ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Payment failed or was cancelled.')),
-           );
-         }
-         return;
-      }
-      
-      // Payment success! Proceed to booking sheet.
-      if (mounted) {
-        setState(() => _isBooking = false);
+    switch (outcome) {
+      case PaymentStart.notLoggedIn:
+        context.go('/login');
+      case PaymentStart.redirecting:
+        // The browser is leaving for Stripe Checkout; the booking sheet
+        // opens when it comes back with a paid session.
+        break;
+      case PaymentStart.paid:
         _showBookingSheet();
-      }
-    } catch (e) {
-      debugPrint('Stripe initialization error: $e');
-      if (mounted) {
-        setState(() => _isBooking = false);
+      case PaymentStart.cancelled:
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Payment failed or was cancelled.')),
+        );
+      case PaymentStart.error:
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error initializing payment.')),
         );
-      }
     }
   }
 
   Future<void> _confirmBooking(DateTime date, String time) async {
-    setState(() => _isBooking = true);
+    final result = await _vm.confirmBooking(date, time);
+    if (!mounted) return;
 
-    final session = JomnesDB.auth.currentSession;
-    if (session == null) {
-      context.go('/login');
-      return;
-    }
-
-    try {
-      // Calculate start time
-      int hour = int.parse(time.split(':')[0]);
-      if (time.contains('PM') && hour != 12) hour += 12;
-      final startTime = DateTime(date.year, date.month, date.day, hour, 0);
-      final endTime = startTime.add(const Duration(hours: 1));
-
-      final res = await ApiService.createBooking(
-        accessToken: session.accessToken,
-        tutorId: _mentor!.id,
-        startTime: startTime.toIso8601String(),
-        endTime: endTime.toIso8601String(),
-        bookingDate: date.toIso8601String().split('T')[0],
-        timeSlot: time,
-        hourlyRate: _mentor!.bookingPrice,
-        totalPrice: _mentor!.bookingPrice,
-        checkoutSessionId: widget.checkoutSessionId,
-      );
-
-      if (mounted) {
-        setState(() => _isBooking = false);
-        if (res['success'] == true) {
-          // Device notifications and the calendar plugin are mobile-only.
-          if (!kIsWeb) {
-            await NotificationService.showInstantNotification(
-              title: 'Booking Confirmed! 🎉',
-              body: 'Request sent to ${_mentor!.name}!',
-            );
-          }
-          await StudentNotificationService.addNotification(
-            title: 'Booking Confirmed! 🎉',
-            body: 'Your class with ${_mentor!.name} on ${date.toIso8601String().split('T')[0]} at $time has been scheduled.',
-            type: 'booking',
-            route: '/courses',
-          );
-
-          if (!kIsWeb) {
-            final event = Event(
-              title: 'Lesson with ${_mentor!.name}',
-              description: 'Jomnes App - Study Session',
-              startDate: startTime,
-              endDate: endTime,
-            );
-            await Add2Calendar.addEvent2Cal(event);
-          }
-
-          context.go('/courses');
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(res['message'] ?? 'Failed to book'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isBooking = false);
+    switch (result.status) {
+      case BookingStatus.notLoggedIn:
+        context.go('/login');
+      case BookingStatus.booked:
+        context.go('/courses');
+      case BookingStatus.rejected:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result.message ?? 'Failed to book'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      case BookingStatus.error:
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error connecting to server'),
             backgroundColor: Colors.red,
           ),
         );
-      }
-    }
-  }
-
-  Future<void> _fetchMentor() async {
-    try {
-      var user = await JomnesDB.from(
-        'Users',
-      ).select().eq('user_id', widget.mentorId).maybeSingle();
-      // The avatar may live in either table (social logins only fill
-      // `profiles`), so read both rather than only falling back when the
-      // `Users` row is missing.
-      final profileRow = await JomnesDB.from(
-        'profiles',
-      ).select().eq('id', widget.mentorId).maybeSingle();
-      user ??= profileRow;
-
-      final avatarCandidates = [
-        user?['profile_image'],
-        profileRow?['avatar_url'],
-        user?['avatar_url'],
-      ].map((value) => value?.toString() ?? '').where((url) => url.isNotEmpty);
-      final avatarUrl = avatarCandidates.isNotEmpty
-          ? avatarCandidates.first
-          : 'https://api.dicebear.com/9.x/avataaars/png?seed=${widget.mentorId}';
-
-      var profile = await JomnesDB.from(
-        'tutor_profiles',
-      ).select().eq('user_id', widget.mentorId).maybeSingle();
-      profile ??= await JomnesDB.from(
-        'tutor_profiles',
-      ).select().eq('tutor_id', widget.mentorId).maybeSingle();
-
-      final coursesData = await JomnesDB.from(
-        'courses',
-      ).select().eq('tutor_id', widget.mentorId);
-
-      final coursesList = (coursesData as List)
-          .map((c) => Course.fromJson(c))
-          .toList();
-
-      if (mounted && user != null) {
-        final p = profile ?? {};
-        final rawSub = p['subject'] as String? ?? p['category'] as String?;
-        final subject =
-            (rawSub != null && rawSub.isNotEmpty && rawSub != 'General')
-            ? rawSub
-            : Mentor.inferMentorSubject(p['bio'], p['education']);
-
-        setState(() {
-          _mentor = Mentor(
-            id: widget.mentorId,
-            name: user?['name'] ?? user?['full_name'] ?? 'Mentor',
-            subject: subject,
-            experience: '${p['experience_years'] ?? 5} years experience',
-            timeSlot: 'Flexible',
-            avatarUrl: avatarUrl,
-            rating: (p['rating'] as num?)?.toDouble() ?? 4.8,
-            students: (p['total_students'] as num?)?.toInt() ?? 120,
-            classes: 50,
-            followers: 300,
-            bookingPrice: (p['hourly_rate'] as num?)?.toDouble() ?? 250.0,
-            bio: p['bio'] ?? 'Experienced mentor.',
-            courses: coursesList,
-          );
-          _isLoading = false;
-        });
-      } else if (mounted) {
-        final mock = getMockMentorById(widget.mentorId);
-        setState(() {
-          if (mock != null) _mentor = mock;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        final mock = getMockMentorById(widget.mentorId);
-        setState(() {
-          if (mock != null) _mentor = mock;
-          _isLoading = false;
-        });
-      }
     }
   }
 
@@ -417,13 +222,14 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
+    context.watch<MentorProfileViewModel>();
+    if (_vm.isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.pageBg,
         body: Center(child: CircularProgressIndicator()),
       );
     }
-    final m = _mentor;
+    final m = _vm.mentor;
     if (m == null) {
       return const Scaffold(
         backgroundColor: AppColors.pageBg,
@@ -534,7 +340,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         Expanded(
                           flex: 3,
                           child: ElevatedButton(
-                            onPressed: _isBooking ? null : _handleInitialPayment,
+                            onPressed: _vm.isBooking ? null : _handleInitialPayment,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.accentBlue,
                               foregroundColor: Colors.white,
@@ -544,7 +350,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                               padding: const EdgeInsets.symmetric(vertical: 14),
                               elevation: 0,
                             ),
-                            child: _isBooking
+                            child: _vm.isBooking
                                 ? const SizedBox(
                                     height: 20,
                                     width: 20,
@@ -566,8 +372,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                         Expanded(
                           flex: 2,
                           child: ElevatedButton(
-                            onPressed: () =>
-                                setState(() => _following = !_following),
+                            onPressed: _vm.toggleFollowing,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.border,
                               foregroundColor: AppColors.textPrimary,
@@ -578,7 +383,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                               elevation: 0,
                             ),
                             child: Text(
-                              _following ? 'Following' : 'Follow',
+                              _vm.isFollowing ? 'Following' : 'Follow',
                               style: GoogleFonts.inter(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
@@ -661,7 +466,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                       )
                     else if (_tabController.index == 2)
                       // Reviews List
-                      _reviews.isEmpty
+                      _vm.reviews.isEmpty
                           ? Padding(
                               padding: const EdgeInsets.symmetric(vertical: 40),
                               child: Center(
@@ -687,7 +492,7 @@ class _MentorProfileScreenState extends State<MentorProfileScreen>
                               ),
                             )
                           : Column(
-                              children: _reviews.map((r) {
+                              children: _vm.reviews.map((r) {
                                 final user = r['Users'] ?? r['profiles'] ?? {};
                                 final name = user['name'] ?? user['full_name'] ?? 'Student';
                                 final avatar = user['profile_image'] ?? user['avatar_url'];
