@@ -40,7 +40,7 @@ class AuthService {
       log('DEBUG: Initiating Google OAuth sign-in for Web');
       await supabase.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'http://localhost:8080',
+        redirectTo: Uri.base.origin,
         queryParams: {'prompt': 'select_account'},
       );
       return;

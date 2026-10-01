@@ -375,9 +375,11 @@ class ApiService {
     String? timeSlot,
     double? hourlyRate,
     double? totalPrice,
+    String? checkoutSessionId,
   }) async {
     final body = jsonEncode({
       'tutor_id': tutorId,
+      if (checkoutSessionId != null) 'checkout_session_id': checkoutSessionId,
       if (courseId != null) 'course_id': courseId,
       if (startTime != null) 'start_time': startTime,
       if (endTime != null) 'end_time': endTime,

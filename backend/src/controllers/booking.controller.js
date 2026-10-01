@@ -1,14 +1,32 @@
 import { supabaseAdmin } from "../config/supabase.js";
 import { createNotification } from "../services/notification.service.js";
+import {
+  checkCheckoutSession,
+  markCheckoutSessionUsed,
+} from "../services/payment.service.js";
 
 // ── POST /api/bookings/create ──────────────────────────────────────────────
 export async function createBooking(req, res) {
   try {
     const studentId = req.user.id;
-    const { tutor_id, start_time, end_time, hourly_rate, total_price, course_id } = req.body;
+    const { tutor_id, start_time, end_time, hourly_rate, total_price, course_id, checkout_session_id } = req.body;
 
     if (!tutor_id) {
       return res.status(400).json({ success: false, message: "Missing tutor_id" });
+    }
+
+    // Web bookings pay through Stripe Checkout and send the session id here.
+    let checkoutPaymentIntentId = null;
+    if (checkout_session_id) {
+      const payment = await checkCheckoutSession({
+        sessionId: checkout_session_id,
+        studentId,
+        tutorId: tutor_id,
+      });
+      if (!payment.usable) {
+        return res.status(402).json({ success: false, message: payment.reason });
+      }
+      checkoutPaymentIntentId = payment.paymentIntentId;
     }
 
     // Check if the student already booked this exact tutor and time
@@ -51,6 +69,14 @@ export async function createBooking(req, res) {
     if (bookingError) {
       console.error("[createBooking] bookings error:", bookingError.message);
       return res.status(500).json({ success: false, message: bookingError.message });
+    }
+
+    if (checkoutPaymentIntentId) {
+      try {
+        await markCheckoutSessionUsed(checkoutPaymentIntentId, booking.id);
+      } catch (markErr) {
+        console.error("[createBooking] could not mark payment as used:", markErr);
+      }
     }
 
     // 2. If course_id is provided, also add to user_courses
