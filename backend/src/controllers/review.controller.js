@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../config/supabase.js";
+import { createNotification } from "../services/notification.service.js";
 
 // ── POST /api/reviews ──────────────────────────────────────────────
 export async function createReview(req, res) {
@@ -29,6 +30,24 @@ export async function createReview(req, res) {
     // Auto-update rating in tutor_profiles
     // Note: User says "the SQL trigger handles the math", so we might not need to manually calculate it,
     // but just in case, we'll let the trigger do its job.
+
+    try {
+      const { data: studentProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', studentId)
+        .maybeSingle();
+
+      await createNotification({
+        userId: mentor_id,
+        type: 'review_new',
+        title: 'New review received',
+        body: `${studentProfile?.full_name || 'A student'} left you a ${rating}-star review.`,
+        data: { review_id: review.id },
+      });
+    } catch (notifyErr) {
+      console.error("[createReview] notification error:", notifyErr);
+    }
 
     return res.status(200).json({ success: true, review });
   } catch (err) {

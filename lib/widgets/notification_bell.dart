@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../services/student_notification_service.dart';
@@ -7,18 +8,22 @@ class NotificationBell extends StatelessWidget {
   final Color color;
   final double size;
   final VoidCallback? onTap;
+  final ValueListenable<int>? unreadCountListenable;
 
   const NotificationBell({
     super.key,
     this.color = Colors.white,
     this.size = 26,
     this.onTap,
+    this.unreadCountListenable,
   });
 
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
-      valueListenable: StudentNotificationService.unreadCountNotifier,
+      valueListenable:
+          unreadCountListenable ??
+          StudentNotificationService.unreadCountNotifier,
       builder: (context, unreadCount, _) {
         return IconButton(
           onPressed: onTap ?? () => context.push('/notifications'),

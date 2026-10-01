@@ -5,6 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/teacher_bottom_nav_bar.dart';
 import '../services/teacher_course_service.dart';
+import '../services/teacher_notification_service.dart';
+import '../widgets/notification_bell.dart';
 import '../main.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -246,6 +248,7 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
     super.initState();
     _fetchProfile();
     _fetchCourses();
+    TeacherNotificationService.init();
   }
 
   Future<void> _fetchCourses() async {
@@ -353,7 +356,13 @@ class _TeacherHomeScreenState extends State<TeacherHomeScreen> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.white10),
                       ),
-                      child: const Icon(Icons.notifications_outlined, color: Colors.white70, size: 22),
+                      child: NotificationBell(
+                        color: Colors.white70,
+                        size: 22,
+                        unreadCountListenable:
+                            TeacherNotificationService.unreadCountNotifier,
+                        onTap: () => context.push('/teacher-notifications'),
+                      ),
                     ),
                   ],
                 ),

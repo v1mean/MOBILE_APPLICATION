@@ -1,4 +1,5 @@
 import 'screens/notifications_screen.dart';
+import 'screens/teacher_notifications_screen.dart';
 import 'dart:async';
 import 'dart:developer';
 import 'package:go_router/go_router.dart';
@@ -175,6 +176,7 @@ final GoRouter router = GoRouter(
     GoRoute(path: '/teacher-schedules', pageBuilder: (c, s) => _instant(s, const TeacherSchedulesScreen())),
     GoRoute(path: '/teacher-upload', pageBuilder: (c, s) => _instant(s, const TeacherUploadCourseScreen())),
     GoRoute(path: '/teacher-settings', pageBuilder: (c, s) => _instant(s, const TeacherSettingsScreen())),
+    GoRoute(path: '/teacher-notifications', pageBuilder: (c, s) => _instant(s, const TeacherNotificationsScreen())),
     GoRoute(
       path: '/login',
       pageBuilder: (c, s) {

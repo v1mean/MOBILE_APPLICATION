@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "../config/supabase.js";
+import { createNotification } from "../services/notification.service.js";
 
 // ── POST /api/bookings/create ──────────────────────────────────────────────
 export async function createBooking(req, res) {
@@ -113,6 +114,24 @@ export async function createBooking(req, res) {
              });
           }
       }
+    }
+
+    try {
+      const { data: studentProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('full_name')
+        .eq('id', studentId)
+        .maybeSingle();
+
+      await createNotification({
+        userId: tutor_id,
+        type: 'booking_new',
+        title: 'New booking request',
+        body: `${studentProfile?.full_name || 'A student'} booked a session with you.`,
+        data: { booking_id: booking.id },
+      });
+    } catch (notifyErr) {
+      console.error("[createBooking] notification error:", notifyErr);
     }
 
     return res.status(200).json({ success: true, booking });
